@@ -9,6 +9,8 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
   const [attempt, setAttempt] = useState('');
   const [loading, setLoading] = useState(false);
   const [userDetails, setUserDetails] = useState({ cidade: '', loja: '' });
+  const [localProblema, setLocalProblema] = useState('');
+  const [modalMessage, setModalMessage] = useState('');
 
   useEffect(() => {
     const fetchUserDetails = async () => {
@@ -44,6 +46,12 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
     e.preventDefault();
     setLoading(true);
 
+    if (!localProblema) {
+      setModalMessage('Por favor, selecione o local do problema.');
+      setLoading(false);
+      return;
+    }
+
     try {
       const orderControlRef = doc(db, 'ordersControl', 'orders');
       const orderControlSnap = await getDoc(orderControlRef);
@@ -78,7 +86,8 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
         order: nextOrder,
         status: 'aberto',
         tentou: attempt,
-        user: currentUser
+        user: currentUser,
+        localProblema: localProblema
       };
 
       const newTicketRef = doc(db, 'chamados', 'aberto', 'tickets', nextOrder);
@@ -87,6 +96,7 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
       addTicket({ id: nextOrder, ...newTicket });
       setDescription('');
       setAttempt('');
+      setLocalProblema('');
       setLoading(false);
       onClose();
     } catch (error) {
@@ -125,6 +135,33 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
               className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
               required
             />
+          </div>
+          <div className="mb-6">
+            <label className="block text-gray-700 text-sm font-bold mb-2">Local do Problema</label>
+            <div className="flex justify-between">
+              <button
+                type="button"
+                className={`bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ${localProblema === 'Caixa' ? 'opacity-100' : 'opacity-50'}`}
+                onClick={() => setLocalProblema('Caixa')}
+              >
+                Caixa
+              </button>
+              <button
+                type="button"
+                className={`bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ${localProblema === 'Balcão' ? 'opacity-100' : 'opacity-50'}`}
+                onClick={() => setLocalProblema('Balcão')}
+              >
+                Balcão
+              </button>
+              <button
+                type="button"
+                className={`bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ${localProblema === 'Gerencial' ? 'opacity-100' : 'opacity-50'}`}
+                onClick={() => setLocalProblema('Gerencial')}
+              >
+                Gerencial
+              </button>
+            </div>
+            {modalMessage && <p className="text-red-500 text-xs italic">{modalMessage}</p>}
           </div>
           <div className="flex items-center justify-between">
             <button
