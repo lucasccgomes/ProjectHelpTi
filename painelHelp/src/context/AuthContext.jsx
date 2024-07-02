@@ -1,49 +1,63 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { auth, db } from '../firebase';
-import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../firebase';
+import { collection, getDocs } from 'firebase/firestore';
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, user => {
-      if (user) {
-        console.log('Usuário autenticado:', user);
-        setIsAuthenticated(true);
-      } else {
-        console.log('Usuário não autenticado');
-        setIsAuthenticated(false);
-      }
-      setLoading(false);
-    });
+    // Placeholder for checking user authentication state
+    setLoading(false);
+  }, []);
 
-    return () => unsubscribe();
+  const logAllUsuarios = async () => {
+    try {
+      console.log('Buscando todos os dados na coleção "usuarios"...');
+      const usuariosRef = collection(db, 'usuarios');
+      const querySnapshot = await getDocs(usuariosRef);
+
+      querySnapshot.forEach(doc => {
+        console.log(`Documento encontrado: ${doc.id} => `, doc.data());
+      });
+    } catch (error) {
+      console.error('Erro ao buscar documentos:', error);
+    }
+  };
+
+  useEffect(() => {
+    logAllUsuarios();
   }, []);
 
   const login = async (username, password) => {
     try {
       console.log('Buscando dados do usuário no Firestore para:', username);
-      // Fetch user credentials from Firebase Firestore
-      const userDocRef = doc(db, 'usuarios/osvaldoCruz', username);
-      const userDoc = await getDoc(userDocRef);
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
-        console.log('Dados do usuário encontrados:', userData);
-        if (userData.user === username && userData.pass === password) {
-          console.log('Credenciais válidas, tentando autenticar...');
-          await signInWithEmailAndPassword(auth, userData.user, password);
-          console.log('Autenticação bem-sucedida');
-        } else {
-          console.log('Credenciais inválidas');
-          throw new Error('Invalid credentials');
+      const usuariosRef = collection(db, 'usuarios');
+      const querySnapshot = await getDocs(usuariosRef);
+
+      let userFound = false;
+      querySnapshot.forEach(doc => {
+        const userData = doc.data()[username];
+        if (userData) {
+          console.log('Dados do usuário encontrados:', userData);
+          if (userData.pass === password) {
+            console.log('Credenciais válidas, autenticando usuário...');
+            setIsAuthenticated(true);
+            setCurrentUser(username);
+            console.log('Autenticação bem-sucedida');
+            userFound = true;
+          } else {
+            console.log('Credenciais inválidas');
+          }
         }
-      } else {
-        console.log('Usuário não encontrado no Firestore');
-        throw new Error('User not found');
+      });
+
+      if (!userFound) {
+        console.log('Usuário não encontrado no Firestore ou credenciais inválidas');
+        throw new Error('User not found or invalid credentials');
       }
     } catch (error) {
       console.error('Erro ao tentar login:', error);
@@ -54,7 +68,8 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       console.log('Tentando fazer logout...');
-      await signOut(auth);
+      setIsAuthenticated(false);
+      setCurrentUser(null);
       console.log('Logout bem-sucedido');
     } catch (error) {
       console.error('Erro ao tentar logout:', error);
@@ -62,7 +77,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, login, logout, loading }}>
+    <AuthContext.Provider value={{ isAuthenticated, login, logout, loading, currentUser }}>
       {children}
     </AuthContext.Provider>
   );
