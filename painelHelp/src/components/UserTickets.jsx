@@ -79,7 +79,7 @@ const UserTickets = () => {
       {tickets.length === 0 ? (
         <p>Nenhum chamado aberto encontrado.</p>
       ) : (
-        <ul>
+        <ul className='max-w-[500px]'>
           {tickets.map(ticket => (
             <li key={ticket.id} className="bg-slate-400 shadow-xl mb-4 p-4 border rounded">
               <h3 className="text-xl uppercase text-center font-semibold">{ticket.order}</h3>
