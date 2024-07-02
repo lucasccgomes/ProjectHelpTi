@@ -54,7 +54,7 @@ const Navbar = () => {
                     onClick={logout}
                     className="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium flex items-center"
                   >
-                    <FaSignOutAlt className="mr-2" /> Logout
+                    <FaSignOutAlt className="mr-2" /> Sair
                   </button>
                 ) : (
                   <Link
