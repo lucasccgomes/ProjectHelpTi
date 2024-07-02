@@ -1,9 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
+import UserTickets from '../components/UserTickets';
+
+
 
 const HomePage = () => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <h1 className="text-4xl font-bold">Home Page Teste!</h1>
+    <div className="pt-20 min-h-screen flex flex-col items-center justify-center bg-gray-100">
+      <UserTickets />
     </div>
   );
 };
