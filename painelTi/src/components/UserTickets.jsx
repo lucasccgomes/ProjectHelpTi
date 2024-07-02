@@ -3,6 +3,7 @@ import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
 import { FaCity, FaUser, FaStoreAlt } from "react-icons/fa";
+import { MdReportProblem } from "react-icons/md";
 
 const UserTickets = () => {
   const { currentUser } = useAuth();
@@ -134,12 +135,18 @@ const UserTickets = () => {
                 <p className='flex uppercase items-center'><FaStoreAlt />: {ticket.loja}</p>
                 <p><strong>Data:</strong> {ticket.data.toLocaleString()}</p>
               </div>
-              <p className="flex items-center">
-                <strong>Status:</strong>
-                <p className={`ml-1 font-bold uppercase ${getStatusClass(ticket.status)}`}>
-                  {ticket.status}
+              <div className='flex lg:flex-row flex-col lg:gap-4'>
+                <p className='flex uppercase items-center'>
+                  <MdReportProblem />: {ticket.localProblema}
                 </p>
-              </p>
+                <p className="flex items-center">
+                  <strong>Status:</strong>
+                  <p className={`ml-1 font-bold uppercase ${getStatusClass(ticket.status)}`}>
+                    {ticket.status}
+                  </p>
+                </p>
+              </div>
+
               <p className='bg-red-100 p-3 rounded-md mb-2 mt-2'><strong>Descrição:</strong> {ticket.descricao}</p>
               <p className='bg-green-100 p-3 rounded-md'><strong>Tentativa:</strong> {ticket.tentou}</p>
               {ticket.descricaoFinalizacao && (
