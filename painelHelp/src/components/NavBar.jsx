@@ -8,14 +8,11 @@ const Navbar = () => {
   const { isAuthenticated, logout } = useAuth();
 
   const navItems = [
-    { name: 'Dashboard', icon: FaHome, href: '/' },
-    { name: 'Team', icon: FaUsers, href: '/team' },
-    { name: 'Projects', icon: FaProjectDiagram, href: '/projects' },
-    { name: 'Calendar', icon: FaCalendarAlt, href: '/calendar' }
+    { name: 'Home', icon: FaHome, href: '/' },
   ];
 
   return (
-    <nav className="fixed w-full bg-gray-800 text-white">
+    <nav className="fixed w-full z-30 bg-gray-800 text-white">
       <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
         <div className="relative flex items-center justify-between h-16">
           <div className="absolute inset-y-0 left-0 flex items-center sm:hidden">
@@ -79,7 +76,7 @@ const Navbar = () => {
               <Link
                 key={item.name}
                 to={item.href}
-                className="text-gray-300 hover:bg-gray-700 hover:text-white block px-3 py-2 rounded-md text-base font-medium flex items-center"
+                className="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-base font-medium flex items-center"
               >
                 <item.icon className="mr-2" /> {item.name}
               </Link>
@@ -87,14 +84,14 @@ const Navbar = () => {
             {isAuthenticated ? (
               <button
                 onClick={logout}
-                className="text-gray-300 hover:bg-gray-700 hover:text-white block px-3 py-2 rounded-md text-base font-medium flex items-center"
+                className="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-base font-medium flex items-center"
               >
-                <FaSignOutAlt className="mr-2" /> Logout
+                <FaSignOutAlt className="mr-2" /> Sair
               </button>
             ) : (
               <Link
                 to="/login"
-                className="text-gray-300 hover:bg-gray-700 hover:text-white block px-3 py-2 rounded-md text-base font-medium flex items-center"
+                className="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-base font-medium flex items-center"
               >
                 <FaSignInAlt className="mr-2" /> Login
               </Link>
