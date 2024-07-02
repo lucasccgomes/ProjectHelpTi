@@ -10,7 +10,12 @@ export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
-    // Placeholder for checking user authentication state
+    const storedUser = localStorage.getItem('currentUser');
+    const storedAuth = localStorage.getItem('isAuthenticated');
+    if (storedUser && storedAuth) {
+      setCurrentUser(storedUser);
+      setIsAuthenticated(storedAuth === 'true');
+    }
     setLoading(false);
   }, []);
 
@@ -47,6 +52,8 @@ export const AuthProvider = ({ children }) => {
             console.log('Credenciais válidas, autenticando usuário...');
             setIsAuthenticated(true);
             setCurrentUser(username);
+            localStorage.setItem('isAuthenticated', 'true');
+            localStorage.setItem('currentUser', username);
             console.log('Autenticação bem-sucedida');
             userFound = true;
           } else {
@@ -70,6 +77,8 @@ export const AuthProvider = ({ children }) => {
       console.log('Tentando fazer logout...');
       setIsAuthenticated(false);
       setCurrentUser(null);
+      localStorage.removeItem('isAuthenticated');
+      localStorage.removeItem('currentUser');
       console.log('Logout bem-sucedido');
     } catch (error) {
       console.error('Erro ao tentar logout:', error);
