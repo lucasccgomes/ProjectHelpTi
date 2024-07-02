@@ -30,28 +30,16 @@ const UserTickets = () => {
   useEffect(() => {
     const fetchTickets = async () => {
       try {
-        console.log('Procurando todos os chamados...');
-
-        // Correção da referência da coleção
-        const abertoRef = collection(db, 'chamados', 'aberto', 'tickets'); // Ajuste para acessar a subcoleção corretamente
-
-        // Log da query
-        console.log('Criando query para buscar todos os chamados...');
-
-        // Removendo o filtro de usuário
+        const abertoRef = collection(db, 'chamados', 'aberto', 'tickets');
         const querySnapshot = await getDocs(abertoRef);
-
-        console.log('Query executada, processando resultados...');
         const ticketsData = querySnapshot.docs.map(doc => {
           const data = doc.data();
           return {
             id: doc.id,
             ...data,
-            data: data.data.toDate() // Convertendo o Timestamp para Date
+            data: data.data.toDate()
           };
         });
-
-        console.log('Chamados encontrados:', ticketsData);
         setTickets(ticketsData);
         setLoading(false);
       } catch (error) {
@@ -89,12 +77,11 @@ const UserTickets = () => {
     return <div>Loading...</div>;
   }
 
-  // Obter listas únicas de usuários e lojas para os filtros
   const uniqueUsers = [...new Set(tickets.map(ticket => ticket.user))];
   const uniqueStores = [...new Set(tickets.map(ticket => ticket.loja))];
 
   return (
-    <div className="p-4">
+    <div className="p-4 flex flex-col justify-center items-center">
       <div className='flex lg:flex-row flex-col gap-4 items-center mb-4'>
         <h2 className="text-2xl font-bold">Chamados</h2>
 
@@ -135,7 +122,7 @@ const UserTickets = () => {
       {filteredTickets.length === 0 ? (
         <p>Nenhum chamado encontrado.</p>
       ) : (
-        <ul>
+        <ul className='max-w-[500px]'>
           {filteredTickets.map(ticket => (
             <li key={ticket.id} className="bg-slate-400 shadow-xl mb-4 p-4 border rounded">
               <h3 className="text-xl uppercase text-center font-semibold">{ticket.order}</h3>
