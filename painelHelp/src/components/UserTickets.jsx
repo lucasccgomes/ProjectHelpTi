@@ -77,7 +77,7 @@ const UserTickets = () => {
         <NewTicketModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} addTicket={addTicket} />
       </div>
       {tickets.length === 0 ? (
-        <p>Nenhum chamado aberto encontrado.</p>
+        <p>Nenhum chamado em seu nome.</p>
       ) : (
         <ul className='max-w-[500px]'>
           {tickets.map(ticket => (
