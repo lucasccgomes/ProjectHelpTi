@@ -1,3 +1,4 @@
+// App.js
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Navbar from './components/NavBar';
@@ -11,9 +12,9 @@ const App = () => {
     <AuthProvider>
       <Router>
         <AuthConsumer>
-          {({ isAuthenticated }) => (
+          {({ isAuthenticated, currentUser }) => (
             <>
-              {isAuthenticated && <Navbar />}
+              {isAuthenticated && <Navbar currentUser={currentUser} />}
               <Routes>
                 <Route
                   path="/"
