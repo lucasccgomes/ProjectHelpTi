@@ -18,13 +18,13 @@ const UserTickets = () => {
   const getStatusClass = (status) => {
     switch (status) {
       case 'aberto':
-        return 'text-red-700';
+        return 'bg-red-600';
       case 'andamento':
-        return 'text-yellow-700';
+        return 'bg-orange-600';
       case 'finalizado':
-        return 'text-green-700';
+        return 'bg-green-600';
       default:
-        return 'text-gray-700';
+        return 'bg-gray-700';
     }
   };
 
@@ -125,51 +125,69 @@ const UserTickets = () => {
       ) : (
         <ul className='max-w-[500px]'>
           {filteredTickets.map(ticket => (
-            <li key={ticket.id} className="bg-slate-400 shadow-xl mb-4 p-4 border rounded">
-              <h3 className="text-xl uppercase text-center font-semibold">{ticket.order}</h3>
-              <div className='flex gap-4'>
+            <li key={ticket.id} className="bg-slate-400 shadow-xl mb-4 p-4 border rounded-xl">
+              <h3 className="text-xl uppercase text-center font-semibold">
+                {ticket.order}
+                <p className={`my-1 p-1 rounded-lg text-white uppercase ${getStatusClass(ticket.status)}`}>
+                  {ticket.status}
+                </p>
+              </h3>
+
+              <div className='flex gap-4 mb-1'>
                 <p className='flex uppercase items-center'><FaCity />: {ticket.cidade}</p>
                 <p className='flex uppercase items-center'><FaUser />: {ticket.user}</p>
               </div>
-              <div className='flex lg:flex-row flex-col lg:gap-4'>
+
+              <div className='flex gap-4 mb-1'>
                 <p className='flex uppercase items-center'><FaStoreAlt />: {ticket.loja}</p>
-                <p><strong>Data:</strong> {ticket.data.toLocaleString()}</p>
-              </div>
-              <div className='flex lg:flex-row flex-col lg:gap-4'>
                 <p className='flex uppercase items-center'>
                   <MdReportProblem />: {ticket.localProblema}
                 </p>
-                <p className="flex items-center">
-                  <strong>Status:</strong>
-                  <p className={`ml-1 font-bold uppercase ${getStatusClass(ticket.status)}`}>
-                    {ticket.status}
-                  </p>
+              </div>
+
+              <div className='flex gap-4 mb-1'>
+                <p>
+                  <strong>
+                    Data:
+                  </strong>
+                  {ticket.data.toLocaleString()}
                 </p>
               </div>
 
-              <p className='bg-red-100 p-3 rounded-md mb-2 mt-2'><strong>Descrição:</strong> {ticket.descricao}</p>
-              <p className='bg-green-100 p-3 rounded-md'><strong>Tentativa:</strong> {ticket.tentou}</p>
+              <div className='bg-white p-3 rounded-md mb-2 mt-2'>
+                <p className='text-center font-bold'>Descrição</p>
+                <p>{ticket.descricao}</p>
+              </div>
+
+              <div className='bg-white p-3 rounded-md mb-2 mt-2'>
+                <p className='text-center font-bold'>Tentativa</p>
+                <p>{ticket.tentou}</p>
+              </div>
+
               {ticket.descricaoFinalizacao && (
-                <p className='bg-blue-100 p-3 rounded-md mt-2'><strong>Conclusão:</strong> {ticket.descricaoFinalizacao}</p>
+                <p className='bg-blue-100 p-3 rounded-md mt-2'>
+                  <strong>Conclusão:</strong>
+                  {ticket.descricaoFinalizacao}
+                </p>
               )}
               <div className="flex gap-2 mt-2">
                 <button
                   onClick={() => updateTicketStatus(ticket.id, 'aberto')}
-                  className={`bg-red-500 text-white px-4 py-2 rounded ${ticket.status === 'finalizado' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  className={`bg-red-400 text-white px-4 py-2 rounded ${ticket.status === 'finalizado' ? 'opacity-50 cursor-not-allowed' : ''} ${ticket.status === 'aberto' ? 'bg-red-600 ring-2 ring-white' : ''}`}
                   disabled={ticket.status === 'finalizado'}
                 >
                   Aberto
                 </button>
                 <button
                   onClick={() => updateTicketStatus(ticket.id, 'andamento')}
-                  className={`bg-yellow-500 text-white px-4 py-2 rounded ${ticket.status === 'finalizado' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  className={`bg-orange-400 text-white px-4 py-2 rounded ${ticket.status === 'finalizado' ? 'opacity-50 cursor-not-allowed' : ''} ${ticket.status === 'andamento' ? 'bg-orange-600 ring-2 ring-white' : ''}`}
                   disabled={ticket.status === 'finalizado'}
                 >
                   Andamento
                 </button>
                 <button
                   onClick={() => setSelectedTicket(ticket)}
-                  className={`bg-green-500 text-white px-4 py-2 rounded ${ticket.status === 'finalizado' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  className={`bg-green-400 text-white px-4 py-2 rounded ${ticket.status === 'finalizado' ? 'opacity-50 cursor-not-allowed' : ''} ${ticket.status === 'finalizado' ? 'bg-green-600 ring-2 ring-white' : ''}`}
                   disabled={ticket.status === 'finalizado'}
                 >
                   Finalizado
@@ -182,7 +200,7 @@ const UserTickets = () => {
 
       {selectedTicket && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white p-4 rounded">
+          <div className="bg-white p-4 rounded min-w-[300px]">
             <h2 className="text-xl mb-2">Finalizar Chamado</h2>
             <textarea
               className="border p-2 w-full mb-2"
