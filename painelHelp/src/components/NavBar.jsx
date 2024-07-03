@@ -1,15 +1,17 @@
 import { useState } from "react";
 import { Link } from 'react-router-dom';
-import { FaBars, FaTimes, FaHome, FaUsers, FaProjectDiagram, FaCalendarAlt, FaSignOutAlt, FaSignInAlt } from 'react-icons/fa';
+import { FaBars, FaTimes, FaUserCircle, FaHome, FaUsers, FaProjectDiagram, FaCalendarAlt, FaSignOutAlt, FaSignInAlt } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 
-const Navbar = () => {
+const Navbar = ({ currentUser }) => {
   const [isOpen, setIsOpen] = useState(false);
   const { isAuthenticated, logout } = useAuth();
 
   const navItems = [
     { name: 'Home', icon: FaHome, href: '/' },
   ];
+
+  console.log('userteste:', currentUser)
 
   return (
     <nav className="fixed w-full z-30 bg-gray-800 text-white">
@@ -31,12 +33,8 @@ const Navbar = () => {
             </button>
           </div>
           <div className="flex-1 flex items-center justify-center sm:items-stretch sm:justify-start">
-            <div className="flex-shrink-0">
-              <img
-                className="h-8 w-auto"
-                src=""
-                alt=""
-              />
+            <div className="flex flex-row">
+              <p className="flex justify-center items-center gap-1 uppercase"><FaUserCircle />{currentUser}</p>
             </div>
             <div className="hidden sm:block sm:ml-6">
               <div className="flex space-x-4">
