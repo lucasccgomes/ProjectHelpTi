@@ -4,7 +4,7 @@ import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
 import NewTicketModal from './NewTicketModal';
 import { FaCity, FaUser, FaStoreAlt } from "react-icons/fa";
-
+import { MdReportProblem } from "react-icons/md"
 const UserTickets = () => {
   const { currentUser } = useAuth();
   const [tickets, setTickets] = useState([]);
@@ -14,13 +14,13 @@ const UserTickets = () => {
   const getStatusClass = (status) => {
     switch (status) {
       case 'aberto':
-        return 'text-red-700';
+        return 'bg-red-600';
       case 'andamento':
-        return 'text-yellow-700';
+        return 'bg-orange-600';
       case 'finalizado':
-        return 'text-green-700';
+        return 'bg-green-600';
       default:
-        return 'text-gray-700';
+        return 'bg-gray-700';
     }
   };
 
@@ -82,23 +82,43 @@ const UserTickets = () => {
         <ul className='max-w-[500px]'>
           {tickets.map(ticket => (
             <li key={ticket.id} className="bg-slate-400 shadow-xl mb-4 p-4 border rounded">
-              <h3 className="text-xl uppercase text-center font-semibold">{ticket.order}</h3>
-              <div className='flex gap-4'>
+               <h3 className="text-xl uppercase text-center font-semibold">
+                {ticket.order}
+                <p className={`my-1 p-1 rounded-lg text-white uppercase ${getStatusClass(ticket.status)}`}>
+                  {ticket.status}
+                </p>
+              </h3>
+
+              <div className='flex gap-4 mb-1'>
                 <p className='flex uppercase items-center'><FaCity />: {ticket.cidade}</p>
                 <p className='flex uppercase items-center'><FaUser />: {ticket.user}</p>
               </div>
-              <div className='flex lg:flex-row flex-col lg:gap-4'>
+
+              <div className='flex gap-4 mb-1'>
                 <p className='flex uppercase items-center'><FaStoreAlt />: {ticket.loja}</p>
-                <p><strong>Data:</strong> {ticket.data.toLocaleString()}</p>
-              </div>
-              <p className="flex items-center">
-                <strong>Status:</strong>
-                <p className={`ml-1 font-bold uppercase ${getStatusClass(ticket.status)}`}>
-                  {ticket.status}
+                <p className='flex uppercase items-center'>
+                  <MdReportProblem />: {ticket.localProblema}
                 </p>
-              </p>
-              <p className='bg-red-100 p-3 rounded-md mb-2'><strong>Descrição:</strong> {ticket.descricao}</p>
-              <p className='bg-green-100 p-3 rounded-md'><strong>Tentativa:</strong> {ticket.tentou}</p>
+              </div>
+
+              <div className='flex gap-4 mb-1'>
+                <p>
+                  <strong>
+                    Data:
+                  </strong>
+                  {ticket.data.toLocaleString()}
+                </p>
+              </div>
+
+              <div className='bg-white p-3 rounded-md mb-2 mt-2'>
+                <p className='text-center font-bold'>Descrição</p>
+                <p>{ticket.descricao}</p>
+              </div>
+
+              <div className='bg-white p-3 rounded-md mb-2 mt-2'>
+                <p className='text-center font-bold'>Tentativa</p>
+                <p>{ticket.tentou}</p>
+              </div>
             </li>
           ))}
         </ul>
