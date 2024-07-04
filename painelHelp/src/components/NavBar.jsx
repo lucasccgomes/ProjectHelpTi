@@ -12,8 +12,6 @@ const Navbar = ({ currentUser }) => {
     { name: 'Home', icon: FaHome, href: '/' },
   ];
 
-  console.log('userteste:', currentUser)
-
   return (
     <nav className="fixed w-full z-30 bg-primary text-white">
       <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">

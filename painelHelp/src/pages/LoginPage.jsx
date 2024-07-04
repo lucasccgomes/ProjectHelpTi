@@ -11,10 +11,10 @@ const LoginPage = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    console.log('Tentando fazer login com:', { username, password });
+
     try {
       await login(username, password);
-      console.log('Login bem-sucedido');
+
       navigate('/');
     } catch (error) {
       console.error('Erro ao fazer login:', error);
@@ -41,7 +41,6 @@ const LoginPage = () => {
               value={username}
               onChange={(e) => {
                 setUsername(e.target.value);
-                console.log('Username atualizado:', e.target.value);
               }}
               className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
               autoComplete="off"
@@ -59,7 +58,6 @@ const LoginPage = () => {
               value={password}
               onChange={(e) => {
                 setPassword(e.target.value);
-                console.log('Password atualizado:', e.target.value);
               }}
               className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
               autoComplete="off"

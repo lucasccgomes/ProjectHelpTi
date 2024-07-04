@@ -21,13 +21,11 @@ export const AuthProvider = ({ children }) => {
 
   const logAllUsuarios = async () => {
     try {
-      console.log('Buscando todos os dados na coleção "usuarios"...');
       const usuariosRef = collection(db, 'usuarios');
       const querySnapshot = await getDocs(usuariosRef);
 
       querySnapshot.forEach(doc => {
-        console.log(`Documento encontrado: ${doc.id} => `, doc.data());
-      });
+         });
     } catch (error) {
       console.error('Erro ao buscar documentos:', error);
     }
@@ -39,7 +37,6 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (username, password) => {
     try {
-      console.log('Buscando dados do usuário no Firestore para:', username);
       const usuariosRef = collection(db, 'usuarios');
       const querySnapshot = await getDocs(usuariosRef);
 
@@ -47,14 +44,11 @@ export const AuthProvider = ({ children }) => {
       querySnapshot.forEach(doc => {
         const userData = doc.data()[username];
         if (userData) {
-          console.log('Dados do usuário encontrados:', userData);
           if (userData.pass === password) {
-            console.log('Credenciais válidas, autenticando usuário...');
             setIsAuthenticated(true);
             setCurrentUser(username);
             localStorage.setItem('isAuthenticated', 'true');
             localStorage.setItem('currentUser', username);
-            console.log('Autenticação bem-sucedida');
             userFound = true;
           } else {
             console.log('Credenciais inválidas');
@@ -74,7 +68,6 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
-      console.log('Tentando fazer logout...');
       setIsAuthenticated(false);
       setCurrentUser(null);
       localStorage.removeItem('isAuthenticated');
