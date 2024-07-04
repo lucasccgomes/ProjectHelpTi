@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { collection, addDoc, getDoc, doc, getDocs, setDoc, updateDoc } from 'firebase/firestore';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
 
@@ -11,6 +12,8 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
   const [userDetails, setUserDetails] = useState({ cidade: '', loja: '' });
   const [localProblema, setLocalProblema] = useState('');
   const [modalMessage, setModalMessage] = useState('');
+  const [images, setImages] = useState([]);
+  const storage = getStorage();
 
   useEffect(() => {
     const fetchUserDetails = async () => {
@@ -77,11 +80,21 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
         });
       }
 
+      // Upload de imagens
+      const imageUrls = [];
+      for (let i = 0; i < images.length; i++) {
+        const image = images[i];
+        const storageRef = ref(storage, `chamados/${nextOrder}/${image.name}`);
+        const snapshot = await uploadBytes(storageRef, image);
+        const url = await getDownloadURL(snapshot.ref);
+        imageUrls.push(url);
+      }
+
       const newTicket = {
         cidade: userDetails.cidade,
         data: new Date(),
         descricao: description,
-        imgUrl: '',
+        imgUrl: imageUrls,
         loja: userDetails.loja,
         order: nextOrder,
         status: 'aberto',
@@ -97,6 +110,7 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
       setDescription('');
       setAttempt('');
       setLocalProblema('');
+      setImages([]);
       setLoading(false);
       onClose();
     } catch (error) {
@@ -105,11 +119,19 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
     }
   };
 
+  const handleImageChange = (e) => {
+    if (e.target.files.length + images.length > 4) {
+      alert('Você pode enviar no máximo 4 imagens.');
+      return;
+    }
+    setImages([...images, ...e.target.files]);
+  };
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-      <div className="bg-white p-4 rounded shadow-lg w-96">
+    <div className="fixed inset-0 pt-11 bg-black bg-opacity-50 flex items-center justify-center">
+      <div className="bg-white m-4 p-4 rounded shadow-lg w-96">
         <h2 className="text-2xl font-bold mb-4">Novo Chamado</h2>
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
@@ -126,7 +148,10 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
           </div>
           <div className="mb-6">
             <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="attempt">
-              Tentativa <p className='text-gray-500'>(oque você tentou fazer?)</p>
+              Tentativa
+              <p className='text-gray-500'>
+              (Descreva as ações que você tomou para tentar resolver o problema)
+              </p>
             </label>
             <textarea
               id="attempt"
@@ -137,31 +162,53 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
             />
           </div>
           <div className="mb-6">
-            <label className="block text-gray-700 text-sm font-bold mb-2">Local do Problema</label>
-            <div className="flex justify-between">
+            <label className="block text-gray-700 text-sm font-bold mb-2 text-center">Local do Problema</label>
+            <div className="flex gap-4 justify-center">
               <button
                 type="button"
-                className={`bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ${localProblema === 'Caixa' ? 'opacity-100' : 'opacity-50'}`}
+                className={`bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ${localProblema === 'Caixa' ? 'ring-2 ring-primary' : ''}`}
                 onClick={() => setLocalProblema('Caixa')}
               >
                 Caixa
               </button>
               <button
                 type="button"
-                className={`bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ${localProblema === 'Balcão' ? 'opacity-100' : 'opacity-50'}`}
+                className={`bg-orange-600 hover:bg-orange-500 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ${localProblema === 'Balcão' ? 'ring-2 ring-primary' : ''}`}
                 onClick={() => setLocalProblema('Balcão')}
               >
                 Balcão
               </button>
               <button
                 type="button"
-                className={`bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ${localProblema === 'Gerencial' ? 'opacity-100' : 'opacity-50'}`}
+                className={`bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ${localProblema === 'Gerencial' ? 'ring-2 ring-primary' : ''}`}
                 onClick={() => setLocalProblema('Gerencial')}
               >
                 Gerencial
               </button>
             </div>
             {modalMessage && <p className="text-red-500 text-xs italic">{modalMessage}</p>}
+          </div>
+          <div className="mb-6">
+            <label className="block text-gray-700 text-sm font-bold mb-2">
+              Imagens
+              <p className='text-gray-500'>
+              (Se possível, envie fotos que possam ajudar a solucionar o problema.)
+                </p>
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleImageChange}
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            />
+            {images.length > 0 && (
+              <div className="mt-2">
+                {Array.from(images).map((image, index) => (
+                  <p key={index} className="text-sm text-gray-600">{image.name}</p>
+                ))}
+              </div>
+            )}
           </div>
           <div className="flex items-center justify-between">
             <button
@@ -173,7 +220,7 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
             </button>
             <button
               type="submit"
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+              className="bg-green-600 hover:bg-green-500 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
               disabled={loading}
             >
               {loading ? 'Enviando...' : 'Enviar'}

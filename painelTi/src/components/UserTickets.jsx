@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
+import Modal from 'react-modal';
 import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
 import { FaCity, FaUser, FaStoreAlt } from "react-icons/fa";
@@ -14,6 +15,8 @@ const UserTickets = () => {
   const [storeFilter, setStoreFilter] = useState('');
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [finalizadoDescricao, setFinalizadoDescricao] = useState('');
+  const [modalIsOpen, setModalIsOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState('');
 
   const getStatusClass = (status) => {
     switch (status) {
@@ -80,6 +83,16 @@ const UserTickets = () => {
 
   const uniqueUsers = [...new Set(tickets.map(ticket => ticket.user))];
   const uniqueStores = [...new Set(tickets.map(ticket => ticket.loja))];
+
+  const openImageModal = (image) => {
+    setSelectedImage(image);
+    setModalIsOpen(true);
+  };
+
+  const closeImageModal = () => {
+    setSelectedImage('');
+    setModalIsOpen(false);
+  };
 
   return (
     <div className="p-4 flex flex-col justify-center items-center">
@@ -164,6 +177,23 @@ const UserTickets = () => {
                 <p>{ticket.tentou}</p>
               </div>
 
+              {Array.isArray(ticket.imgUrl) && ticket.imgUrl.length > 0 && (
+                <div className='bg-white p-3 rounded-md mb-2 mt-2'>
+                  <p className='text-center font-bold'>Imagens</p>
+                  <div className='flex gap-2'>
+                    {ticket.imgUrl.map((image, index) => (
+                      <img
+                        key={index}
+                        src={image}
+                        alt={`ticket-${index}`}
+                        className='w-20 h-20 object-cover cursor-pointer'
+                        onClick={() => openImageModal(image)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {ticket.descricaoFinalizacao && (
                 <p className='bg-blue-100 p-3 rounded-md mt-2'>
                   <strong>Conclusão:</strong>
@@ -229,6 +259,20 @@ const UserTickets = () => {
           </div>
         </div>
       )}
+
+      <Modal
+        isOpen={modalIsOpen}
+        onRequestClose={closeImageModal}
+        contentLabel="Imagem Grande"
+        className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50"
+      >
+        <div className="bg-white p-4 rounded">
+          <img src={selectedImage} alt="imagem grande" className="max-w-full max-h-full" />
+          <button onClick={closeImageModal} className="mt-4 bg-red-500 text-white px-4 py-2 rounded">
+            Fechar
+          </button>
+        </div>
+      </Modal>
     </div>
   );
 };
