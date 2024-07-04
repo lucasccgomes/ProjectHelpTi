@@ -14,6 +14,7 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
   const [modalMessage, setModalMessage] = useState('');
   const [images, setImages] = useState([]);
   const storage = getStorage();
+  
 
   useEffect(() => {
     const fetchUserDetails = async () => {
@@ -130,7 +131,7 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 pt-11 bg-black bg-opacity-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-40 pt-11 bg-black bg-opacity-50 flex items-center justify-center">
       <div className="bg-white m-4 p-4 rounded shadow-lg w-96">
         <h2 className="text-2xl font-bold mb-4">Novo Chamado</h2>
         <form onSubmit={handleSubmit}>
