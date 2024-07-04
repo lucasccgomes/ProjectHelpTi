@@ -14,7 +14,7 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
   const [modalMessage, setModalMessage] = useState('');
   const [images, setImages] = useState([]);
   const storage = getStorage();
-  
+
 
   useEffect(() => {
     const fetchUserDetails = async () => {
@@ -131,13 +131,16 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-40 pt-11 bg-black bg-opacity-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-40 pt-1 bg-black bg-opacity-50 flex items-center justify-center">
       <div className="bg-white m-4 p-4 rounded shadow-lg w-96">
         <h2 className="text-2xl font-bold mb-4">Novo Chamado</h2>
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="description">
-              Descrição <p className='text-gray-500'>(descreva detalhadamente o problema.)</p>
+              Descrição
+              <p className='text-gray-500 font-semibold'>
+                (descreva detalhadamente o problema.)
+              </p>
             </label>
             <textarea
               id="description"
@@ -150,8 +153,8 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
           <div className="mb-6">
             <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="attempt">
               Tentativa
-              <p className='text-gray-500'>
-              (Descreva as ações que você tomou para tentar resolver o problema)
+              <p className='text-gray-500 font-semibold'>
+                (Descreva as ações que você tomou para tentar resolver o problema)
               </p>
             </label>
             <textarea
@@ -163,7 +166,9 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
             />
           </div>
           <div className="mb-6">
-            <label className="block text-gray-700 text-sm font-bold mb-2 text-center">Local do Problema</label>
+            <label className="block text-gray-700 text-sm font-bold mb-2 text-center">
+              Local do Problema
+            </label>
             <div className="flex gap-4 justify-center">
               <button
                 type="button"
@@ -192,9 +197,9 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
           <div className="mb-6">
             <label className="block text-gray-700 text-sm font-bold mb-2">
               Imagens
-              <p className='text-gray-500'>
-              (Se possível, envie fotos que possam ajudar a solucionar o problema.)
-                </p>
+              <p className='text-gray-500 font-semibold'>
+                (Se possível, envie fotos que possam ajudar a solucionar o problema.)
+              </p>
             </label>
             <input
               type="file"
