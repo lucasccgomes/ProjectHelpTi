@@ -4,7 +4,7 @@ import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
 import NewTicketModal from './NewTicketModal';
 import { FaCity, FaUser, FaStoreAlt } from "react-icons/fa";
-import { MdReportProblem } from "react-icons/md"
+import { MdReportProblem, MdHelp } from "react-icons/md"
 const UserTickets = () => {
   const { currentUser } = useAuth();
   const [tickets, setTickets] = useState([]);
@@ -67,12 +67,12 @@ const UserTickets = () => {
   return (
     <div className="p-4">
       <div className='flex gap-4'>
-        <h2 className="text-2xl font-bold mb-4">Meus Chamados</h2>
+        <h2 className="lg:text-2xl text-lg font-bold mb-4">Meus Chamados</h2>
         <button
-          className="mb-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+          className="mb-4  bg-primary flex justify-center items-center hover:bg-secondary text-white font-bold py-2 px-4 rounded"
           onClick={() => setIsModalOpen(true)}
         >
-          Novo Chamado
+            <MdHelp className='text-xl mr-1'/> Novo Chamado
         </button>
         <NewTicketModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} addTicket={addTicket} />
       </div>
@@ -81,7 +81,7 @@ const UserTickets = () => {
       ) : (
         <ul className='max-w-[500px]'>
           {tickets.map(ticket => (
-            <li key={ticket.id} className="bg-slate-400 shadow-xl mb-4 p-4 border rounded">
+            <li key={ticket.id} className="bg-gray-400 shadow-xl mb-4 p-4 border rounded">
                <h3 className="text-xl uppercase text-center font-semibold">
                 {ticket.order}
                 <p className={`my-1 p-1 rounded-lg text-white uppercase ${getStatusClass(ticket.status)}`}>
