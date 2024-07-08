@@ -15,6 +15,7 @@ const UserTickets = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [itemsPerSlide, setItemsPerSlide] = useState(3);
+  const [statusFilter, setStatusFilter] = useState('finalizado');
 
   const getStatusClass = (status) => {
     switch (status) {
@@ -32,8 +33,12 @@ const UserTickets = () => {
   useEffect(() => {
     const fetchTickets = async () => {
       try {
-        const abertoRef = collection(db, 'chamados', 'aberto', 'tickets');
-        const q = query(abertoRef, where('user', '==', currentUser));
+        let abertoRef = collection(db, 'chamados', 'aberto', 'tickets');
+        let q = query(abertoRef, where('user', '==', currentUser));
+
+        if (statusFilter !== 'todos') {
+          q = query(abertoRef, where('user', '==', currentUser), where('status', '==', statusFilter));
+        }
 
         const querySnapshot = await getDocs(q);
 
@@ -57,7 +62,7 @@ const UserTickets = () => {
     if (currentUser) {
       fetchTickets();
     }
-  }, [currentUser]);
+  }, [currentUser, statusFilter]);
 
   useEffect(() => {
     const updateItemsPerSlide = () => {
@@ -115,15 +120,31 @@ const UserTickets = () => {
         </button>
         <NewTicketModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} addTicket={addTicket} />
       </div>
+
+      <div className="mb-4">
+        <label htmlFor="statusFilter" className="mr-2 font-bold">Filtrar por status:</label>
+        <select
+          id="statusFilter"
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="border p-2 rounded"
+        >
+          <option value="todos">Todos</option>
+          <option value="aberto">Aberto</option>
+          <option value="andamento">Andamento</option>
+          <option value="finalizado">Finalizado</option>
+        </select>
+      </div>
+
       {tickets.length === 0 ? (
         <p>Nenhum chamado em seu nome.</p>
       ) : (
-        <div className="relative p-4" {...handlers}>
+        <div className="relative  max-w-full" {...handlers}>
           <div className="overflow-hidden">
             <div className="flex transition-transform duration-500" style={{ transform: `translateX(-${currentIndex * 100 / itemsPerSlide}%)` }}>
               {tickets.map(ticket => (
                 <div key={ticket.id} className='gap-4' style={{ flex: `0 0 ${100 / itemsPerSlide}%` }}>
-                  <div className="bg-gray-400 shadow-xl mb-4 p-4 border-2 rounded">
+                  <div className="bg-gray-400 shadow-xl lg:min-w-[250px] mb-4 p-4 border-2 rounded">
                     <h3 className="text-xl uppercase text-center font-semibold">
                       {ticket.order}
                       <p className={`my-1 p-1 rounded-lg text-white uppercase ${getStatusClass(ticket.status)}`}>
@@ -152,12 +173,12 @@ const UserTickets = () => {
                       </p>
                     </div>
 
-                    <div className='bg-white p-3 rounded-md mb-2 mt-2'>
+                    <div className='bg-white p-3 rounded-md max-h-20 overflow-y-auto mb-2 mt-2'>
                       <p className='text-center font-bold'>Descrição</p>
                       <p>{ticket.descricao}</p>
                     </div>
 
-                    <div className='bg-white p-3 rounded-md mb-2 mt-2'>
+                    <div className='bg-white p-3 rounded-md max-h-20 overflow-y-auto mb-2 mt-2'>
                       <p className='text-center font-bold'>Tentativa</p>
                       <p>{ticket.tentou}</p>
                     </div>
@@ -166,8 +187,8 @@ const UserTickets = () => {
               ))}
             </div>
           </div>
-          <button onClick={goToPrevious} className="absolute top-1/2 left-0 transform -translate-y-1/2 bg-primary text-white p-3 rounded opacity-85"><GrCaretPrevious /></button>
-          <button onClick={goToNext} className="absolute top-1/2 right-0 transform -translate-y-1/2 bg-primary text-white p-3 rounded opacity-85"><GrCaretNext /></button>
+          <button onClick={goToPrevious} className="absolute top-1/2 left-5 transform -translate-y-1/2 bg-primary text-white p-3 rounded opacity-85"><GrCaretPrevious /></button>
+          <button onClick={goToNext} className="absolute top-1/2 right-5 transform -translate-y-1/2 bg-primary text-white p-3 rounded opacity-85"><GrCaretNext /></button>
         </div>
       )}
     </div>
