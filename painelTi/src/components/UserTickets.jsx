@@ -319,7 +319,7 @@ const UserTickets = () => {
         className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50"
       >
         <div className="bg-white p-4 rounded">
-          <img src={selectedImage} alt="imagem grande" className="max-w-full max-h-full" />
+          <img src={selectedImage} alt="imagem grande" className="max-w-[500px] max-h-[450px]" />
           <button onClick={closeImageModal} className="mt-4 bg-red-500 text-white px-4 py-2 rounded">
             Fechar
           </button>
