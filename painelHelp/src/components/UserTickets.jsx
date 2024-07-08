@@ -15,7 +15,7 @@ const UserTickets = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [itemsPerSlide, setItemsPerSlide] = useState(3);
-  const [statusFilter, setStatusFilter] = useState('finalizado');
+  const [statusFilter, setStatusFilter] = useState('aberto');
 
   const getStatusClass = (status) => {
     switch (status) {
