@@ -57,7 +57,7 @@ const UserForm = () => {
       <div className="bg-slate-400 p-4 rounded-xl">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block mb-1">Local do DB</label>
+            <label className="block mb-1">Local do BD</label>
             <select
               value={selectedUser}
               onChange={(e) => setSelectedUser(e.target.value)}
