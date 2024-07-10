@@ -26,7 +26,6 @@ export const AuthProvider = ({ children }) => {
       const querySnapshot = await getDocs(usuariosRef);
 
       querySnapshot.forEach(doc => {
-        console.log(`Documento encontrado: ${doc.id} => `, doc.data());
       });
     } catch (error) {
       console.error('Erro ao buscar documentos:', error);
