@@ -238,12 +238,12 @@ const UserTickets = () => {
                   )}
 
                   {ticket.descricaoFinalizacao ? (
-                    <p className='bg-blue-100 p-3 rounded-md mt-2 max-h-16 min-h-16 overflow-y-auto'>
+                    <p className='bg-blue-100 p-3 rounded-md mt-2 max-h-16 min-h-16 overflow-y-auto break-words'>
                       <strong>Conclusão:</strong>
                       {ticket.descricaoFinalizacao}
                     </p>
                   ) : (
-                    <p className='bg-blue-100 p-3 rounded-md mt-2 max-h-16 min-h-16 overflow-y-auto'>
+                    <p className='bg-blue-100 p-3 rounded-md mt-2 max-h-16 min-h-16 overflow-y-auto break-words'>
                       Aguardando conclusão
                     </p>
                   )}
