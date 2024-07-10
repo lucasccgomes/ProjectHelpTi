@@ -165,13 +165,11 @@ const UserTickets = () => {
                       {ticket.data.toLocaleString()}
                     </p>
                   </div>
-
-                  <div className='bg-white p-3 rounded-md max-h-20 overflow-y-auto mb-2 mt-2'>
+                  <div className='bg-white p-3 rounded-md max-h-20 min-h-20 overflow-y-auto mb-2 mt-2 break-words'>
                     <p className='text-center font-bold'>Descrição</p>
                     <p>{ticket.descricao}</p>
                   </div>
-
-                  <div className='bg-white p-3 rounded-md max-h-20 overflow-y-auto mb-2 mt-2'>
+                  <div className='bg-white p-3 rounded-md max-h-20 min-h-20 overflow-y-auto mb-2 mt-2 break-words'>
                     <p className='text-center font-bold'>Tentativa</p>
                     <p>{ticket.tentou}</p>
                   </div>

@@ -205,15 +205,16 @@ const UserTickets = () => {
                     </p>
                   </div>
 
-                  <div className='bg-white p-3 rounded-md max-h-20 overflow-y-auto mb-2 mt-2'>
+                  <div className='bg-white p-3 rounded-md max-h-20 min-h-20 overflow-y-auto mb-2 mt-2 break-words'>
                     <p className='text-center font-bold'>Descrição</p>
                     <p>{ticket.descricao}</p>
                   </div>
 
-                  <div className='bg-white p-3 rounded-md max-h-20 overflow-y-auto mb-2 mt-2'>
+                  <div className='bg-white p-3 rounded-md max-h-20 min-h-20 overflow-y-auto mb-2 mt-2 break-words'>
                     <p className='text-center font-bold'>Tentativa</p>
                     <p>{ticket.tentou}</p>
                   </div>
+
 
                   {Array.isArray(ticket.imgUrl) && ticket.imgUrl.length > 0 ? (
                     <div className='flex items-center justify-center p-3 rounded-md mb-2 mt-2'>
@@ -237,12 +238,12 @@ const UserTickets = () => {
                   )}
 
                   {ticket.descricaoFinalizacao ? (
-                    <p className='bg-blue-100 p-3 rounded-md mt-2 max-h-40 overflow-y-auto'>
+                    <p className='bg-blue-100 p-3 rounded-md mt-2 max-h-16 min-h-16 overflow-y-auto'>
                       <strong>Conclusão:</strong>
                       {ticket.descricaoFinalizacao}
                     </p>
                   ) : (
-                    <p className='bg-blue-100 p-3 rounded-md mt-2 max-h-40 overflow-y-auto'>
+                    <p className='bg-blue-100 p-3 rounded-md mt-2 max-h-16 min-h-16 overflow-y-auto'>
                       Aguardando conclusão
                     </p>
                   )}
