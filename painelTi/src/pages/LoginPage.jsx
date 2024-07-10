@@ -11,13 +11,10 @@ const LoginPage = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    console.log('Tentando fazer login com:', { username, password });
     try {
       await login(username, password);
-      console.log('Login bem-sucedido');
       navigate('/');
     } catch (error) {
-      console.error('Erro ao fazer login:', error);
       alert('Usuário ou senha incorretos');
     }
   };
@@ -38,13 +35,10 @@ const LoginPage = () => {
               type="text"
               id="username"
               value={username}
-              onChange={(e) => {
-                setUsername(e.target.value);
-                console.log('Username atualizado:', e.target.value);
-              }}
+              onChange={(e) => setUsername(e.target.value)}
               className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
               autoComplete="off"
-              autoCapitalize="none" // Adicione esta linha
+              autoCapitalize="none"
               required
             />
           </div>
@@ -56,10 +50,7 @@ const LoginPage = () => {
               type="password"
               id="password"
               value={password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-                console.log('Password atualizado:', e.target.value);
-              }}
+              onChange={(e) => setPassword(e.target.value)}
               className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
               autoComplete="off"
               required
