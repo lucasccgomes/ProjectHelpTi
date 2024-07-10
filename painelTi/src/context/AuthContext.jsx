@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { db } from '../firebase';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, doc, getDoc } from 'firebase/firestore';
 
 const AuthContext = createContext();
 
@@ -21,14 +21,14 @@ export const AuthProvider = ({ children }) => {
 
   const logAllUsuarios = async () => {
     try {
-      console.log('Buscando todos os dados na coleção "usuarios"...');
-      const usuariosRef = collection(db, 'usuarios');
-      const querySnapshot = await getDocs(usuariosRef);
+      const adminTiDocRef = doc(db, 'usuarios', 'adminTi');
+      const adminTiDoc = await getDoc(adminTiDocRef);
 
-      querySnapshot.forEach(doc => {
-      });
+      if (adminTiDoc.exists()) {
+        // Dados do documento "adminTi"
+      }
     } catch (error) {
-      console.error('Erro ao buscar documentos:', error);
+      // Erro ao buscar documentos
     }
   };
 
@@ -38,49 +38,36 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (username, password) => {
     try {
-      console.log('Buscando dados do usuário no Firestore para:', username);
-      const usuariosRef = collection(db, 'usuarios');
-      const querySnapshot = await getDocs(usuariosRef);
+      const adminTiDocRef = doc(db, 'usuarios', 'adminTi');
+      const adminTiDoc = await getDoc(adminTiDocRef);
 
-      let userFound = false;
-      querySnapshot.forEach(doc => {
-        const userData = doc.data()[username];
-        if (userData) {
-          console.log('Dados do usuário encontrados:', userData);
-          if (userData.pass === password) {
-            console.log('Credenciais válidas, autenticando usuário...');
-            setIsAuthenticated(true);
-            setCurrentUser(username);
-            localStorage.setItem('isAuthenticated', 'true');
-            localStorage.setItem('currentUser', username);
-            console.log('Autenticação bem-sucedida');
-            userFound = true;
-          } else {
-            console.log('Credenciais inválidas');
-          }
+      if (adminTiDoc.exists()) {
+        const adminTiData = adminTiDoc.data();
+
+        if (adminTiData[username] && adminTiData[username].pass === password) {
+          setIsAuthenticated(true);
+          setCurrentUser(username);
+          localStorage.setItem('isAuthenticated', 'true');
+          localStorage.setItem('currentUser', username);
+        } else {
+          throw new Error('Credenciais inválidas');
         }
-      });
-
-      if (!userFound) {
-        console.log('Usuário não encontrado no Firestore ou credenciais inválidas');
-        throw new Error('User not found or invalid credentials');
+      } else {
+        throw new Error('Documento não encontrado');
       }
     } catch (error) {
-      console.error('Erro ao tentar login:', error);
       throw error;
     }
   };
 
   const logout = async () => {
     try {
-      console.log('Tentando fazer logout...');
       setIsAuthenticated(false);
       setCurrentUser(null);
       localStorage.removeItem('isAuthenticated');
       localStorage.removeItem('currentUser');
-      console.log('Logout bem-sucedido');
     } catch (error) {
-      console.error('Erro ao tentar logout:', error);
+      // Erro ao tentar logout
     }
   };
 
