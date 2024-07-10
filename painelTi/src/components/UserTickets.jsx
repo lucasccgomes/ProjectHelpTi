@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { FaCity, FaUser, FaStoreAlt, FaFileImage } from "react-icons/fa";
 import { MdReportProblem } from "react-icons/md";
 import { Carousel } from 'react-responsive-carousel';
+import { LuImageOff } from "react-icons/lu";
 import "react-responsive-carousel/lib/styles/carousel.min.css";
 
 Modal.setAppElement('#root'); // Adiciona isso para resolver problemas de acessibilidade
@@ -214,22 +215,35 @@ const UserTickets = () => {
                     <p>{ticket.tentou}</p>
                   </div>
 
-                  {Array.isArray(ticket.imgUrl) && ticket.imgUrl.length > 0 && (
+                  {Array.isArray(ticket.imgUrl) && ticket.imgUrl.length > 0 ? (
                     <div className='flex items-center justify-center p-3 rounded-md mb-2 mt-2'>
                       <p className='text-center font-bold'></p>
-                      <button 
+                      <button
                         className='bg-blue-500 flex justify-center items-center text-white px-4 py-2 rounded'
                         onClick={() => openImageModal(ticket.imgUrl)}
                       >
                         <FaFileImage /> &nbsp; Ver Imagens
                       </button>
                     </div>
+                  ) : (
+                    <div className='flex items-center justify-center p-3 rounded-md mb-2 mt-2'>
+                      <p className='text-center font-bold'></p>
+                      <button
+                        className='bg-gray-600 pointer-events-none flex justify-center items-center text-white px-4 py-2 rounded'
+                      >
+                        <LuImageOff /> &nbsp; Sem Imagens
+                      </button>
+                    </div>
                   )}
 
-                  {ticket.descricaoFinalizacao && (
+                  {ticket.descricaoFinalizacao ? (
                     <p className='bg-blue-100 p-3 rounded-md mt-2 max-h-40 overflow-y-auto'>
                       <strong>Conclusão:</strong>
                       {ticket.descricaoFinalizacao}
+                    </p>
+                  ) : (
+                    <p className='bg-blue-100 p-3 rounded-md mt-2 max-h-40 overflow-y-auto'>
+                      Aguardando conclusão
                     </p>
                   )}
                   <div className="flex gap-2 mt-2">
