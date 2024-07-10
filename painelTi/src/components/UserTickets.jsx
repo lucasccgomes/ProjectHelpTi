@@ -3,7 +3,7 @@ import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
 import Modal from 'react-modal';
 import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
-import { FaCity, FaUser, FaStoreAlt } from "react-icons/fa";
+import { FaCity, FaUser, FaStoreAlt, FaFileImage } from "react-icons/fa";
 import { MdReportProblem } from "react-icons/md";
 import { Carousel } from 'react-responsive-carousel';
 import "react-responsive-carousel/lib/styles/carousel.min.css";
@@ -20,8 +20,9 @@ const UserTickets = () => {
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [finalizadoDescricao, setFinalizadoDescricao] = useState('');
   const [modalIsOpen, setModalIsOpen] = useState(false);
-  const [selectedImage, setSelectedImage] = useState('');
+  const [selectedImages, setSelectedImages] = useState([]);
   const [slidesToShow, setSlidesToShow] = useState(1);
+  const [showArrows, setShowArrows] = useState(false);
 
   const getStatusClass = (status) => {
     switch (status) {
@@ -104,19 +105,19 @@ const UserTickets = () => {
   const uniqueUsers = [...new Set(tickets.map(ticket => ticket.user))];
   const uniqueStores = [...new Set(tickets.map(ticket => ticket.loja))];
 
-  const openImageModal = (image) => {
-    setSelectedImage(image);
+  const openImageModal = (images) => {
+    setSelectedImages(images);
     setModalIsOpen(true);
   };
 
   const closeImageModal = () => {
-    setSelectedImage('');
+    setSelectedImages([]);
     setModalIsOpen(false);
   };
 
   return (
-    <div className="p-4 w-screen flex flex-col justify-center items-center">
-      <div className='flex flex-col lg:flex-row gap-4'>
+    <div className="p-4 w-full flex flex-col justify-center items-center">
+      <div className='flex flex-col lg:flex-row gap-4 mb-4'>
         <h2 className="text-2xl font-bold">Chamados</h2>
 
         <div className=''>
@@ -156,9 +157,13 @@ const UserTickets = () => {
       {filteredTickets.length === 0 ? (
         <p>Nenhum chamado encontrado.</p>
       ) : (
-        <div className="relative p-4 w-screen">
+        <div
+          className="relative w-full"
+          onMouseEnter={() => setShowArrows(true)}
+          onMouseLeave={() => setShowArrows(false)}
+        >
           <Carousel
-            showArrows={true}
+            showArrows={showArrows}
             showStatus={false}
             showIndicators={false}
             showThumbs={false}
@@ -170,7 +175,7 @@ const UserTickets = () => {
           >
             {filteredTickets.map(ticket => (
               <div key={ticket.id} className='gap-4'>
-                <div className="bg-gray-400 shadow-xl lg:min-w-[250px] mb-4 p-4 border-2 rounded">
+                <div className="bg-gray-400 shadow lg:min-w-[250px] mb-4 p-4 border-2 rounded">
                   <h3 className="text-xl uppercase text-center font-semibold">
                     {ticket.order}
                     <p className={`my-1 p-1 rounded-lg text-white uppercase ${getStatusClass(ticket.status)}`}>
@@ -210,19 +215,14 @@ const UserTickets = () => {
                   </div>
 
                   {Array.isArray(ticket.imgUrl) && ticket.imgUrl.length > 0 && (
-                    <div className='bg-white p-3 rounded-md mb-2 mt-2'>
-                      <p className='text-center font-bold'>Imagens</p>
-                      <div className='flex gap-2'>
-                        {ticket.imgUrl.map((image, index) => (
-                          <img
-                            key={index}
-                            src={image}
-                            alt={`ticket-${index}`}
-                            className='w-16 h-16 object-cover cursor-pointer'
-                            onClick={() => openImageModal(image)}
-                          />
-                        ))}
-                      </div>
+                    <div className='flex items-center justify-center p-3 rounded-md mb-2 mt-2'>
+                      <p className='text-center font-bold'></p>
+                      <button 
+                        className='bg-blue-500 flex justify-center items-center text-white px-4 py-2 rounded'
+                        onClick={() => openImageModal(ticket.imgUrl)}
+                      >
+                        <FaFileImage /> &nbsp; Ver Imagens
+                      </button>
                     </div>
                   )}
 
@@ -297,11 +297,25 @@ const UserTickets = () => {
       <Modal
         isOpen={modalIsOpen}
         onRequestClose={closeImageModal}
-        contentLabel="Imagem Grande"
-        className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50"
+        contentLabel="Imagens"
+        className="fixed inset-0 flex !z-[1000] items-center justify-center bg-black bg-opacity-50"
       >
-        <div className="bg-white p-4 rounded">
-          <img src={selectedImage} alt="imagem grande" className="max-w-[500px] max-h-[450px]" />
+        <div className="bg-white p-4 rounded z-40">
+          <Carousel
+            showArrows={true}
+            showStatus={false}
+            showIndicators={false}
+            showThumbs={false}
+            infiniteLoop={true}
+            useKeyboardArrows
+            swipeable
+          >
+            {selectedImages.map((image, index) => (
+              <div key={index}>
+                <img src={image} alt={`Imagem ${index}`} className="max-w-[500px] max-h-[450px]" />
+              </div>
+            ))}
+          </Carousel>
           <button onClick={closeImageModal} className="mt-4 bg-red-500 text-white px-4 py-2 rounded">
             Fechar
           </button>
