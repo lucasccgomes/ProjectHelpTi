@@ -5,17 +5,18 @@ import { useAuth } from '../context/AuthContext';
 import NewTicketModal from './NewTicketModal';
 import { FaCity, FaUser, FaStoreAlt } from "react-icons/fa";
 import { MdReportProblem, MdHelp } from "react-icons/md";
-import { useSwipeable } from 'react-swipeable';
-import { GrCaretPrevious, GrCaretNext } from "react-icons/gr";
+import { Carousel } from 'react-responsive-carousel';
+import "react-responsive-carousel/lib/styles/carousel.min.css";
 
 const UserTickets = () => {
   const { currentUser } = useAuth();
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [itemsPerSlide, setItemsPerSlide] = useState(3);
+  const [slidesToShow, setSlidesToShow] = useState(3);
   const [statusFilter, setStatusFilter] = useState('aberto');
+  const [showArrows, setShowArrows] = useState(false);
+
 
   const getStatusClass = (status) => {
     switch (status) {
@@ -65,51 +66,30 @@ const UserTickets = () => {
   }, [currentUser, statusFilter]);
 
   useEffect(() => {
-    const updateItemsPerSlide = () => {
-      if (window.innerWidth >= 1280) {
-        setItemsPerSlide(3);
-      } else if (window.innerWidth >= 1023) {
-        setItemsPerSlide(3);
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) {
+        setSlidesToShow(3);
       } else {
-        setItemsPerSlide(1);
+        setSlidesToShow(1);
       }
     };
 
-    window.addEventListener('resize', updateItemsPerSlide);
-    updateItemsPerSlide();
+    handleResize();
+    window.addEventListener('resize', handleResize);
 
-    return () => window.removeEventListener('resize', updateItemsPerSlide);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   const addTicket = (ticket) => {
     setTickets((prevTickets) => [ticket, ...prevTickets]);
   };
 
-  const goToPrevious = () => {
-    const isFirstSlide = currentIndex === 0;
-    const newIndex = isFirstSlide ? Math.ceil(tickets.length / itemsPerSlide) - 1 : currentIndex - 1;
-    setCurrentIndex(newIndex);
-  };
-
-  const goToNext = () => {
-    const isLastSlide = currentIndex === Math.ceil(tickets.length / itemsPerSlide) - 1;
-    const newIndex = isLastSlide ? 0 : currentIndex + 1;
-    setCurrentIndex(newIndex);
-  };
-
-  const handlers = useSwipeable({
-    onSwipedLeft: goToNext,
-    onSwipedRight: goToPrevious,
-    preventDefaultTouchmoveEvent: true,
-    trackMouse: true
-  });
-
   if (loading) {
     return <div>Loading...</div>;
   }
 
   return (
-    <div className="p-4 w-screen flex flex-col justify-center items-center">
+    <div className="p-4 w-full flex flex-col justify-center items-center">
       <div className='flex flex-col lg:flex-row gap-4'>
         <h2 className="text-2xl font-bold mb-4">Meus Chamados</h2>
         <button
@@ -139,56 +119,66 @@ const UserTickets = () => {
       {tickets.length === 0 ? (
         <p>Nenhum chamado em seu nome.</p>
       ) : (
-        <div className="relative  max-w-full" {...handlers}>
-          <div className="overflow-hidden">
-            <div className="flex transition-transform duration-500" style={{ transform: `translateX(-${currentIndex * 100 / itemsPerSlide}%)` }}>
-              {tickets.map(ticket => (
-                <div key={ticket.id} className='gap-4' style={{ flex: `0 0 ${100 / itemsPerSlide}%` }}>
-                  <div className="bg-gray-400 shadow-xl lg:min-w-[250px] mb-4 p-4 border-2 rounded">
-                    <h3 className="text-xl uppercase text-center font-semibold">
-                      {ticket.order}
-                      <p className={`my-1 p-1 rounded-lg text-white uppercase ${getStatusClass(ticket.status)}`}>
-                        {ticket.status}
-                      </p>
-                    </h3>
+        <div
+          className="relative w-full"
+          onMouseEnter={() => setShowArrows(true)}
+          onMouseLeave={() => setShowArrows(false)}
+        >
+          <Carousel
+            showArrows={showArrows}
+            showStatus={false}
+            showIndicators={false}
+            showThumbs={false}
+            infiniteLoop={true}
+            useKeyboardArrows
+            swipeable
+            centerMode
+            centerSlidePercentage={slidesToShow === 1 ? 100 : 33.33}
+          >
+            {tickets.map(ticket => (
+              <div key={ticket.id} className='gap-4'>
+                <div className="bg-gray-400 shadow lg:min-w-[250px] mb-4 p-4 border-2 rounded">
+                  <h3 className="text-xl uppercase text-center font-semibold">
+                    {ticket.order}
+                    <p className={`my-1 p-1 rounded-lg text-white uppercase ${getStatusClass(ticket.status)}`}>
+                      {ticket.status}
+                    </p>
+                  </h3>
 
-                    <div className='flex gap-4 mb-1'>
-                      <p className='flex uppercase items-center'><FaCity />: {ticket.cidade}</p>
-                      <p className='flex uppercase items-center'><FaUser />: {ticket.user}</p>
-                    </div>
+                  <div className='flex gap-4 mb-1'>
+                    <p className='flex uppercase items-center'><FaCity />: {ticket.cidade}</p>
+                    <p className='flex uppercase items-center'><FaUser />: {ticket.user}</p>
+                  </div>
 
-                    <div className='flex gap-4 mb-1'>
-                      <p className='flex uppercase items-center'><FaStoreAlt />: {ticket.loja}</p>
-                      <p className='flex uppercase items-center'>
-                        <MdReportProblem />: {ticket.localProblema}
-                      </p>
-                    </div>
+                  <div className='flex gap-4 mb-1'>
+                    <p className='flex uppercase items-center'><FaStoreAlt />: {ticket.loja}</p>
+                    <p className='flex uppercase items-center'>
+                      <MdReportProblem />: {ticket.localProblema}
+                    </p>
+                  </div>
 
-                    <div className='flex gap-4 mb-1'>
-                      <p>
-                        <strong>
-                          Data:
-                        </strong>
-                        {ticket.data.toLocaleString()}
-                      </p>
-                    </div>
+                  <div className='flex gap-4 mb-1'>
+                    <p>
+                      <strong>
+                        Data:
+                      </strong>
+                      {ticket.data.toLocaleString()}
+                    </p>
+                  </div>
 
-                    <div className='bg-white p-3 rounded-md max-h-20 overflow-y-auto mb-2 mt-2'>
-                      <p className='text-center font-bold'>Descrição</p>
-                      <p>{ticket.descricao}</p>
-                    </div>
+                  <div className='bg-white p-3 rounded-md max-h-20 overflow-y-auto mb-2 mt-2'>
+                    <p className='text-center font-bold'>Descrição</p>
+                    <p>{ticket.descricao}</p>
+                  </div>
 
-                    <div className='bg-white p-3 rounded-md max-h-20 overflow-y-auto mb-2 mt-2'>
-                      <p className='text-center font-bold'>Tentativa</p>
-                      <p>{ticket.tentou}</p>
-                    </div>
+                  <div className='bg-white p-3 rounded-md max-h-20 overflow-y-auto mb-2 mt-2'>
+                    <p className='text-center font-bold'>Tentativa</p>
+                    <p>{ticket.tentou}</p>
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
-          <button onClick={goToPrevious} className="absolute top-1/2 left-5 transform -translate-y-1/2 bg-primary text-white p-3 rounded opacity-85"><GrCaretPrevious /></button>
-          <button onClick={goToNext} className="absolute top-1/2 right-5 transform -translate-y-1/2 bg-primary text-white p-3 rounded opacity-85"><GrCaretNext /></button>
+              </div>
+            ))}
+          </Carousel>
         </div>
       )}
     </div>
