@@ -8,3 +8,25 @@
     height: 90%;
     top: 10px !important;
 }
+
+
+/* Estilizando a barra de rolagem para navegadores baseados em WebKit */
+::-webkit-scrollbar {
+    width: 5px; /* Largura da barra de rolagem vertical */
+    height: 12px; /* Altura da barra de rolagem horizontal */
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: #f1f1f1; /* Cor do fundo da barra de rolagem */
+    border-radius: 10px; /* Bordas arredondadas do fundo da barra de rolagem */
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: #888; /* Cor do "polegar" da barra de rolagem */
+    border-radius: 10px; /* Bordas arredondadas do "polegar" da barra de rolagem */
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: #555; /* Cor do "polegar" da barra de rolagem ao passar o mouse */
+  }
+  
