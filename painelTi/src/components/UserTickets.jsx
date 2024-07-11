@@ -10,6 +10,8 @@ import { CiNoWaitingSign } from "react-icons/ci";
 import { LuImageOff } from "react-icons/lu";
 import "react-responsive-carousel/lib/styles/carousel.min.css";
 
+import logoVsm from "../assets/logo-vsm.png"
+
 Modal.setAppElement('#root'); // Adiciona isso para resolver problemas de acessibilidade
 
 const UserTickets = () => {
@@ -98,6 +100,8 @@ const UserTickets = () => {
         return 'bg-orange-600';
       case 'finalizado':
         return 'bg-green-600';
+      case 'vsm':
+        return 'bg-blue-700';
       default:
         return 'bg-gray-700';
     }
@@ -201,6 +205,7 @@ const UserTickets = () => {
             <option value="aberto">Aberto</option>
             <option value="andamento">Andamento</option>
             <option value="finalizado">Finalizado</option>
+            <option value="vsm">VSM</option>
           </select>
           <select
             className="border p-2 mr-2 rounded"
@@ -336,28 +341,39 @@ const UserTickets = () => {
                       </div>
                     )
                     }
-                    <div className="flex gap-2 mt-2">
-                      <button
-                        onClick={() => updateTicketStatus(ticket.id, 'aberto')}
-                        className={`bg-red-400 text-white px-4 py-2 rounded ${ticket.status === 'finalizado' ? 'opacity-50 cursor-not-allowed' : ''} ${ticket.status === 'aberto' ? 'bg-red-600 ring-2 ring-white' : ''}`}
-                        disabled={ticket.status === 'finalizado'}
-                      >
-                        Aberto
-                      </button>
-                      <button
-                        onClick={() => updateTicketStatus(ticket.id, 'andamento')}
-                        className={`bg-orange-400 text-white px-4 py-2 rounded ${ticket.status === 'finalizado' ? 'opacity-50 cursor-not-allowed' : ''} ${ticket.status === 'andamento' ? 'bg-orange-600 ring-2 ring-white' : ''}`}
-                        disabled={ticket.status === 'finalizado'}
-                      >
-                        Andamento
-                      </button>
-                      <button
-                        onClick={() => setSelectedTicket(ticket)}
-                        className={`bg-green-400 text-white px-4 py-2 rounded ${ticket.status === 'finalizado' ? 'opacity-50 cursor-not-allowed' : ''} ${ticket.status === 'finalizado' ? 'bg-green-600 ring-2 ring-white' : ''}`}
-                        disabled={ticket.status === 'finalizado'}
-                      >
-                        Finalizado
-                      </button>
+                    <div className="flex flex-col gap-2 mt-2">
+                      <div className=''>
+                        <button
+                          onClick={() => updateTicketStatus(ticket.id, 'aberto')}
+                          className={`bg-red-400 text-white px-4 py-2 rounded mr-2 ${ticket.status === 'finalizado' ? 'opacity-50 cursor-not-allowed' : ''} ${ticket.status === 'aberto' ? 'bg-red-600 ring-2 ring-white' : ''}`}
+                          disabled={ticket.status === 'finalizado'}
+                        >
+                          Aberto
+                        </button>
+                        <button
+                          onClick={() => updateTicketStatus(ticket.id, 'andamento')}
+                          className={`bg-orange-400 text-white px-4 py-2 rounded ${ticket.status === 'finalizado' ? 'opacity-50 cursor-not-allowed' : ''} ${ticket.status === 'andamento' ? 'bg-orange-600 ring-2 ring-white' : ''}`}
+                          disabled={ticket.status === 'finalizado'}
+                        >
+                          Andamento
+                        </button>
+                        <button
+                          onClick={() => setSelectedTicket(ticket)}
+                          className={`bg-green-400 text-white px-4 py-2 rounded ml-2 ${ticket.status === 'finalizado' ? 'opacity-50 cursor-not-allowed' : ''} ${ticket.status === 'finalizado' ? 'bg-green-600 ring-2 ring-white' : ''}`}
+                          disabled={ticket.status === 'finalizado'}
+                        >
+                          Finalizado
+                        </button>
+                      </div>
+                      <div>
+                        <button
+                          onClick={() => updateTicketStatus(ticket.id, 'vsm')}
+                          className={`bg-blue-400 text-white px-4 w-full  py-2 rounded ${ticket.status === 'finalizado' ? 'opacity-50 cursor-not-allowed' : ''} ${ticket.status === 'vsm' ? 'bg-blue-700 ring-2 ring-white' : ''}`}
+                          disabled={ticket.status === 'finalizado'}
+                        >
+                        (VSM)-Externo
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
