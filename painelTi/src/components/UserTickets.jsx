@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
 import Modal from 'react-modal';
 import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
-import { FaCity, FaUser, FaStoreAlt, FaFileImage, FaWhatsapp } from "react-icons/fa";
-import { MdReportProblem } from "react-icons/md";
 import { Carousel } from 'react-responsive-carousel';
+import { FaCity, FaUser, FaStoreAlt, FaFileImage, FaWhatsapp } from "react-icons/fa";
+import { MdReportProblem, MdOutlineReportProblem } from "react-icons/md";
+import { CiNoWaitingSign } from "react-icons/ci";
 import { LuImageOff } from "react-icons/lu";
 import "react-responsive-carousel/lib/styles/carousel.min.css";
 
@@ -24,6 +25,69 @@ const UserTickets = () => {
   const [selectedImages, setSelectedImages] = useState([]);
   const [slidesToShow, setSlidesToShow] = useState(1);
   const [showArrows, setShowArrows] = useState(false);
+  const [checkboxes, setCheckboxes] = useState([]);
+  const [newCheckbox, setNewCheckbox] = useState('');
+  const [checkproblema, setCheckproblema] = useState([]);
+
+  const handleCheckboxChange = (event) => {
+    const { value, checked } = event.target;
+    console.log(`Checkbox ${checked ? 'selecionado' : 'deselecionado'}:`, value);
+    if (checked) {
+      setCheckproblema([...checkproblema, value]);
+    } else {
+      setCheckproblema(checkproblema.filter(item => item !== value));
+    }
+  };
+
+  const addNewCheckbox = async () => {
+    if (newCheckbox) {
+      try {
+        console.log('Adicionando novo checkbox:', newCheckbox);
+        const checkboxDocRef = doc(db, 'ordersControl', 'checkbox');
+        const docSnapshot = await getDoc(checkboxDocRef);
+
+        let updatedCheckboxes = [];
+        if (docSnapshot.exists()) {
+          const data = docSnapshot.data();
+          updatedCheckboxes = data.checkProblemas ? [...data.checkProblemas, newCheckbox] : [newCheckbox];
+        } else {
+          updatedCheckboxes = [newCheckbox];
+        }
+
+        await updateDoc(checkboxDocRef, { checkProblemas: updatedCheckboxes });
+
+        setCheckboxes(updatedCheckboxes);
+        setNewCheckbox('');
+      } catch (error) {
+        console.error('Erro ao adicionar novo checkbox:', error);
+      }
+    }
+  };
+
+  const fetchCheckboxes = async () => {
+    try {
+      console.log('Buscando documento checkbox dentro de ordersControl...');
+      const checkboxDocRef = doc(db, 'ordersControl', 'checkbox');
+      const docSnapshot = await getDoc(checkboxDocRef);
+      if (docSnapshot.exists()) {
+        const data = docSnapshot.data();
+        console.log('Documento checkbox encontrado:', data);
+        const checkboxesData = data.checkProblemas || [];
+        console.log('Checkboxes encontrados:', checkboxesData);
+        setCheckboxes(checkboxesData);
+      } else {
+        console.log('Documento checkbox não encontrado.');
+      }
+    } catch (error) {
+      console.error('Erro ao buscar documentos:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchCheckboxes();
+  }, []);
+
+
 
   const formatWhatsappLink = (phone) => {
     const cleaned = ('' + phone).replace(/\D/g, '');
@@ -88,18 +152,20 @@ const UserTickets = () => {
   const updateTicketStatus = async (id, status, descricaoFinalizacao = '') => {
     try {
       const ticketDocRef = doc(db, 'chamados', 'aberto', 'tickets', id);
-      await updateDoc(ticketDocRef, { status, descricaoFinalizacao });
+      await updateDoc(ticketDocRef, { status, descricaoFinalizacao, checkproblema });
       setTickets(prevTickets =>
         prevTickets.map(ticket =>
-          ticket.id === id ? { ...ticket, status, descricaoFinalizacao } : ticket
+          ticket.id === id ? { ...ticket, status, descricaoFinalizacao, checkproblema } : ticket
         )
       );
       setSelectedTicket(null);
       setFinalizadoDescricao('');
+      setCheckproblema([]);
     } catch (error) {
       console.error('Erro ao atualizar status do chamado:', error);
     }
   };
+
 
   const filteredTickets = tickets.filter(ticket =>
     (statusFilter ? ticket.status === statusFilter : true) &&
@@ -182,7 +248,6 @@ const UserTickets = () => {
             centerMode={true}
             centerSlidePercentage={slidesToShow === 1 ? 100 : 33.33}
           >
-
             {filteredTickets.map(ticket => {
               if (renderedTicketIds.has(ticket.id)) {
                 return null; // Ocultar tickets duplicados
@@ -248,16 +313,34 @@ const UserTickets = () => {
                         </button>
                       </div>
                     )}
+                    <div className='bg-orange-100 mb-1 rounded-md'>
+                      {ticket.checkproblema && ticket.checkproblema.length > 0 ? (
+                        <ul>
+
+                          {ticket.checkproblema.map((checkbox, index) => (
+                            <li key={index} className='flex justify-center items-center font-bold'><MdOutlineReportProblem />{checkbox}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className='flex justify-center items-center'><CiNoWaitingSign />Aguardando</p>
+                      )}</div>
                     {ticket.descricaoFinalizacao ? (
-                      <p className='bg-blue-100 p-3 rounded-md mt-2 max-h-16 min-h-16 overflow-y-auto break-words'>
-                        <strong>Conclusão:</strong>
-                        {ticket.descricaoFinalizacao}
-                      </p>
+                      <div className='bg-blue-100 pt-0 px-2 pb-1 rounded-md '>
+                        <p className='text-center font-bold'>Conclusão</p>
+                        <p className=' overflow-y-auto break-words max-h-14 min-h-14' >
+                          {ticket.descricaoFinalizacao}
+                        </p>
+                      </div>
+
                     ) : (
-                      <p className='bg-blue-100 p-3 rounded-md mt-2 max-h-16 min-h-16 overflow-y-auto break-words'>
-                        Aguardando conclusão
-                      </p>
-                    )}
+                      <div className='bg-red-100 pt-0 px-2 pb-1 rounded-md '>
+                        <p className='text-center font-bold'>Conclusão</p>
+                        <p className=' overflow-y-auto break-words max-h-14 min-h-14' >
+                          Aguardando
+                        </p>
+                      </div>
+                    )
+                    }
                     <div className="flex gap-2 mt-2">
                       <button
                         onClick={() => updateTicketStatus(ticket.id, 'aberto')}
@@ -292,7 +375,7 @@ const UserTickets = () => {
       {selectedTicket && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white p-4 rounded min-w-[300px]">
-            <h2 className="text-xl mb-2">Finalizar Chamado</h2>
+            <h2 className="text-xl mb-2 font-bold text-center">Finalizar Chamado</h2>
             <textarea
               className="border p-2 w-full mb-2"
               rows="4"
@@ -300,9 +383,37 @@ const UserTickets = () => {
               onChange={(e) => setFinalizadoDescricao(e.target.value)}
               placeholder="Adicione uma descrição de finalização..."
             ></textarea>
+            <div className="mb-2">
+              <h3 className='font-bold text-center'>Problemas encontrados</h3>
+              {checkboxes.map((checkbox, index) => (
+                <div className='grid items-center' key={index}>
+                  <div>
+                    <input
+                      type="checkbox"
+                      value={checkbox}
+                      onChange={handleCheckboxChange}
+                    />
+                    <label className='ml-1'>{checkbox}</label>
+                  </div>
+                </div>
+              ))}
+              <div className="flex gap-2 mt-2">
+                <input
+                  type="text"
+                  value={newCheckbox}
+                  onChange={(e) => setNewCheckbox(e.target.value)}
+                  className="border p-2"
+                  placeholder="Adicionar novo problema"
+                />
+                <button onClick={addNewCheckbox} className="bg-blue-500 text-white px-4 py-2 rounded">
+                  +
+                </button>
+              </div>
+            </div>
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => {
+                  console.log('Finalizando chamado:', checkproblema);
                   updateTicketStatus(selectedTicket.id, 'finalizado', finalizadoDescricao);
                   setSelectedTicket(null);
                 }}
