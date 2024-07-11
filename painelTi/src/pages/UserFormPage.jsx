@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { db } from "../firebase";
 import { collection, getDocs, doc, setDoc } from "firebase/firestore";
 import Modal from "react-modal";
+import InputMask from 'react-input-mask';
 
 Modal.setAppElement('#root');
 
@@ -12,6 +13,7 @@ const UserForm = () => {
   const [loja, setLoja] = useState("");
   const [pass, setPass] = useState("");
   const [user, setUser] = useState("");
+  const [whatsapp, setWhatsapp] = useState("");
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
 
@@ -30,13 +32,14 @@ const UserForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (selectedUser && user && cidade && loja && pass) {
+    if (selectedUser && user && cidade && loja && pass && whatsapp) {
       const userDoc = doc(db, "usuarios", selectedUser);
       const userMap = {
         cidade,
         loja,
         pass,
         user,
+        whatsapp,
       };
       await setDoc(userDoc, { [user]: userMap }, { merge: true });
       setModalMessage("Usuário gravado com sucesso!");
@@ -46,6 +49,7 @@ const UserForm = () => {
       setLoja("");
       setPass("");
       setUser("");
+      setWhatsapp("");
     } else {
       setModalMessage("Por favor, preencha todos os campos.");
       setModalIsOpen(true);
@@ -53,7 +57,7 @@ const UserForm = () => {
   };
 
   return (
-    <div className="pt-20  container mx-auto p-4">
+    <div className="pt-20 container mx-auto p-4">
       <div className="bg-slate-400 p-4 rounded-xl">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -105,6 +109,17 @@ const UserForm = () => {
               value={pass}
               onChange={(e) => setPass(e.target.value)}
               className="w-full border border-gray-300 p-2 rounded"
+            />
+          </div>
+          <div>
+            <label className="block mb-1">WhatsApp</label>
+            <InputMask
+              mask="(99) 99999-9999"
+              value={whatsapp}
+              onChange={(e) => setWhatsapp(e.target.value)}
+              className="w-full border border-gray-300 p-2 rounded"
+              placeholder="(00) 00000-0000"
+              required
             />
           </div>
           <button
