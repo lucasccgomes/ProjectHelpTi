@@ -3,7 +3,7 @@ import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
 import Modal from 'react-modal';
 import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
-import { FaCity, FaUser, FaStoreAlt, FaFileImage } from "react-icons/fa";
+import { FaCity, FaUser, FaStoreAlt, FaFileImage, FaWhatsapp } from "react-icons/fa";
 import { MdReportProblem } from "react-icons/md";
 import { Carousel } from 'react-responsive-carousel';
 import { LuImageOff } from "react-icons/lu";
@@ -24,6 +24,12 @@ const UserTickets = () => {
   const [selectedImages, setSelectedImages] = useState([]);
   const [slidesToShow, setSlidesToShow] = useState(1);
   const [showArrows, setShowArrows] = useState(false);
+
+  const formatWhatsappLink = (phone) => {
+    const cleaned = ('' + phone).replace(/\D/g, '');
+    const countryCode = '55';
+    return `https://wa.me/${countryCode}${cleaned}`;
+  };
 
   const getStatusClass = (status) => {
     switch (status) {
@@ -51,7 +57,9 @@ const UserTickets = () => {
             data: data.data.toDate()
           };
         });
-        setTickets(ticketsData);
+
+        const uniqueTickets = Array.from(new Map(ticketsData.map(ticket => [ticket.id, ticket])).values());
+        setTickets(uniqueTickets);
         setLoading(false);
       } catch (error) {
         console.error('Erro ao buscar chamados:', error);
@@ -116,11 +124,12 @@ const UserTickets = () => {
     setModalIsOpen(false);
   };
 
+  const renderedTicketIds = new Set();
+
   return (
     <div className="p-4 w-full flex flex-col justify-center items-center">
       <div className='flex flex-col lg:flex-row gap-4 mb-4'>
         <h2 className="text-2xl font-bold">Chamados</h2>
-
         <div className=''>
           <select
             className="border p-2 mr-1 rounded"
@@ -154,7 +163,6 @@ const UserTickets = () => {
           </select>
         </div>
       </div>
-
       {filteredTickets.length === 0 ? (
         <p>Nenhum chamado encontrado.</p>
       ) : (
@@ -164,115 +172,119 @@ const UserTickets = () => {
           onMouseLeave={() => setShowArrows(false)}
         >
           <Carousel
+            key={filteredTickets.map(ticket => ticket.id).join(',')} // Adiciona uma chave única para o Carousel
             showArrows={showArrows}
             showStatus={false}
             showIndicators={false}
             showThumbs={false}
-            infiniteLoop={true}
             useKeyboardArrows
             swipeable
-            centerMode
+            centerMode={true}
             centerSlidePercentage={slidesToShow === 1 ? 100 : 33.33}
           >
-            {filteredTickets.map(ticket => (
-              <div key={ticket.id} className='gap-4'>
-                <div className="bg-gray-400 shadow lg:min-w-[250px] mb-4 p-4 border-2 rounded">
-                  <h3 className="text-xl uppercase text-center font-semibold">
-                    {ticket.order}
-                    <p className={`my-1 p-1 rounded-lg text-white uppercase ${getStatusClass(ticket.status)}`}>
-                      {ticket.status}
-                    </p>
-                  </h3>
 
-                  <div className='flex gap-4 mb-1'>
-                    <p className='flex uppercase items-center'><FaCity />: {ticket.cidade}</p>
-                    <p className='flex uppercase items-center'><FaUser />: {ticket.user}</p>
-                  </div>
-
-                  <div className='flex gap-4 mb-1'>
-                    <p className='flex uppercase items-center'><FaStoreAlt />: {ticket.loja}</p>
-                    <p className='flex uppercase items-center'>
-                      <MdReportProblem />: {ticket.localProblema}
-                    </p>
-                  </div>
-
-                  <div className='flex gap-4 mb-1'>
-                    <p>
-                      <strong>
-                        Data:
-                      </strong>
-                      {ticket.data.toLocaleString()}
-                    </p>
-                  </div>
-
-                  <div className='bg-white p-3 rounded-md max-h-20 min-h-20 overflow-y-auto mb-2 mt-2 break-words'>
-                    <p className='text-center font-bold'>Descrição</p>
-                    <p>{ticket.descricao}</p>
-                  </div>
-
-                  <div className='bg-white p-3 rounded-md max-h-20 min-h-20 overflow-y-auto mb-2 mt-2 break-words'>
-                    <p className='text-center font-bold'>Tentativa</p>
-                    <p>{ticket.tentou}</p>
-                  </div>
-
-
-                  {Array.isArray(ticket.imgUrl) && ticket.imgUrl.length > 0 ? (
-                    <div className='flex items-center justify-center p-3 rounded-md mb-2 mt-2'>
-                      <p className='text-center font-bold'></p>
+            {filteredTickets.map(ticket => {
+              if (renderedTicketIds.has(ticket.id)) {
+                return null; // Ocultar tickets duplicados
+              }
+              renderedTicketIds.add(ticket.id);
+              return (
+                <div key={ticket.id} className='gap-4'>
+                  <div className="bg-gray-400 shadow lg:min-w-[250px] mb-4 p-4 border-2 rounded">
+                    <h3 className="text-xl uppercase text-center font-semibold">
+                      {ticket.order}
+                      <p className={`my-1 p-1 rounded-lg text-white uppercase ${getStatusClass(ticket.status)}`}>
+                        {ticket.status}
+                      </p>
+                    </h3>
+                    <div className='flex justify-between gap-4 mb-1 mt-2'>
+                      <p className='flex uppercase items-center'><FaCity />: {ticket.cidade}</p>
+                      <p className='flex uppercase items-center'><FaUser />: {ticket.user}</p>
+                      <p className='bg-green-600 p-2 rounded-2xl shadow-lg'>
+                        <a target='_blank' href={formatWhatsappLink(ticket.whatsapp)}>
+                          <FaWhatsapp className='text-2xl text-white' />
+                        </a>
+                      </p>
+                    </div>
+                    <div className='flex gap-4 mb-1'>
+                      <p className='flex uppercase items-center'><FaStoreAlt />: {ticket.loja}</p>
+                      <p className='flex uppercase items-center'>
+                        <MdReportProblem />: {ticket.localProblema}
+                      </p>
+                    </div>
+                    <div className='flex gap-4 mb-1'>
+                      <p>
+                        <strong>
+                          Data:
+                        </strong>
+                        {ticket.data.toLocaleString()}
+                      </p>
+                    </div>
+                    <div className='bg-white pt-0 px-2 pb-1 rounded-md mb-2'>
+                      <p className='text-center font-bold'>Descrição</p>
+                      <p className=' overflow-y-auto break-words max-h-14 min-h-14' >{ticket.descricao}</p>
+                    </div>
+                    <div className='bg-white pt-0 px-2 pb-1 rounded-md '>
+                      <p className='text-center font-bold'>Tentativa</p>
+                      <p className=' overflow-y-auto break-words max-h-14 min-h-14' >{ticket.tentou}</p>
+                    </div>
+                    {Array.isArray(ticket.imgUrl) && ticket.imgUrl.length > 0 ? (
+                      <div className='flex items-center justify-center p-3 rounded-md mb-2 mt-2'>
+                        <p className='text-center font-bold'></p>
+                        <button
+                          className='bg-blue-500 flex justify-center items-center text-white px-4 py-2 rounded'
+                          onClick={() => openImageModal(ticket.imgUrl)}
+                        >
+                          <FaFileImage /> &nbsp; Ver Imagens
+                        </button>
+                      </div>
+                    ) : (
+                      <div className='flex items-center justify-center p-3 rounded-md mb-2 mt-2'>
+                        <p className='text-center font-bold'></p>
+                        <button
+                          className='bg-gray-600 pointer-events-none flex justify-center items-center text-white px-4 py-2 rounded'
+                        >
+                          <LuImageOff /> &nbsp; Sem Imagens
+                        </button>
+                      </div>
+                    )}
+                    {ticket.descricaoFinalizacao ? (
+                      <p className='bg-blue-100 p-3 rounded-md mt-2 max-h-16 min-h-16 overflow-y-auto break-words'>
+                        <strong>Conclusão:</strong>
+                        {ticket.descricaoFinalizacao}
+                      </p>
+                    ) : (
+                      <p className='bg-blue-100 p-3 rounded-md mt-2 max-h-16 min-h-16 overflow-y-auto break-words'>
+                        Aguardando conclusão
+                      </p>
+                    )}
+                    <div className="flex gap-2 mt-2">
                       <button
-                        className='bg-blue-500 flex justify-center items-center text-white px-4 py-2 rounded'
-                        onClick={() => openImageModal(ticket.imgUrl)}
+                        onClick={() => updateTicketStatus(ticket.id, 'aberto')}
+                        className={`bg-red-400 text-white px-4 py-2 rounded ${ticket.status === 'finalizado' ? 'opacity-50 cursor-not-allowed' : ''} ${ticket.status === 'aberto' ? 'bg-red-600 ring-2 ring-white' : ''}`}
+                        disabled={ticket.status === 'finalizado'}
                       >
-                        <FaFileImage /> &nbsp; Ver Imagens
+                        Aberto
+                      </button>
+                      <button
+                        onClick={() => updateTicketStatus(ticket.id, 'andamento')}
+                        className={`bg-orange-400 text-white px-4 py-2 rounded ${ticket.status === 'finalizado' ? 'opacity-50 cursor-not-allowed' : ''} ${ticket.status === 'andamento' ? 'bg-orange-600 ring-2 ring-white' : ''}`}
+                        disabled={ticket.status === 'finalizado'}
+                      >
+                        Andamento
+                      </button>
+                      <button
+                        onClick={() => setSelectedTicket(ticket)}
+                        className={`bg-green-400 text-white px-4 py-2 rounded ${ticket.status === 'finalizado' ? 'opacity-50 cursor-not-allowed' : ''} ${ticket.status === 'finalizado' ? 'bg-green-600 ring-2 ring-white' : ''}`}
+                        disabled={ticket.status === 'finalizado'}
+                      >
+                        Finalizado
                       </button>
                     </div>
-                  ) : (
-                    <div className='flex items-center justify-center p-3 rounded-md mb-2 mt-2'>
-                      <p className='text-center font-bold'></p>
-                      <button
-                        className='bg-gray-600 pointer-events-none flex justify-center items-center text-white px-4 py-2 rounded'
-                      >
-                        <LuImageOff /> &nbsp; Sem Imagens
-                      </button>
-                    </div>
-                  )}
-
-                  {ticket.descricaoFinalizacao ? (
-                    <p className='bg-blue-100 p-3 rounded-md mt-2 max-h-16 min-h-16 overflow-y-auto break-words'>
-                      <strong>Conclusão:</strong>
-                      {ticket.descricaoFinalizacao}
-                    </p>
-                  ) : (
-                    <p className='bg-blue-100 p-3 rounded-md mt-2 max-h-16 min-h-16 overflow-y-auto break-words'>
-                      Aguardando conclusão
-                    </p>
-                  )}
-                  <div className="flex gap-2 mt-2">
-                    <button
-                      onClick={() => updateTicketStatus(ticket.id, 'aberto')}
-                      className={`bg-red-400 text-white px-4 py-2 rounded ${ticket.status === 'finalizado' ? 'opacity-50 cursor-not-allowed' : ''} ${ticket.status === 'aberto' ? 'bg-red-600 ring-2 ring-white' : ''}`}
-                      disabled={ticket.status === 'finalizado'}
-                    >
-                      Aberto
-                    </button>
-                    <button
-                      onClick={() => updateTicketStatus(ticket.id, 'andamento')}
-                      className={`bg-orange-400 text-white px-4 py-2 rounded ${ticket.status === 'finalizado' ? 'opacity-50 cursor-not-allowed' : ''} ${ticket.status === 'andamento' ? 'bg-orange-600 ring-2 ring-white' : ''}`}
-                      disabled={ticket.status === 'finalizado'}
-                    >
-                      Andamento
-                    </button>
-                    <button
-                      onClick={() => setSelectedTicket(ticket)}
-                      className={`bg-green-400 text-white px-4 py-2 rounded ${ticket.status === 'finalizado' ? 'opacity-50 cursor-not-allowed' : ''} ${ticket.status === 'finalizado' ? 'bg-green-600 ring-2 ring-white' : ''}`}
-                      disabled={ticket.status === 'finalizado'}
-                    >
-                      Finalizado
-                    </button>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </Carousel>
         </div>
       )}
@@ -323,6 +335,7 @@ const UserTickets = () => {
             showThumbs={false}
             infiniteLoop={true}
             useKeyboardArrows
+            centerMode
             swipeable
           >
             {selectedImages.map((image, index) => (
