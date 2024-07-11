@@ -22,22 +22,22 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
         try {
           const usersRef = collection(db, 'usuarios');
           const citiesSnapshot = await getDocs(usersRef);
-
+  
           let found = false;
           for (const cityDoc of citiesSnapshot.docs) {
             const cityData = cityDoc.data();
             if (cityData[currentUser]) {
               found = true;
               const userDoc = cityData[currentUser];
-              setUserDetails({ cidade: cityDoc.id, loja: userDoc.loja });
+              setUserDetails({ cidade: cityDoc.id, loja: userDoc.loja, whatsapp: userDoc.whatsapp });
               break;
             }
           }
-
+  
           if (!found) {
             console.log('Usuário não encontrado em nenhuma cidade.');
           }
-
+  
         } catch (error) {
           console.error('Erro ao buscar detalhes do usuário:', error);
         }
@@ -45,6 +45,7 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
     };
     fetchUserDetails();
   }, [currentUser]);
+  
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -101,7 +102,8 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
         status: 'aberto',
         tentou: attempt,
         user: currentUser,
-        localProblema: localProblema
+        localProblema: localProblema,
+        whatsapp: userDetails.whatsapp
       };
 
       const newTicketRef = doc(db, 'chamados', 'aberto', 'tickets', nextOrder);
