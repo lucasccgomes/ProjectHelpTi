@@ -129,7 +129,6 @@ const UserTickets = () => {
             showStatus={false}
             showIndicators={false}
             showThumbs={false}
-            infiniteLoop={true}
             useKeyboardArrows
             swipeable
             centerMode
@@ -165,13 +164,13 @@ const UserTickets = () => {
                       {ticket.data.toLocaleString()}
                     </p>
                   </div>
-                  <div className='bg-white p-3 rounded-md max-h-20 min-h-20 overflow-y-auto mb-2 mt-2 break-words'>
+                  <div className='bg-white pt-0 px-2 pb-1 rounded-md mb-2'>
                     <p className='text-center font-bold'>Descrição</p>
-                    <p>{ticket.descricao}</p>
+                    <p className=' overflow-y-auto break-words max-h-14 min-h-14' >{ticket.descricao}</p>
                   </div>
-                  <div className='bg-white p-3 rounded-md max-h-20 min-h-20 overflow-y-auto mb-2 mt-2 break-words'>
+                  <div className='bg-white pt-0 px-2 pb-1 rounded-md '>
                     <p className='text-center font-bold'>Tentativa</p>
-                    <p>{ticket.tentou}</p>
+                    <p className=' overflow-y-auto break-words max-h-14 min-h-14' >{ticket.tentou}</p>
                   </div>
                 </div>
               </div>
