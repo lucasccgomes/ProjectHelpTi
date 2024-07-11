@@ -31,7 +31,6 @@ const UserTickets = () => {
 
   const handleCheckboxChange = (event) => {
     const { value, checked } = event.target;
-    console.log(`Checkbox ${checked ? 'selecionado' : 'deselecionado'}:`, value);
     if (checked) {
       setCheckproblema([...checkproblema, value]);
     } else {
@@ -42,7 +41,6 @@ const UserTickets = () => {
   const addNewCheckbox = async () => {
     if (newCheckbox) {
       try {
-        console.log('Adicionando novo checkbox:', newCheckbox);
         const checkboxDocRef = doc(db, 'ordersControl', 'checkbox');
         const docSnapshot = await getDoc(checkboxDocRef);
 
@@ -66,14 +64,11 @@ const UserTickets = () => {
 
   const fetchCheckboxes = async () => {
     try {
-      console.log('Buscando documento checkbox dentro de ordersControl...');
       const checkboxDocRef = doc(db, 'ordersControl', 'checkbox');
       const docSnapshot = await getDoc(checkboxDocRef);
       if (docSnapshot.exists()) {
         const data = docSnapshot.data();
-        console.log('Documento checkbox encontrado:', data);
         const checkboxesData = data.checkProblemas || [];
-        console.log('Checkboxes encontrados:', checkboxesData);
         setCheckboxes(checkboxesData);
       } else {
         console.log('Documento checkbox não encontrado.');
@@ -413,7 +408,6 @@ const UserTickets = () => {
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => {
-                  console.log('Finalizando chamado:', checkproblema);
                   updateTicketStatus(selectedTicket.id, 'finalizado', finalizadoDescricao);
                   setSelectedTicket(null);
                 }}
