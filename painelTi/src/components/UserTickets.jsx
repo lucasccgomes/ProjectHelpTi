@@ -10,8 +10,6 @@ import { CiNoWaitingSign } from "react-icons/ci";
 import { LuImageOff } from "react-icons/lu";
 import "react-responsive-carousel/lib/styles/carousel.min.css";
 
-import logoVsm from "../assets/logo-vsm.png"
-
 Modal.setAppElement('#root'); // Adiciona isso para resolver problemas de acessibilidade
 
 const UserTickets = () => {
