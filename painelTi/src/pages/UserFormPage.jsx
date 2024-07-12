@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { db } from "../firebase";
-import { collection, getDocs, doc, setDoc } from "firebase/firestore";
+import { collection, getDocs, doc, getDoc, setDoc } from "firebase/firestore";
 import Modal from "react-modal";
 import InputMask from 'react-input-mask';
 
@@ -17,6 +17,8 @@ const UserForm = () => {
   const [whatsapp, setWhatsapp] = useState("");
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
+  const [cidades, setCidades] = useState({});
+  const [lojas, setLojas] = useState([]);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -30,6 +32,28 @@ const UserForm = () => {
 
     fetchUsers();
   }, []);
+
+  useEffect(() => {
+    const fetchCidades = async () => {
+      const docRef = doc(db, "ordersControl", "cidades");
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        setCidades(docSnap.data());
+      } else {
+        console.log("No such document!");
+      }
+    };
+
+    fetchCidades();
+  }, []);
+
+  useEffect(() => {
+    if (cidade) {
+      setLojas(cidades[cidade] || []);
+    } else {
+      setLojas([]);
+    }
+  }, [cidade, cidades]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -89,21 +113,33 @@ const UserForm = () => {
           </div>
           <div>
             <label className="block mb-1">Cidade</label>
-            <input
-              type="text"
+            <select
               value={cidade}
               onChange={(e) => setCidade(e.target.value)}
               className="w-full border border-gray-300 p-2 rounded"
-            />
+            >
+              <option value="">Selecione a cidade</option>
+              {Object.keys(cidades).map((city) => (
+                <option key={city} value={city}>
+                  {city}
+                </option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="block mb-1">Loja</label>
-            <input
-              type="text"
+            <select
               value={loja}
               onChange={(e) => setLoja(e.target.value)}
               className="w-full border border-gray-300 p-2 rounded"
-            />
+            >
+              <option value="">Selecione a loja</option>
+              {lojas.map((store, index) => (
+                <option key={index} value={store}>
+                  {store}
+                </option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="block mb-1">Cargo</label>
