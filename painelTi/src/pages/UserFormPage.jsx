@@ -11,6 +11,7 @@ const UserForm = () => {
   const [selectedUser, setSelectedUser] = useState("");
   const [cidade, setCidade] = useState("");
   const [loja, setLoja] = useState("");
+  const [cargo, setCargo] = useState("");
   const [pass, setPass] = useState("");
   const [user, setUser] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
@@ -37,6 +38,7 @@ const UserForm = () => {
       const userMap = {
         cidade,
         loja,
+        cargo,
         pass,
         user,
         whatsapp,
@@ -47,6 +49,7 @@ const UserForm = () => {
       setSelectedUser("");
       setCidade("");
       setLoja("");
+      setCargo("");
       setPass("");
       setUser("");
       setWhatsapp("");
@@ -99,6 +102,15 @@ const UserForm = () => {
               type="text"
               value={loja}
               onChange={(e) => setLoja(e.target.value)}
+              className="w-full border border-gray-300 p-2 rounded"
+            />
+          </div>
+          <div>
+            <label className="block mb-1">Cargo</label>
+            <input
+              type="text"
+              value={cargo}
+              onChange={(e) => setCargo(e.target.value)}
               className="w-full border border-gray-300 p-2 rounded"
             />
           </div>
