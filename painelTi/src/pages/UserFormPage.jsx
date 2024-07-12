@@ -12,6 +12,7 @@ const UserForm = () => {
   const [cidade, setCidade] = useState("");
   const [loja, setLoja] = useState("");
   const [cargo, setCargo] = useState("");
+  const [cargos, setCargos] = useState([]);
   const [pass, setPass] = useState("");
   const [user, setUser] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
@@ -48,16 +49,48 @@ const UserForm = () => {
   }, []);
 
   useEffect(() => {
+    const fetchCargos = async () => {
+      const docRef = doc(db, "ordersControl", "cargos");
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        setCargos(docSnap.data().typeCargos || []);
+      } else {
+        console.log("No such document!");
+      }
+    };
+
+    fetchCargos();
+  }, []);
+
+  useEffect(() => {
     if (cidade) {
       setLojas(cidades[cidade] || []);
+
+      const userDoc = users.find(user => user.cidade === cidade);
+      if (userDoc) {
+        setSelectedUser(userDoc.id);
+        console.log("Selected BD: ", userDoc.id);
+      } else {
+        setSelectedUser("");
+        console.log("No BD found for the selected city");
+      }
     } else {
       setLojas([]);
+      setSelectedUser("");
     }
-  }, [cidade, cidades]);
+  }, [cidade, cidades, users]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (selectedUser && user && cidade && loja && pass && whatsapp) {
+    console.log("Selected BD: ", selectedUser);
+    console.log("User: ", user);
+    console.log("Cidade: ", cidade);
+    console.log("Loja: ", loja);
+    console.log("Cargo: ", cargo);
+    console.log("Pass: ", pass);
+    console.log("Whatsapp: ", whatsapp);
+
+    if (selectedUser && user && cidade && loja && cargo && pass && whatsapp) {
       const userDoc = doc(db, "usuarios", selectedUser);
       const userMap = {
         cidade,
@@ -88,27 +121,13 @@ const UserForm = () => {
       <div className="bg-slate-400 p-4 rounded-xl">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block mb-1">Local do BD</label>
-            <select
-              value={selectedUser}
-              onChange={(e) => setSelectedUser(e.target.value)}
-              className="w-full border border-gray-300 p-2 rounded"
-            >
-              <option value="">Selecione o BD</option>
-              {users.map((user) => (
-                <option key={user.id} value={user.id}>
-                  {user.id}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
             <label className="block mb-1">Nome do usuário</label>
             <input
               type="text"
               value={user}
               onChange={(e) => setUser(e.target.value)}
               className="w-full border border-gray-300 p-2 rounded"
+              required
             />
           </div>
           <div>
@@ -117,6 +136,7 @@ const UserForm = () => {
               value={cidade}
               onChange={(e) => setCidade(e.target.value)}
               className="w-full border border-gray-300 p-2 rounded"
+              required
             >
               <option value="">Selecione a cidade</option>
               {Object.keys(cidades).map((city) => (
@@ -132,6 +152,7 @@ const UserForm = () => {
               value={loja}
               onChange={(e) => setLoja(e.target.value)}
               className="w-full border border-gray-300 p-2 rounded"
+              required
             >
               <option value="">Selecione a loja</option>
               {lojas.map((store, index) => (
@@ -143,12 +164,19 @@ const UserForm = () => {
           </div>
           <div>
             <label className="block mb-1">Cargo</label>
-            <input
-              type="text"
+            <select
               value={cargo}
               onChange={(e) => setCargo(e.target.value)}
               className="w-full border border-gray-300 p-2 rounded"
-            />
+              required
+            >
+              <option value="">Selecione o cargo</option>
+              {cargos.map((type, index) => (
+                <option key={index} value={type}>
+                  {type}
+                </option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="block mb-1">Senha</label>
@@ -157,6 +185,7 @@ const UserForm = () => {
               value={pass}
               onChange={(e) => setPass(e.target.value)}
               className="w-full border border-gray-300 p-2 rounded"
+              required
             />
           </div>
           <div>
