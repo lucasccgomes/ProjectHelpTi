@@ -8,31 +8,18 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
+  const [currentUserRole, setCurrentUserRole] = useState('');
 
   useEffect(() => {
     const storedUser = localStorage.getItem('currentUser');
     const storedAuth = localStorage.getItem('isAuthenticated');
-    if (storedUser && storedAuth) {
+    const storedRole = localStorage.getItem('currentUserRole');
+    if (storedUser && storedAuth && storedRole) {
       setCurrentUser(storedUser);
       setIsAuthenticated(storedAuth === 'true');
+      setCurrentUserRole(storedRole);
     }
     setLoading(false);
-  }, []);
-
-  const logAllUsuarios = async () => {
-    try {
-      const usuariosRef = collection(db, 'usuarios');
-      const querySnapshot = await getDocs(usuariosRef);
-
-      querySnapshot.forEach(doc => {
-         });
-    } catch (error) {
-      console.error('Erro ao buscar documentos:', error);
-    }
-  };
-
-  useEffect(() => {
-    logAllUsuarios();
   }, []);
 
   const login = async (username, password) => {
@@ -47,21 +34,23 @@ export const AuthProvider = ({ children }) => {
           if (userData.pass === password) {
             setIsAuthenticated(true);
             setCurrentUser(username);
+            setCurrentUserRole(userData.cargo);
             localStorage.setItem('isAuthenticated', 'true');
             localStorage.setItem('currentUser', username);
+            localStorage.setItem('currentUserRole', userData.cargo);
             userFound = true;
           } else {
-            console.log('Credenciais inválidas');
+            console.log('Invalid credentials');
           }
         }
       });
 
       if (!userFound) {
-        console.log('Usuário não encontrado no Firestore ou credenciais inválidas');
+        console.log('User not found or invalid credentials');
         throw new Error('User not found or invalid credentials');
       }
     } catch (error) {
-      console.error('Erro ao tentar login:', error);
+      console.error('Error logging in:', error);
       throw error;
     }
   };
@@ -70,16 +59,17 @@ export const AuthProvider = ({ children }) => {
     try {
       setIsAuthenticated(false);
       setCurrentUser(null);
+      setCurrentUserRole('');
       localStorage.removeItem('isAuthenticated');
       localStorage.removeItem('currentUser');
-      console.log('Logout bem-sucedido');
+      localStorage.removeItem('currentUserRole');
     } catch (error) {
-      console.error('Erro ao tentar logout:', error);
+      console.error('Error logging out:', error);
     }
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, login, logout, loading, currentUser }}>
+    <AuthContext.Provider value={{ isAuthenticated, login, logout, loading, currentUser, currentUserRole }}>
       {children}
     </AuthContext.Provider>
   );
