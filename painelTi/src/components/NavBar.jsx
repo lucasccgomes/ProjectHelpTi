@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { Link } from 'react-router-dom';
-import { FaBars, FaTimes, FaHome, FaUsers, FaProjectDiagram, FaCalendarAlt, FaSignOutAlt, FaSignInAlt } from 'react-icons/fa';
+import { FaBars, FaTimes, FaHome, FaUsers, FaSignOutAlt, FaSignInAlt } from 'react-icons/fa';
+import { MdOutlineBugReport } from "react-icons/md";
+import { IoPrintSharp } from "react-icons/io5";
+import { CgShutterstock } from "react-icons/cg";
 import { useAuth } from '../context/AuthContext';
 
 const Navbar = () => {
@@ -10,6 +13,9 @@ const Navbar = () => {
   const navItems = [
     { name: 'Home', icon: FaHome, href: '/' },
     { name: 'Novo Usuario', icon: FaUsers, href: '/userform' },
+    { name: 'Relatório', icon: MdOutlineBugReport, href: '/relatorio' },
+    { name: 'Estoque', icon: CgShutterstock, href: '/estoque' },
+    { name: 'Impressoras', icon: IoPrintSharp , href: '/impressora' },
   ];
 
   return (
