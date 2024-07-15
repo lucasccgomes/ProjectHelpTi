@@ -6,6 +6,9 @@ import HomePage from './pages/HomePage';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import UserForm from './pages/UserFormPage';
+import Relatorio from './pages/Relatorio';
+import Estoque from './pages/Estoque';
+import Impressora from './pages/Impressora';
 
 const App = () => {
   return (
@@ -29,6 +32,30 @@ const App = () => {
                   element={
                     <ProtectedRoute>
                       <UserForm />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/relatorio"
+                  element={
+                    <ProtectedRoute>
+                      <Relatorio />
+                    </ProtectedRoute>
+                  }
+                />
+                 <Route
+                  path="/estoque"
+                  element={
+                    <ProtectedRoute>
+                      <Estoque />
+                    </ProtectedRoute>
+                  }
+                />
+                 <Route
+                  path="/impressora"
+                  element={
+                    <ProtectedRoute>
+                      <Impressora />
                     </ProtectedRoute>
                   }
                 />
