@@ -1,6 +1,6 @@
 import React from 'react';
 import UserTickets from '../components/UserTickets';
-import Solicitacao from '../components/Solicitacao';
+import Solicitacao from '../components/Solicitacoes';
 import { useAuth } from '../context/AuthContext';
 
 const HomePage = () => {
