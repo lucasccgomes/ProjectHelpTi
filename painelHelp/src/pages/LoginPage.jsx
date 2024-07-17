@@ -1,20 +1,60 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import logo from '../assets/logo.png'
+import logo from '../assets/logo.png';
+import OfflineNotice from '../components/OfflineNotice';
+import { IoLogoAndroid } from "react-icons/io";
 
 const LoginPage = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [installPrompt, setInstallPrompt] = useState(null);
+  const [isInstalled, setIsInstalled] = useState(false);
   const navigate = useNavigate();
   const { login } = useAuth();
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e) => {
+      e.preventDefault();
+      setInstallPrompt(e);
+      console.log("beforeinstallprompt event captured");  // Debugging
+    };
+
+    const checkInstalledStatus = async () => {
+      if ('getInstalledRelatedApps' in navigator) {
+        const relatedApps = await navigator.getInstalledRelatedApps();
+        setIsInstalled(relatedApps.length > 0);
+        console.log("Installed apps:", relatedApps);  // Debugging
+      }
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    checkInstalledStatus();
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  const handleInstallClick = () => {
+    if (installPrompt) {
+      installPrompt.prompt();
+      installPrompt.userChoice.then((choiceResult) => {
+        if (choiceResult.outcome === 'accepted') {
+          console.log('User accepted the install prompt');
+        } else {
+          console.log('User dismissed the install prompt');
+        }
+        setInstallPrompt(null);
+      });
+    }
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
 
     try {
       await login(username, password);
-
       navigate('/');
     } catch (error) {
       console.error('Erro ao fazer login:', error);
@@ -44,7 +84,7 @@ const LoginPage = () => {
               }}
               className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
               autoComplete="off"
-              autoCapitalize="none" // Adicione esta linha
+              autoCapitalize="none"
               required
             />
           </div>
@@ -73,7 +113,17 @@ const LoginPage = () => {
             </button>
           </div>
         </form>
+
+        {!isInstalled && installPrompt && (
+          <button
+            onClick={handleInstallClick}
+            className="mt-4 w-full p-2 rounded-md flex justify-center items-center text-white bg-green-600 hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
+          >
+            <IoLogoAndroid className='text-xl' />&nbsp;Instalar App
+          </button>
+        )}
       </div>
+      <OfflineNotice />
     </div>
   );
 };
