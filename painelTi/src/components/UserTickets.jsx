@@ -9,8 +9,9 @@ import { MdReportProblem, MdOutlineReportProblem } from "react-icons/md";
 import { CiNoWaitingSign } from "react-icons/ci";
 import { LuImageOff } from "react-icons/lu";
 import "react-responsive-carousel/lib/styles/carousel.min.css";
+import { requestNotificationPermission, checkForNewTickets } from '../components/notificationService';
 
-Modal.setAppElement('#root'); // Adiciona isso para resolver problemas de acessibilidade
+Modal.setAppElement('#root');
 
 const UserTickets = () => {
   const { currentUser } = useAuth();
@@ -28,6 +29,33 @@ const UserTickets = () => {
   const [checkboxes, setCheckboxes] = useState([]);
   const [newCheckbox, setNewCheckbox] = useState('');
   const [checkproblema, setCheckproblema] = useState([]);
+  const [lastNotifiedTicketDate, setLastNotifiedTicketDate] = useState(
+    localStorage.getItem('lastNotifiedTicketDate') ? new Date(localStorage.getItem('lastNotifiedTicketDate')) : null
+  );
+  const [lastNotifiedTicketOrder, setLastNotifiedTicketOrder] = useState(localStorage.getItem('lastNotifiedTicketOrder'));
+
+  useEffect(() => {
+    const initializeNotifications = async () => {
+      const permissionGranted = await requestNotificationPermission();
+      if (permissionGranted) {
+        const interval = setInterval(async () => {
+          console.log('Verificando novos tickets no intervalo...');
+          const result = await checkForNewTickets(lastNotifiedTicketDate, lastNotifiedTicketOrder);
+          if (result) {
+            console.log('Atualizando último ticket notificado:', result);
+            setLastNotifiedTicketDate(result.date);
+            setLastNotifiedTicketOrder(result.order);
+          } else {
+            console.log('Nenhuma atualização necessária para tickets.');
+          }
+        }, 30000); // Verifica a cada 30 segundos
+
+        return () => clearInterval(interval); // Limpa o intervalo quando o componente é desmontado
+      }
+    };
+
+    initializeNotifications();
+  }, [lastNotifiedTicketDate, lastNotifiedTicketOrder]);
 
   const handleCheckboxChange = (event) => {
     const { value, checked } = event.target;
@@ -81,8 +109,6 @@ const UserTickets = () => {
   useEffect(() => {
     fetchCheckboxes();
   }, []);
-
-
 
   const formatWhatsappLink = (phone) => {
     const cleaned = ('' + phone).replace(/\D/g, '');
@@ -162,7 +188,6 @@ const UserTickets = () => {
       console.error('Erro ao atualizar status do chamado:', error);
     }
   };
-
 
   const filteredTickets = tickets.filter(ticket =>
     (statusFilter ? ticket.status === statusFilter : true) &&
@@ -369,7 +394,7 @@ const UserTickets = () => {
                           className={`bg-blue-400 text-white px-4 w-full  py-2 rounded ${ticket.status === 'finalizado' ? 'opacity-50 cursor-not-allowed' : ''} ${ticket.status === 'vsm' ? 'bg-blue-700 ring-2 ring-white' : ''}`}
                           disabled={ticket.status === 'finalizado'}
                         >
-                        (VSM)-Externo
+                          (VSM)-Externo
                         </button>
                       </div>
                     </div>
