@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
-import NewTicketModal from './NewTicketModal';
+import NewTicketModal from '../components/NewTicketModal';
 import { FaCity, FaUser, FaStoreAlt } from "react-icons/fa";
 import { MdReportProblem, MdHelp } from "react-icons/md";
 import { Carousel } from 'react-responsive-carousel';
@@ -89,7 +89,7 @@ const UserTickets = () => {
   }
 
   return (
-    <div className="p-4 w-full flex flex-col justify-center items-center">
+    <div className="p-4 w-full pt-20 flex flex-col justify-center items-center">
       <div className='flex flex-col lg:flex-row gap-4'>
         <h2 className="text-2xl font-bold mb-4">Meus Chamados</h2>
         <button
