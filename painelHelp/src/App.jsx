@@ -11,8 +11,8 @@ import NoPermission from './pages/NoPermission';
 
 const App = () => {
   return (
-    <AuthProvider>
-      <Router>
+    <Router>
+      <AuthProvider>
         <AuthConsumer>
           {({ isAuthenticated, currentUser }) => (
             <>
@@ -48,8 +48,8 @@ const App = () => {
             </>
           )}
         </AuthConsumer>
-      </Router>
-    </AuthProvider>
+      </AuthProvider>
+    </Router>
   );
 };
 

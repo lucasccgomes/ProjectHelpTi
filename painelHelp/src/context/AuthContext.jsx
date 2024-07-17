@@ -1,4 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { db } from '../firebase';
 import { collection, getDocs } from 'firebase/firestore';
 
@@ -9,6 +10,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
   const [currentUserRole, setCurrentUserRole] = useState('');
+  const navigate = useNavigate();
 
   useEffect(() => {
     const storedUser = localStorage.getItem('currentUser');
@@ -63,6 +65,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.removeItem('isAuthenticated');
       localStorage.removeItem('currentUser');
       localStorage.removeItem('currentUserRole');
+      navigate('/login');  // Redireciona para a página de login após o logout
     } catch (error) {
       console.error('Error logging out:', error);
     }
