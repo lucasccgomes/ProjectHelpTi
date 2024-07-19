@@ -26,7 +26,12 @@ const UserForm = () => {
       const querySnapshot = await getDocs(collection(db, "usuarios"));
       const userList = [];
       querySnapshot.forEach((doc) => {
-        userList.push({ id: doc.id, ...doc.data() });
+        const data = doc.data();
+        Object.keys(data).forEach((key) => {
+          if (data[key].user) {
+            userList.push({ id: doc.id, userKey: key, ...data[key] });
+          }
+        });
       });
       setUsers(userList);
     };
@@ -65,20 +70,10 @@ const UserForm = () => {
   useEffect(() => {
     if (cidade) {
       setLojas(cidades[cidade] || []);
-
-      const userDoc = users.find(user => user.cidade === cidade);
-      if (userDoc) {
-        setSelectedUser(userDoc.id);
-        console.log("Selected BD: ", userDoc.id);
-      } else {
-        setSelectedUser("");
-        console.log("No BD found for the selected city");
-      }
     } else {
       setLojas([]);
-      setSelectedUser("");
     }
-  }, [cidade, cidades, users]);
+  }, [cidade, cidades]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -91,7 +86,7 @@ const UserForm = () => {
     console.log("Whatsapp: ", whatsapp);
 
     if (selectedUser && user && cidade && loja && cargo && pass && whatsapp) {
-      const userDoc = doc(db, "usuarios", selectedUser);
+      const userDoc = doc(db, "usuarios", cidade);
       const userMap = {
         cidade,
         loja,
@@ -99,6 +94,7 @@ const UserForm = () => {
         pass,
         user,
         whatsapp,
+        assignment: selectedUser
       };
       await setDoc(userDoc, { [user]: userMap }, { merge: true });
       setModalMessage("Usuário gravado com sucesso!");
@@ -198,6 +194,22 @@ const UserForm = () => {
               placeholder="(00) 00000-0000"
               required
             />
+          </div>
+          <div>
+            <label className="block mb-1">Atribuições</label>
+            <select
+              value={selectedUser}
+              onChange={(e) => setSelectedUser(e.target.value)}
+              className="w-full border border-gray-300 p-2 rounded"
+              required
+            >
+              <option value="">Selecione o usuário</option>
+              {users.map((user) => (
+                <option key={user.userKey} value={user.userKey}>
+                  {user.user} - {user.loja}
+                </option>
+              ))}
+            </select>
           </div>
           <button
             type="submit"
