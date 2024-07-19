@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import logo from '../assets/logo.png';
-import OfflineNotice from '../components/OfflineNotice';
+import OfflineNotice from '../components/OffLineNotice/OfflineNotice';
 import { IoLogoAndroid } from "react-icons/io";
 
 const LoginPage = () => {
