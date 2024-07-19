@@ -9,7 +9,6 @@ import { MdReportProblem, MdOutlineReportProblem } from "react-icons/md";
 import { CiNoWaitingSign } from "react-icons/ci";
 import { LuImageOff } from "react-icons/lu";
 import "react-responsive-carousel/lib/styles/carousel.min.css";
-import { requestNotificationPermission, checkForNewTickets } from '../components/notificationService';
 
 Modal.setAppElement('#root');
 
@@ -29,84 +28,57 @@ const UserTickets = () => {
   const [checkboxes, setCheckboxes] = useState([]);
   const [newCheckbox, setNewCheckbox] = useState('');
   const [checkproblema, setCheckproblema] = useState([]);
-  const [lastNotifiedTicketDate, setLastNotifiedTicketDate] = useState(
-    localStorage.getItem('lastNotifiedTicketDate') ? new Date(localStorage.getItem('lastNotifiedTicketDate')) : null
-  );
-  const [lastNotifiedTicketOrder, setLastNotifiedTicketOrder] = useState(localStorage.getItem('lastNotifiedTicketOrder'));
 
   useEffect(() => {
-    const initializeNotifications = async () => {
-      const permissionGranted = await requestNotificationPermission();
-      if (permissionGranted) {
-        const interval = setInterval(async () => {
-          console.log('Verificando novos tickets no intervalo...');
-          const result = await checkForNewTickets(lastNotifiedTicketDate, lastNotifiedTicketOrder);
-          if (result) {
-            console.log('Atualizando último ticket notificado:', result);
-            setLastNotifiedTicketDate(result.date);
-            setLastNotifiedTicketOrder(result.order);
-          } else {
-            console.log('Nenhuma atualização necessária para tickets.');
-          }
-        }, 30000); // Verifica a cada 30 segundos
-
-        return () => clearInterval(interval); // Limpa o intervalo quando o componente é desmontado
+    const handleCheckboxChange = (event) => {
+      const { value, checked } = event.target;
+      if (checked) {
+        setCheckproblema([...checkproblema, value]);
+      } else {
+        setCheckproblema(checkproblema.filter(item => item !== value));
       }
     };
 
-    initializeNotifications();
-  }, [lastNotifiedTicketDate, lastNotifiedTicketOrder]);
+    const addNewCheckbox = async () => {
+      if (newCheckbox) {
+        try {
+          const checkboxDocRef = doc(db, 'ordersControl', 'checkbox');
+          const docSnapshot = await getDoc(checkboxDocRef);
 
-  const handleCheckboxChange = (event) => {
-    const { value, checked } = event.target;
-    if (checked) {
-      setCheckproblema([...checkproblema, value]);
-    } else {
-      setCheckproblema(checkproblema.filter(item => item !== value));
-    }
-  };
+          let updatedCheckboxes = [];
+          if (docSnapshot.exists()) {
+            const data = docSnapshot.data();
+            updatedCheckboxes = data.checkProblemas ? [...data.checkProblemas, newCheckbox] : [newCheckbox];
+          } else {
+            updatedCheckboxes = [newCheckbox];
+          }
 
-  const addNewCheckbox = async () => {
-    if (newCheckbox) {
+          await updateDoc(checkboxDocRef, { checkProblemas: updatedCheckboxes });
+
+          setCheckboxes(updatedCheckboxes);
+          setNewCheckbox('');
+        } catch (error) {
+          console.error('Erro ao adicionar novo checkbox:', error);
+        }
+      }
+    };
+
+    const fetchCheckboxes = async () => {
       try {
         const checkboxDocRef = doc(db, 'ordersControl', 'checkbox');
         const docSnapshot = await getDoc(checkboxDocRef);
-
-        let updatedCheckboxes = [];
         if (docSnapshot.exists()) {
           const data = docSnapshot.data();
-          updatedCheckboxes = data.checkProblemas ? [...data.checkProblemas, newCheckbox] : [newCheckbox];
+          const checkboxesData = data.checkProblemas || [];
+          setCheckboxes(checkboxesData);
         } else {
-          updatedCheckboxes = [newCheckbox];
+          console.log('Documento checkbox não encontrado.');
         }
-
-        await updateDoc(checkboxDocRef, { checkProblemas: updatedCheckboxes });
-
-        setCheckboxes(updatedCheckboxes);
-        setNewCheckbox('');
       } catch (error) {
-        console.error('Erro ao adicionar novo checkbox:', error);
+        console.error('Erro ao buscar documentos:', error);
       }
-    }
-  };
+    };
 
-  const fetchCheckboxes = async () => {
-    try {
-      const checkboxDocRef = doc(db, 'ordersControl', 'checkbox');
-      const docSnapshot = await getDoc(checkboxDocRef);
-      if (docSnapshot.exists()) {
-        const data = docSnapshot.data();
-        const checkboxesData = data.checkProblemas || [];
-        setCheckboxes(checkboxesData);
-      } else {
-        console.log('Documento checkbox não encontrado.');
-      }
-    } catch (error) {
-      console.error('Erro ao buscar documentos:', error);
-    }
-  };
-
-  useEffect(() => {
     fetchCheckboxes();
   }, []);
 
@@ -118,13 +90,13 @@ const UserTickets = () => {
 
   const getStatusClass = (status) => {
     switch (status) {
-      case 'aberto':
+      case 'Aberto':
         return 'bg-red-600';
-      case 'andamento':
+      case 'Andamento':
         return 'bg-orange-600';
-      case 'finalizado':
+      case 'Finalizado':
         return 'bg-green-600';
-      case 'vsm':
+      case 'VSM':
         return 'bg-blue-700';
       default:
         return 'bg-gray-700';
@@ -225,10 +197,10 @@ const UserTickets = () => {
             onChange={(e) => setStatusFilter(e.target.value)}
           >
             <option value="">Todos os Status</option>
-            <option value="aberto">Aberto</option>
-            <option value="andamento">Andamento</option>
-            <option value="finalizado">Finalizado</option>
-            <option value="vsm">VSM</option>
+            <option value="Aberto">Aberto</option>
+            <option value="Andamento">Andamento</option>
+            <option value="Finalizado">Finalizado</option>
+            <option value="VSM">VSM</option>
           </select>
           <select
             className="border p-2 mr-2 rounded"
@@ -367,32 +339,32 @@ const UserTickets = () => {
                     <div className="flex flex-col gap-2 mt-2">
                       <div className=''>
                         <button
-                          onClick={() => updateTicketStatus(ticket.id, 'aberto')}
-                          className={`bg-red-400 text-white px-4 py-2 rounded mr-2 ${ticket.status === 'finalizado' ? 'opacity-50 cursor-not-allowed' : ''} ${ticket.status === 'aberto' ? 'bg-red-600 ring-2 ring-white' : ''}`}
-                          disabled={ticket.status === 'finalizado'}
+                          onClick={() => updateTicketStatus(ticket.id, 'Aberto')}
+                          className={`bg-red-400 text-white px-4 py-2 rounded mr-2 ${ticket.status === 'Finalizado' ? 'opacity-50 cursor-not-allowed' : ''} ${ticket.status === 'Aberto' ? 'bg-red-600 ring-2 ring-white' : ''}`}
+                          disabled={ticket.status === 'Finalizado'}
                         >
                           Aberto
                         </button>
                         <button
-                          onClick={() => updateTicketStatus(ticket.id, 'andamento')}
-                          className={`bg-orange-400 text-white px-4 py-2 rounded ${ticket.status === 'finalizado' ? 'opacity-50 cursor-not-allowed' : ''} ${ticket.status === 'andamento' ? 'bg-orange-600 ring-2 ring-white' : ''}`}
-                          disabled={ticket.status === 'finalizado'}
+                          onClick={() => updateTicketStatus(ticket.id, 'Andamento')}
+                          className={`bg-orange-400 text-white px-4 py-2 rounded ${ticket.status === 'Finalizado' ? 'opacity-50 cursor-not-allowed' : ''} ${ticket.status === 'Andamento' ? 'bg-orange-600 ring-2 ring-white' : ''}`}
+                          disabled={ticket.status === 'Finalizado'}
                         >
                           Andamento
                         </button>
                         <button
                           onClick={() => setSelectedTicket(ticket)}
-                          className={`bg-green-400 text-white px-4 py-2 rounded ml-2 ${ticket.status === 'finalizado' ? 'opacity-50 cursor-not-allowed' : ''} ${ticket.status === 'finalizado' ? 'bg-green-600 ring-2 ring-white' : ''}`}
-                          disabled={ticket.status === 'finalizado'}
+                          className={`bg-green-400 text-white px-4 py-2 rounded ml-2 ${ticket.status === 'Finalizado' ? 'opacity-50 cursor-not-allowed' : ''} ${ticket.status === 'Finalizado' ? 'bg-green-600 ring-2 ring-white' : ''}`}
+                          disabled={ticket.status === 'Finalizado'}
                         >
                           Finalizado
                         </button>
                       </div>
                       <div>
                         <button
-                          onClick={() => updateTicketStatus(ticket.id, 'vsm')}
-                          className={`bg-blue-400 text-white px-4 w-full  py-2 rounded ${ticket.status === 'finalizado' ? 'opacity-50 cursor-not-allowed' : ''} ${ticket.status === 'vsm' ? 'bg-blue-700 ring-2 ring-white' : ''}`}
-                          disabled={ticket.status === 'finalizado'}
+                          onClick={() => updateTicketStatus(ticket.id, 'VSM')}
+                          className={`bg-blue-400 text-white px-4 w-full  py-2 rounded ${ticket.status === 'Finalizado' ? 'opacity-50 cursor-not-allowed' : ''} ${ticket.status === 'VSM' ? 'bg-blue-700 ring-2 ring-white' : ''}`}
+                          disabled={ticket.status === 'Finalizado'}
                         >
                           (VSM)-Externo
                         </button>
@@ -447,7 +419,7 @@ const UserTickets = () => {
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => {
-                  updateTicketStatus(selectedTicket.id, 'finalizado', finalizadoDescricao);
+                  updateTicketStatus(selectedTicket.id, 'Finalizado', finalizadoDescricao);
                   setSelectedTicket(null);
                 }}
                 className="bg-green-500 text-white px-4 py-2 rounded"
