@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { db } from '../firebase';
-import { collection, doc, getDoc } from 'firebase/firestore';
+import { collection, getDocs } from 'firebase/firestore';
 
 const AuthContext = createContext();
 
@@ -13,47 +13,44 @@ export const AuthProvider = ({ children }) => {
     const storedUser = localStorage.getItem('currentUser');
     const storedAuth = localStorage.getItem('isAuthenticated');
     if (storedUser && storedAuth) {
-      setCurrentUser(storedUser);
+      setCurrentUser(JSON.parse(storedUser));
       setIsAuthenticated(storedAuth === 'true');
     }
     setLoading(false);
   }, []);
 
-  const logAllUsuarios = async () => {
-    try {
-      const adminTiDocRef = doc(db, 'usuarios', 'adminTi');
-      const adminTiDoc = await getDoc(adminTiDocRef);
-
-      if (adminTiDoc.exists()) {
-        // Dados do documento "adminTi"
-      }
-    } catch (error) {
-      // Erro ao buscar documentos
-    }
-  };
-
-  useEffect(() => {
-    logAllUsuarios();
-  }, []);
-
   const login = async (username, password) => {
     try {
-      const adminTiDocRef = doc(db, 'usuarios', 'adminTi');
-      const adminTiDoc = await getDoc(adminTiDocRef);
+      const usuariosCollection = collection(db, 'usuarios');
+      const querySnapshot = await getDocs(usuariosCollection);
 
-      if (adminTiDoc.exists()) {
-        const adminTiData = adminTiDoc.data();
+      if (!querySnapshot.empty) {
+        let userFound = false;
 
-        if (adminTiData[username] && adminTiData[username].pass === password) {
-          setIsAuthenticated(true);
-          setCurrentUser(username);
-          localStorage.setItem('isAuthenticated', 'true');
-          localStorage.setItem('currentUser', username);
-        } else {
-          throw new Error('Credenciais inválidas');
+        querySnapshot.forEach((doc) => {
+          const usuarios = doc.data();
+          for (const [key, userData] of Object.entries(usuarios)) {
+            if (userData.user === username && userData.cargo === 'T.I') {
+              if (userData.pass === password) {
+                setIsAuthenticated(true);
+                const userInfo = { id: key, ...userData };
+                setCurrentUser(userInfo);
+                localStorage.setItem('isAuthenticated', 'true');
+                localStorage.setItem('currentUser', JSON.stringify(userInfo));
+                userFound = true;
+                break;
+              } else {
+                throw new Error('Credenciais inválidas');
+              }
+            }
+          }
+        });
+
+        if (!userFound) {
+          throw new Error('Usuário não encontrado ou sem permissão');
         }
       } else {
-        throw new Error('Documento não encontrado');
+        throw new Error('Nenhum documento encontrado na coleção usuarios');
       }
     } catch (error) {
       throw error;
@@ -67,7 +64,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.removeItem('isAuthenticated');
       localStorage.removeItem('currentUser');
     } catch (error) {
-      // Erro ao tentar logout
+      console.error('Erro ao tentar logout:', error);
     }
   };
 
