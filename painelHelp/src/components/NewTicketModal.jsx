@@ -99,7 +99,7 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
         imgUrl: imageUrls,
         loja: userDetails.loja,
         order: nextOrder,
-        status: 'aberto',
+        status: 'Aberto',
         tentou: attempt,
         user: currentUser,
         localProblema: localProblema,
@@ -134,7 +134,7 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
 
   return (
     <div className="fixed inset-0 z-40 pt-1 bg-black bg-opacity-50 flex items-center justify-center">
-      <div className="bg-white m-4 p-4 rounded shadow-lg w-96">
+      <div className="bg-white m-4 p-3 px-5 border-gray-400 border-2 rounded-xl shadow-lg ">
         <h2 className="text-2xl font-bold mb-4">Novo Chamado</h2>
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
@@ -200,7 +200,7 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
             <label className="block text-gray-700 text-sm font-bold mb-2">
               Imagens
               <p className='text-gray-500 font-semibold'>
-                (Se possível, envie fotos que possam ajudar a solucionar o problema.)
+                (Se possível, envie fotos do problema.)
               </p>
             </label>
             <input
