@@ -1,6 +1,7 @@
+//App.jsx
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import Navbar from './components/NavBar';
+import Navbar from './components/NavBar/NavBar';
 import LoginPage from './pages/LoginPage';
 import HomePage from './pages/HomePage';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -8,6 +9,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import UserTickets from './pages/UserTickets';
 import Solicitacao from './pages/Solicitacoes';
 import NoPermission from './pages/NoPermission';
+import AssignTasksPage from './pages/AssignTaskPage';
 
 const App = () => {
   return (
@@ -38,8 +40,16 @@ const App = () => {
                 <Route
                   path="/solicitacao"
                   element={
-                    <ProtectedRoute allowedRoles={['Gerente', 'Supervisor']}>
+                    <ProtectedRoute allowedRoles={['Gerente', 'Supervisor', 'T.I']}>
                       <Solicitacao />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/atribute"
+                  element={
+                    <ProtectedRoute>
+                      <AssignTasksPage />
                     </ProtectedRoute>
                   }
                 />
