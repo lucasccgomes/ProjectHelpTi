@@ -2,8 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { Link } from 'react-router-dom';
 import { MdHelp } from "react-icons/md";
 import { FaBars, FaTimes, FaUserCircle, FaHome, FaSignOutAlt, FaSignInAlt, FaChevronDown, FaChevronRight } from 'react-icons/fa';
-import { useAuth } from '../context/AuthContext';
-import OfflineNotice from './OfflineNotice';
+import { useAuth } from '../../context/AuthContext';
+import OfflineNotice from '../OffLineNotice/OfflineNotice';
 import { IoLogoAndroid } from "react-icons/io";
 
 const Navbar = ({ currentUser }) => {
@@ -27,6 +27,11 @@ const Navbar = ({ currentUser }) => {
         { name: 'Chamados', href: '/usertickets' },
         { name: 'Solicitações', href: '/solicitacao' },
       ]
+    },
+    {
+      name: 'Tarefas',
+      icon: FaHome,
+      href: '/atribute'
     },
   ];
 
@@ -83,7 +88,7 @@ const Navbar = ({ currentUser }) => {
   return (
     <div className="flex">
       {/* Botão para abrir o menu lateral */}
-      <div className="bg-primary w-full h-14 fixed flex items-center justify-end">
+      <div className="bg-primary w-full h-14 fixed flex items-center z-10 justify-end">
 
         {!isInstalled && installPrompt && (
           <button
