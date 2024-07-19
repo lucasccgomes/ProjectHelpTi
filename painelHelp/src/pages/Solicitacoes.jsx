@@ -5,10 +5,14 @@ import { useAuth } from '../context/AuthContext';
 import ListaSolicitacoes from '../components/ListaSolicitacoes';
 import { MdOutlineRequestQuote } from "react-icons/md";
 import Modal from 'react-modal';
+import { useTransition, animated } from '@react-spring/web';
+import AlertModal from '../components/AlertModal/AlertModal';
+import { IoClose } from "react-icons/io5";
+import Dropdown from '../components/Dropdown/Dropdown';
 
 const Solicitacao = () => {
   const { currentUser, currentUserRole } = useAuth();
-  const [tipo, setTipo] = useState('reposição');
+  const [tipo, setTipo] = useState('Reposição');
   const [nomeItem, setNomeItem] = useState('');
   const [motivo, setMotivo] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
@@ -20,6 +24,9 @@ const Solicitacao = () => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
   const [modalIsOpen, setModalIsOpen] = useState(false);
+  const [alertModalOpen, setAlertModalOpen] = useState(false);
+  const [alertModalContent, setAlertModalContent] = useState({ title: '', message: '', showOkButton: true });
+  const [statusFilter, setStatusFilter] = useState('Todos');
 
   useEffect(() => {
     const fetchUserDetails = async () => {
@@ -97,6 +104,9 @@ const Solicitacao = () => {
     setError(null);
     setSuccess(false);
 
+    setAlertModalContent({ title: 'Enviando', message: 'Enviando solicitação...', showOkButton: false });
+    setAlertModalOpen(true);
+
     try {
       const numSolicite = await getNextSolicitacaoNumber();
 
@@ -110,43 +120,45 @@ const Solicitacao = () => {
         cidade: selectedCidade,
         loja: selectedLoja,
         data: new Date(),
-        status: "pendente",
+        status: "Pendente",
         numSolicite
       };
 
       await setDoc(doc(db, 'solicitacoes', numSolicite), novaSolicitacao);
       setSuccess(true);
-      console.log('Solicitação adicionada com sucesso');
+      setAlertModalContent({ title: 'Sucesso', message: 'Solicitação enviada com sucesso!', showOkButton: true });
     } catch (error) {
       setError('Erro ao adicionar solicitação');
+      setAlertModalContent({ title: 'Erro', message: 'Erro ao adicionar solicitação', showOkButton: true });
       console.error('Erro ao adicionar solicitação:', error);
     } finally {
       setLoading(false);
     }
   };
 
+  const transitions = useTransition(modalIsOpen, {
+    from: { opacity: 0, transform: 'translateY(-50%)' },
+    enter: { opacity: 1, transform: 'translateY(0%)' },
+    leave: { opacity: 0, transform: 'translateY(-50%)' },
+  });
+
   return (
     <div className="flex lg:justify-between lg:flex-row flex-col">
-
       <div className="pt-20 hidden lg:block">
-        <div className='p-8 bg-white border lg:ml-28 m-4 lg:m-0 border-gray-300 rounded-xl shadow-lg'>
-          <h2 className="text-xl font-bold mb-4">Nova Solicitação</h2>
+        <div className='p-5 bg-white border min-w-[400px] lg:ml-[13rem] m-4 lg:m-0 border-gray-300 rounded-xl shadow-lg'>
+          <h2 className="text-xl font-bold mb-4 block  text-gray-700">Nova Solicitação</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className='flex gap-4 flex-col'>
-              <div>
-                <label className="block mb-1 font-semibold">Tipo de Solicitação</label>
-                <select
-                  value={tipo}
-                  onChange={(e) => setTipo(e.target.value)}
-                  className="w-full border border-gray-300 p-2 rounded focus:ring focus:ring-blue-200"
-                  required
-                >
-                  <option value="reposição">Reposição</option>
-                  <option value="novo">Novo</option>
-                </select>
+              <div className="">
+                <Dropdown
+                  label="Tipo de Solicitação"
+                  options={['Reposição', 'Novo']}
+                  selected={tipo}
+                  onSelectedChange={(option) => setTipo(option)}
+                />
               </div>
               <div>
-                <label className="block mb-1 font-semibold">Nome do Item</label>
+                <label className="block mb-2 text-sm font-medium text-gray-700">Nome do Item</label>
                 <input
                   type="text"
                   value={nomeItem}
@@ -157,7 +169,7 @@ const Solicitacao = () => {
               </div>
             </div>
             <div>
-              <label className="block mb-1 font-semibold">Motivo</label>
+              <label className="block mb-2 text-sm font-medium text-gray-700">Motivo</label>
               <textarea
                 value={motivo}
                 onChange={(e) => setMotivo(e.target.value)}
@@ -179,169 +191,152 @@ const Solicitacao = () => {
               </div>
             )}
             <div className='flex gap-4'>
-              <div>
-                <label className="block mb-1 font-semibold">Cidade</label>
-                <select
-                  value={selectedCidade}
-                  onChange={(e) => setSelectedCidade(e.target.value)}
-                  className="w-full border border-gray-300 p-2 rounded focus:ring focus:ring-blue-200"
-                  required
-                >
-                  <option value="">Selecione uma Cidade</option>
-                  {cidades.map(cidade => (
-                    <option key={cidade} value={cidade}>
-                      {cidade}
-                    </option>
-                  ))}
-                </select>
+              <div className='w-52'>
+                <Dropdown
+                  label="Cidade"
+                  options={cidades}
+                  selected={selectedCidade || "Cidade"}
+                  onSelectedChange={(option) => setSelectedCidade(option)}
+                />
               </div>
-
-              <div>
-                <label className="block mb-1 font-semibold">Loja</label>
-                <select
-                  value={selectedLoja}
-                  onChange={(e) => setSelectedLoja(e.target.value)}
-                  className="w-full border border-gray-300 p-2 rounded focus:ring focus:ring-blue-200"
-                  required
-                >
-                  <option value="">Selecione uma Loja</option>
-                  {lojas.map((loja, index) => (
-                    <option key={index} value={loja}>
-                      {loja}
-                    </option>
-                  ))}
-                </select>
+              <div className='w-24'>
+                <Dropdown
+                  label="Loja"
+                  options={lojas}
+                  selected={selectedLoja || "Loja"}
+                  onSelectedChange={(option) => setSelectedLoja(option)}
+                />
               </div>
             </div>
             <button
               type="submit"
-              className="w-full bg-primary text-white p-2 rounded hover:bg-primaryOpaci focus:outline-none focus:ring focus:ring-green-200"
+              className="w-full bg-primary text-white p-2 rounded hover:bg-primaryOpaci focus:outline-none focus:ring focus:ring-gray-200"
               disabled={loading}
             >
               {loading ? 'Enviando...' : 'Enviar'}
             </button>
-            {loading && <div className="mt-2 text-blue-500">Enviando solicitação...</div>}
           </form>
-          {success && <div className="mt-4 text-green-500">Solicitação enviada com sucesso!</div>}
-          {error && <div className="mt-4 text-red-500">{error}</div>}
         </div>
       </div>
-
       <div className="block lg:hidden p-4 pt-20">
         <button
           onClick={() => setModalIsOpen(true)}
-          className="w-full bg-primary text-white p-2 flex justify-center items-center rounded hover:bg-primaryOpaci focus:outline-none focus:ring focus:ring-green-200"
+          className="w-full bg-primary text-white p-2 flex justify-center items-center rounded hover:bg-primaryOpaci focus:outline-none focus:ring focus:ring-gray-200"
         >
-         <MdOutlineRequestQuote className='text-xl' /> Nova Solicitação
+          <MdOutlineRequestQuote className='text-xl' /> Nova Solicitação
         </button>
       </div>
+      {transitions(
+        (styles, item) => item && (
+          <Modal
+            isOpen={modalIsOpen}
+            onRequestClose={() => setModalIsOpen(false)}
+            className="modal"
+            overlayClassName="overlay"
+            style={{
+              overlay: { backgroundColor: 'rgba(0, 0, 0, 0.5)' },
+              content: { transition: 'opacity 0.3s ease-in-out' }
+            }}
+          >
+            <animated.div style={styles}>
+              <div className='p-4 bg-white border border-gray-300 rounded-xl shadow-lg '>
+                <div className='flex justify-between mb-1'>
+                  <h2 className="text-xl font-bold mb-4">Nova Solicitação</h2>
+                  <button
+                    onClick={() => setModalIsOpen(false)}
+                    className='bg-red-600 text-white p-2 rounded-full h-7 w-7 flex justify-center items-center shadow-xl'
+                  >
+                    <IoClose className='' />
+                  </button>
+                </div>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className='flex gap-4 flex-col'>
+                    <div>
+                      <div className='w-full'>
+                        <Dropdown
+                          label="Tipo de Solicitação"
+                          options={['Reposição', 'Novo']}
+                          selected={tipo}
+                          onSelectedChange={(option) => setTipo(option)}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block mb-2 text-sm font-medium text-gray-700">Nome do Item</label>
+                      <input
+                        type="text"
+                        value={nomeItem}
+                        onChange={(e) => setNomeItem(e.target.value)}
+                        className="w-full border border-gray-300 p-2 rounded focus:ring focus:ring-blue-200"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block mb-2 text-sm font-medium text-gray-700">Motivo</label>
+                    <textarea
+                      value={motivo}
+                      onChange={(e) => setMotivo(e.target.value)}
+                      className="w-full border border-gray-300 p-2 rounded max-h-14 focus:ring focus:ring-blue-200"
+                      rows="4"
+                      required
+                    >
+                    </textarea>
+                  </div>
+                  {whatsapp && (
+                    <div className='hidden'>
+                      <label className="block mb-1 font-semibold">WhatsApp</label>
+                      <input
+                        type="text"
+                        value={whatsapp}
+                        onChange={(e) => setWhatsapp(e.target.value)}
+                        className="w-full border border-gray-300 p-2 rounded focus:ring focus:ring-blue-200"
+                        required
+                      />
+                    </div>
+                  )}
+                  <div className='flex gap-4'>
+                    <div className='w-52'>
+                      <Dropdown
+                        label="Cidade"
+                        options={cidades}
+                        selected={selectedCidade || "Cidade"}
+                        onSelectedChange={(option) => setSelectedCidade(option)}
+                      />
+                    </div>
+                    <div>
+                      <Dropdown
+                        label="Loja"
+                        options={lojas}
+                        selected={selectedLoja || "Loja"}
+                        onSelectedChange={(option) => setSelectedLoja(option)}
+                      />
+                    </div>
+                  </div>
+                  <button
+                    type="submit"
+                    className="w-full bg-primary text-white p-2 rounded hover:bg-primaryOpaci focus:outline-none focus:ring focus:ring-gray-200"
+                    disabled={loading}
+                  >
+                    {loading ? 'Enviando...' : 'Enviar'}
+                  </button>
+                </form>
+              </div>
+            </animated.div>
+          </Modal>
+        )
+      )}
 
-      <Modal
-        isOpen={modalIsOpen}
-        onRequestClose={() => setModalIsOpen(false)}
-        className="modal"
-        overlayClassName="overlay"
-      >
-        <div className='p-4 bg-white border border-gray-300 rounded-xl shadow-lg '>
-          <h2 className="text-xl font-bold mb-4">Nova Solicitação</h2>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className='flex gap-4 flex-col'>
-              <div>
-                <label className="block mb-1 font-semibold">Tipo de Solicitação</label>
-                <select
-                  value={tipo}
-                  onChange={(e) => setTipo(e.target.value)}
-                  className="w-full border border-gray-300 p-2 rounded focus:ring focus:ring-blue-200"
-                  required
-                >
-                  <option value="reposição">Reposição</option>
-                  <option value="novo">Novo</option>
-                </select>
-              </div>
-              <div>
-                <label className="block mb-1 font-semibold">Nome do Item</label>
-                <input
-                  type="text"
-                  value={nomeItem}
-                  onChange={(e) => setNomeItem(e.target.value)}
-                  className="w-full border border-gray-300 p-2 rounded focus:ring focus:ring-blue-200"
-                  required
-                />
-              </div>
-            </div>
-            <div>
-              <label className="block mb-1 font-semibold">Motivo</label>
-              <textarea
-                value={motivo}
-                onChange={(e) => setMotivo(e.target.value)}
-                className="w-full border border-gray-300 p-2 rounded max-h-14 focus:ring focus:ring-blue-200"
-                rows="4"
-                required
-              ></textarea>
-            </div>
-            {whatsapp && (
-              <div className='hidden'>
-                <label className="block mb-1 font-semibold">WhatsApp</label>
-                <input
-                  type="text"
-                  value={whatsapp}
-                  onChange={(e) => setWhatsapp(e.target.value)}
-                  className="w-full border border-gray-300 p-2 rounded focus:ring focus:ring-blue-200"
-                  required
-                />
-              </div>
-            )}
-            <div className='flex gap-4'>
-              <div>
-                <label className="block mb-1 font-semibold">Cidade</label>
-                <select
-                  value={selectedCidade}
-                  onChange={(e) => setSelectedCidade(e.target.value)}
-                  className="w-full border border-gray-300 p-2 rounded focus:ring focus:ring-blue-200"
-                  required
-                >
-                  <option value="">Selecione uma Cidade</option>
-                  {cidades.map(cidade => (
-                    <option key={cidade} value={cidade}>
-                      {cidade}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block mb-1 font-semibold">Loja</label>
-                <select
-                  value={selectedLoja}
-                  onChange={(e) => setSelectedLoja(e.target.value)}
-                  className="w-full border border-gray-300 p-2 rounded focus:ring focus:ring-blue-200"
-                  required
-                >
-                  <option value="">Selecione uma Loja</option>
-                  {lojas.map((loja, index) => (
-                    <option key={index} value={loja}>
-                      {loja}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <button
-              type="submit"
-              className="w-full bg-green-500 text-white p-2 rounded hover:bg-green-600 focus:outline-none focus:ring focus:ring-green-200"
-              disabled={loading}
-            >
-              {loading ? 'Enviando...' : 'Enviar'}
-            </button>
-            {loading && <div className="mt-2 text-blue-500">Enviando solicitação...</div>}
-          </form>
-          {success && <div className="mt-4 text-green-500">Solicitação enviada com sucesso!</div>}
-          {error && <div className="mt-4 text-red-500">{error}</div>}
-        </div>
-      </Modal>
+      <AlertModal
+        isOpen={alertModalOpen}
+        onRequestClose={() => setAlertModalOpen(false)}
+        title={alertModalContent.title}
+        message={alertModalContent.message}
+        showOkButton={alertModalContent.showOkButton}
+      />
 
       <div className="">
-        <ListaSolicitacoes />
+        <ListaSolicitacoes statusFilter={statusFilter} />
       </div>
     </div>
   );
