@@ -15,7 +15,6 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
   const [images, setImages] = useState([]);
   const storage = getStorage();
 
-
   useEffect(() => {
     const fetchUserDetails = async () => {
       if (currentUser) {
@@ -45,7 +44,26 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
     };
     fetchUserDetails();
   }, [currentUser]);
-  
+
+  const sendNotification = async (tokens, notification) => {
+    try {
+      const response = await fetch('http://localhost:3000/send-notification', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ tokens, notification })
+      });
+
+      if (response.ok) {
+        console.log('Notificação enviada com sucesso');
+      } else {
+        console.error('Erro ao enviar notificação');
+      }
+    } catch (error) {
+      console.error('Erro ao enviar notificação:', error);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -110,6 +128,29 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
       await setDoc(newTicketRef, newTicket);
 
       addTicket({ id: nextOrder, ...newTicket });
+
+      // Coletar tokens dos usuários com cargo "T.I"
+      const usersRef = collection(db, 'usuarios');
+      const citiesSnapshot = await getDocs(usersRef);
+
+      const tokens = [];
+      citiesSnapshot.forEach((cityDoc) => {
+        const cityData = cityDoc.data();
+        Object.keys(cityData).forEach((userKey) => {
+          const user = cityData[userKey];
+          if (user.cargo === 'T.I' && user.token) {
+            tokens.push(user.token);
+          }
+        });
+      });
+
+      const notification = {
+        title: 'Novo Chamado',
+        body: `Um novo chamado foi criado: ${nextOrder}`
+      };
+
+      await sendNotification(tokens, notification);
+
       setDescription('');
       setAttempt('');
       setLocalProblema('');
