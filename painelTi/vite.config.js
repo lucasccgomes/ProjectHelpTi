@@ -1,8 +1,7 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
-// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
     react(),
@@ -13,9 +12,9 @@ export default defineConfig({
       },
       manifest: {
         id: "/",
-        name: 'Finance Familiy',
+        name: 'Finance Family',
         short_name: 'FinanceFamily',
-        description: 'Gerencie sua finanças com este app pratico e facil de usar.',
+        description: 'Gerencie suas finanças com este app prático e fácil de usar.',
         theme_color: '#ffffff',
         background_color: '#ffffff',
         display: 'standalone',
@@ -67,7 +66,64 @@ export default defineConfig({
             form_factor: "narrow"
           }
         ]
+      },
+      workbox: {
+        importScripts: ['/firebase-messaging-sw.js'], // Importar o Service Worker do Firebase
+        navigateFallback: '/',
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'google-fonts-cache',
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
+              },
+            },
+          },
+          {
+            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'gstatic-fonts-cache',
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
+              },
+            },
+          },
+          {
+            urlPattern: /^https:\/\/cdn.jsdelivr.net\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'jsdelivr-cache',
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
+              },
+            },
+          },
+          {
+            urlPattern: /\/.*\.(?:js|css|html|png|jpg|jpeg|svg|gif)/,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'static-resources',
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
+              },
+            },
+          }
+        ]
       }
     })
-  ]
+  ],
+  build: {
+    rollupOptions: {
+      input: {
+        main: './index.html'
+      }
+    }
+  }
 });
