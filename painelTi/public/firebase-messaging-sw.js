@@ -18,6 +18,7 @@ messaging.onBackgroundMessage((payload) => {
   const notificationTitle = payload.notification.title;
   const notificationOptions = {
     body: payload.notification.body,
+    icon: payload.notification.icon || '/icon/android-launchericon-144-144.png'
   };
 
   self.registration.showNotification(notificationTitle, notificationOptions);
