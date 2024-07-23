@@ -1,13 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import logo from '../assets/logo.png';
+import { IoLogoAndroid } from "react-icons/io";
+import OfflineNotice from '../components/OffLineNotice/OfflineNotice';
 
 const LoginPage = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
   const navigate = useNavigate();
   const { login } = useAuth();
+
+  useEffect(() => {
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    });
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', () => {});
+    };
+  }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -16,6 +30,19 @@ const LoginPage = () => {
       navigate('/');
     } catch (error) {
       alert('Usuário ou senha incorretos');
+    }
+  };
+
+  const handleInstallClick = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        console.log('Usuário aceitou a instalação');
+      } else {
+        console.log('Usuário rejeitou a instalação');
+      }
+      setDeferredPrompt(null);
     }
   };
 
@@ -65,7 +92,16 @@ const LoginPage = () => {
             </button>
           </div>
         </form>
+        {deferredPrompt && (
+         <button
+         onClick={handleInstallClick}
+         className="mt-4 w-full p-2 rounded-md flex justify-center items-center text-white bg-green-600 hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
+       >
+         <IoLogoAndroid className='text-xl' />&nbsp;Instalar App
+       </button>
+        )}
       </div>
+      <OfflineNotice />
     </div>
   );
 };
