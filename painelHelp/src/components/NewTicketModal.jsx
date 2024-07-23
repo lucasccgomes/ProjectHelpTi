@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, addDoc, getDoc, doc, getDocs, setDoc, updateDoc } from 'firebase/firestore';
+import { collection, getDoc, doc, getDocs, setDoc, updateDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
@@ -47,19 +47,13 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
 
   const sendNotification = async (tokens, notification) => {
     try {
-      const response = await fetch('http://localhost:3000/send-notification', {
+      await fetch('https://83c4-2804-1784-30b3-6700-4540-4ef3-8fee-3bf2.ngrok-free.app/send-notification', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ tokens, notification })
       });
-
-      if (response.ok) {
-        console.log('Notificação enviada com sucesso');
-      } else {
-        console.error('Erro ao enviar notificação');
-      }
     } catch (error) {
       console.error('Erro ao enviar notificação:', error);
     }
@@ -145,8 +139,8 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
       });
 
       const notification = {
-        title: 'Novo Chamado',
-        body: `Um novo chamado foi criado: ${nextOrder}`
+        title: nextOrder,
+        body: description
       };
 
       await sendNotification(tokens, notification);
