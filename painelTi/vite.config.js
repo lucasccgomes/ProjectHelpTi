@@ -12,9 +12,9 @@ export default defineConfig({
       },
       manifest: {
         id: "/",
-        name: 'Finance Family',
-        short_name: 'FinanceFamily',
-        description: 'Gerencie suas finanças com este app prático e fácil de usar.',
+        name: 'TI Drogalira',
+        short_name: 'TiDrogalira',
+        description: 'Gerencia ambiente interno.',
         theme_color: '#ffffff',
         background_color: '#ffffff',
         display: 'standalone',
@@ -22,32 +22,32 @@ export default defineConfig({
         orientation: 'portrait',
         icons: [
           {
-            src: 'icons/android-launchericon-48-48.png',
+            src: 'icon/android-launchericon-48-48.png',
             sizes: '48x48',
             type: 'image/png'
           },
           {
-            src: 'icons/android-launchericon-72-72.png',
+            src: 'icon/android-launchericon-72-72.png',
             sizes: '72x72',
             type: 'image/png'
           },
           {
-            src: 'icons/android-launchericon-96-96.png',
+            src: 'icon/android-launchericon-96-96.png',
             sizes: '96x96',
             type: 'image/png'
           },
           {
-            src: 'icons/android-launchericon-144-144.png',
+            src: 'icon/android-launchericon-144-144.png',
             sizes: '144x144',
             type: 'image/png'
           },
           {
-            src: 'icons/android-launchericon-192-192.png',
+            src: 'icon/android-launchericon-192-192.png',
             sizes: '192x192',
             type: 'image/png'
           },
           {
-            src: 'icons/android-launchericon-512-512.png',
+            src: 'icon/android-launchericon-512-512.png',
             sizes: '512x512',
             type: 'image/png'
           }
