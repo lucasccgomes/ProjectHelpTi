@@ -9,9 +9,8 @@ import UserForm from './pages/UserFormPage';
 import Relatorio from './pages/Relatorio';
 import Estoque from './pages/Estoque';
 import Impressora from './pages/Impressora';
-import { messaging, getToken, db, isSupported } from './firebase';
+import { messaging, getToken, db, isSupported } from './firebase'; // Ajuste o caminho conforme necessário
 import { doc, updateDoc } from 'firebase/firestore';
-import ListaSolicitacoes from './pages/ListaSolicitacoes';
 
 const App = () => {
   return (
@@ -59,14 +58,6 @@ const App = () => {
                   element={
                     <ProtectedRoute>
                       <Impressora />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/solicitacao"
-                  element={
-                    <ProtectedRoute>
-                      <ListaSolicitacoes />
                     </ProtectedRoute>
                   }
                 />

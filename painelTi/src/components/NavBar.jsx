@@ -17,7 +17,6 @@ const Navbar = ({ currentUser }) => {
     { name: 'Home', icon: FaHome, href: '/' },
     { name: 'Novo Usuario', icon: FaUsers, href: '/userform' },
     { name: 'Relatório', icon: MdOutlineBugReport, href: '/relatorio' },
-    { name: 'Solicitações', icon: IoPrintSharp , href: '/solicitacao' },
     { name: 'Estoque', icon: CgShutterstock, href: '/estoque' },
     { name: 'Impressoras', icon: IoPrintSharp , href: '/impressora' },
   ];
