@@ -9,7 +9,7 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
   const [description, setDescription] = useState('');
   const [attempt, setAttempt] = useState('');
   const [loading, setLoading] = useState(false);
-  const [userDetails, setUserDetails] = useState({ cidade: '', loja: '' });
+  const [userDetails, setUserDetails] = useState({ cidade: '', loja: '', whatsapp: '' });
   const [localProblema, setLocalProblema] = useState('');
   const [modalMessage, setModalMessage] = useState('');
   const [images, setImages] = useState([]);
@@ -17,26 +17,26 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
 
   useEffect(() => {
     const fetchUserDetails = async () => {
-      if (currentUser) {
+      if (currentUser && currentUser.user) {
         try {
           const usersRef = collection(db, 'usuarios');
           const citiesSnapshot = await getDocs(usersRef);
-  
+
           let found = false;
           for (const cityDoc of citiesSnapshot.docs) {
             const cityData = cityDoc.data();
-            if (cityData[currentUser]) {
+            if (cityData[currentUser.user]) {
               found = true;
-              const userDoc = cityData[currentUser];
+              const userDoc = cityData[currentUser.user];
               setUserDetails({ cidade: cityDoc.id, loja: userDoc.loja, whatsapp: userDoc.whatsapp });
               break;
             }
           }
-  
+
           if (!found) {
             console.log('Usuário não encontrado em nenhuma cidade.');
           }
-  
+
         } catch (error) {
           console.error('Erro ao buscar detalhes do usuário:', error);
         }
@@ -113,7 +113,7 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
         order: nextOrder,
         status: 'Aberto',
         tentou: attempt,
-        user: currentUser,
+        user: currentUser.user,
         localProblema: localProblema,
         whatsapp: userDetails.whatsapp
       };

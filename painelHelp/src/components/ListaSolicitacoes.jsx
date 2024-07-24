@@ -31,11 +31,16 @@ const ListaSolicitacoes = () => {
     }, [handleResize]);
 
     const fetchSolicitacoes = useCallback(async () => {
+        if (!currentUser) {
+            setError('Usuário não autenticado');
+            return;
+        }
+
         setError(null);
 
         try {
             const solicitacoesRef = collection(db, 'solicitacoes');
-            let q = query(solicitacoesRef, where('user', '==', currentUser));
+            let q = query(solicitacoesRef, where('user', '==', currentUser.user));
 
             if (statusFilter !== 'Todos') {
                 q = query(q, where('status', '==', statusFilter));

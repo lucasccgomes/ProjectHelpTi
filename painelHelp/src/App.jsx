@@ -1,4 +1,4 @@
-//App.jsx
+// App.jsx
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Navbar from './components/NavBar/NavBar';
@@ -130,8 +130,7 @@ const FCMHandler = ({ currentUser }) => {
                 const currentToken = await getToken(messaging, { vapidKey: "BE5sqRiJ8biSfqOey7rpe7SFvbQmnp8mm5R71wtQfW45l-eWs5MHDZBtLGQ3yS4NE5u-Y_LDAWBoREkYlK0I_FU" });
                 if (currentToken) {
                   console.log('Token FCM obtido:', currentToken);
-                  const userId = currentUser.user; // Ajuste conforme necessário
-                  const userCity = currentUser.cidade; // Ajuste conforme necessário
+                  const { user: userId, cidade: userCity } = currentUser;
                   if (typeof userId === 'string' && userId.trim() !== '' && typeof userCity === 'string' && userCity.trim() !== '') {
                     const userDocRef = doc(db, 'usuarios', userCity);
                     await updateDoc(userDocRef, {

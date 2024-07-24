@@ -1,3 +1,4 @@
+// AuthContext.jsx
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../firebase';
@@ -17,7 +18,7 @@ export const AuthProvider = ({ children }) => {
     const storedAuth = localStorage.getItem('isAuthenticated');
     const storedRole = localStorage.getItem('currentUserRole');
     if (storedUser && storedAuth && storedRole) {
-      setCurrentUser(storedUser);
+      setCurrentUser(JSON.parse(storedUser)); // Ajustado para armazenar um objeto
       setIsAuthenticated(storedAuth === 'true');
       setCurrentUserRole(storedRole);
     }
@@ -35,10 +36,18 @@ export const AuthProvider = ({ children }) => {
         if (userData) {
           if (userData.pass === password) {
             setIsAuthenticated(true);
-            setCurrentUser(username);
+            const user = {
+              user: username,
+              cidade: doc.id,
+              cargo: userData.cargo,
+              assignment: userData.assignment,
+              loja: userData.loja,
+              whatsapp: userData.whatsapp
+            };
+            setCurrentUser(user);
             setCurrentUserRole(userData.cargo);
             localStorage.setItem('isAuthenticated', 'true');
-            localStorage.setItem('currentUser', username);
+            localStorage.setItem('currentUser', JSON.stringify(user)); // Armazena o objeto
             localStorage.setItem('currentUserRole', userData.cargo);
             userFound = true;
           } else {

@@ -115,7 +115,7 @@ const Navbar = ({ currentUser }) => {
           className={`flex items-center gap-1 mr-16 text-white uppercase transition-transform duration-300 ease-in-out ${isOpen ? "opacity-0 transform -translate-x-10" : "opacity-100 transform translate-x-0"
             }`}
         >
-          <FaUserCircle /> {currentUser}
+          <FaUserCircle /> {currentUser ? currentUser.user : ''}
         </div>
       </div>
       {/* Menu lateral */}
@@ -125,7 +125,7 @@ const Navbar = ({ currentUser }) => {
             className={`flex items-center justify-center gap-1 uppercase mb-4 transition-transform duration-300 ease-in-out ${isOpen ? "opacity-100 transform translate-x-0 delay-300" : "opacity-0 transform -translate-x-10"
               }`}
           >
-            <FaUserCircle /> {currentUser}
+            <FaUserCircle /> {currentUser ? currentUser.user : ''}
           </div>
           <div className="space-y-2">
             {navItems.map((item) => (
