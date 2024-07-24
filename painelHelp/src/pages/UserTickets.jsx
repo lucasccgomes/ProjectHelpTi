@@ -174,8 +174,12 @@ const UserTickets = () => {
                     <p className=' overflow-y-auto break-words max-h-14 min-h-14' >{ticket.descricao}</p>
                   </div>
                   <div className='bg-white text-gray-700 pt-0 px-2 pb-1 rounded-md shadow-lg'>
-                    <p className='text-center font-bold'>Tentativa</p>
-                    <p className=' overflow-y-auto break-words max-h-14 min-h-14' >{ticket.tentou}</p>
+                    <p className='text-center font-bold'>
+                      {ticket.status === 'Andamento' ? 'Tratativa' : 'Tentativa'}
+                    </p>
+                    <p className='overflow-y-auto break-words max-h-14 min-h-14'>
+                      {ticket.status === 'Andamento' ? ticket.treatment : ticket.tentou}
+                    </p>
                   </div>
                 </div>
               </div>

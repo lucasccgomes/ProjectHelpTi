@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
 import { FaCity, FaUser, FaStoreAlt, FaWhatsapp } from "react-icons/fa";
@@ -12,7 +12,6 @@ const ListaSolicitacoes = () => {
     const [solicitacoes, setSolicitacoes] = useState([]);
     const [error, setError] = useState(null);
     const [slidesToShow, setSlidesToShow] = useState(1);
-    const [showArrows, setShowArrows] = useState(false);
     const [statusFilter, setStatusFilter] = useState('Todos');
 
     const handleResize = useCallback(() => {
@@ -30,34 +29,29 @@ const ListaSolicitacoes = () => {
         return () => window.removeEventListener('resize', handleResize);
     }, [handleResize]);
 
-    const fetchSolicitacoes = useCallback(async () => {
+    useEffect(() => {
         if (!currentUser) {
             setError('Usuário não autenticado');
             return;
         }
 
-        setError(null);
+        const solicitacoesRef = collection(db, 'solicitacoes');
+        let q = query(solicitacoesRef, where('user', '==', currentUser.user));
 
-        try {
-            const solicitacoesRef = collection(db, 'solicitacoes');
-            let q = query(solicitacoesRef, where('user', '==', currentUser.user));
+        if (statusFilter !== 'Todos') {
+            q = query(q, where('status', '==', statusFilter));
+        }
 
-            if (statusFilter !== 'Todos') {
-                q = query(q, where('status', '==', statusFilter));
-            }
-
-            const querySnapshot = await getDocs(q);
+        const unsubscribe = onSnapshot(q, (querySnapshot) => {
             const solicitacoesData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             setSolicitacoes(solicitacoesData);
-        } catch (error) {
+        }, (error) => {
             setError('Erro ao buscar solicitações');
             console.error('Erro ao buscar solicitações:', error);
-        }
-    }, [currentUser, statusFilter]);
+        });
 
-    useEffect(() => {
-        fetchSolicitacoes();
-    }, [fetchSolicitacoes]);
+        return () => unsubscribe();
+    }, [currentUser, statusFilter]);
 
     if (error) {
         return <div className="text-center mt-4 text-lg font-semibold text-red-500">{error}</div>;
@@ -65,7 +59,6 @@ const ListaSolicitacoes = () => {
 
     return (
         <div className="flex flex-col w-full lg:h-screen min-w-[370px] bg-primary lg:pt-16 text-white p-4 lg:overflow-y-scroll">
-
             <div className='mb-4'>
                 <div className="flex flex-col justify-center items-center gap-4 mb-4">
                     <h2 className="text-2xl font-bold">
@@ -89,10 +82,10 @@ const ListaSolicitacoes = () => {
                 ) : (
                     <div className="space-y-4 lg:max-w-4xl lg:overflow-hidden">
                         {solicitacoes.map(solicitacao => (
-                            <div key={solicitacao.id} className="p-6 lg:block  bg-white text-black border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200">
+                            <div key={solicitacao.id} className="p-6 lg:block bg-white text-black border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200">
                                 <h3 className="text-xl font-semibold mb-2">
-                                    {solicitacao.numSolicite
-                                    }</h3>
+                                    {solicitacao.numSolicite}
+                                </h3>
                                 <div className="flex flex-col gap-4 mb-2">
                                     <div className='flex gap-4'>
                                         <p className="flex items-center">

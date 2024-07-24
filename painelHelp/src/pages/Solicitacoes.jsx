@@ -49,12 +49,18 @@ const Solicitacao = () => {
       const cidadesRef = doc(db, 'ordersControl', 'cidades');
       const cidadesDoc = await getDoc(cidadesRef);
       if (cidadesDoc.exists()) {
-        setCidades(Object.keys(cidadesDoc.data()));
+        const userCity = currentUser.cidade;
+        if (userCity && cidadesDoc.data()[userCity]) {
+          setCidades([userCity]);
+          setSelectedCidade(userCity); 
+        } else {
+          setCidades([]);
+        }
       }
     };
 
     fetchCidades();
-  }, []);
+  }, [currentUser]);
 
   useEffect(() => {
     if (selectedCidade) {
@@ -99,6 +105,52 @@ const Solicitacao = () => {
     }
   };
 
+  const fetchTITokens = async () => {
+    const usuariosRef = collection(db, 'usuarios');
+    const querySnapshot = await getDocs(usuariosRef);
+    const tokens = [];
+
+    querySnapshot.forEach(doc => {
+      const userData = doc.data();
+      Object.keys(userData).forEach(userKey => {
+        const user = userData[userKey];
+        if (user.cargo === 'T.I' && user.token) {
+          tokens.push(user.token);
+        }
+      });
+    });
+
+    return tokens;
+  };
+
+  const sendNotification = async (tokens, notification) => {
+    try {
+      const response = await fetch('https://f022-2804-1784-30b3-6700-fc2d-cc1b-c8a7-66e9.ngrok-free.app/send-notification', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          tokens,
+          notification: {
+            title: notification.title,
+            body: notification.body,
+            click_action: notification.click_action,
+            icon: notification.icon
+          }
+        })
+      });
+
+      const responseData = await response.json();
+
+      if (!response.ok) {
+        throw new Error('Erro ao enviar notificações');
+      }
+    } catch (error) {
+      console.error('Erro ao enviar notificações:', error);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -107,6 +159,13 @@ const Solicitacao = () => {
 
     setAlertModalContent({ title: 'Enviando', message: 'Enviando solicitação...', showOkButton: false });
     setAlertModalOpen(true);
+
+    if (!selectedLoja) {
+      setError('Por favor, selecione uma loja.');
+      setAlertModalContent({ title: 'Erro', message: 'Por favor, selecione uma loja.', showOkButton: true });
+      setLoading(false);
+      return;
+    }
 
     try {
       const numSolicite = await getNextSolicitacaoNumber();
@@ -128,6 +187,25 @@ const Solicitacao = () => {
       await setDoc(doc(db, 'solicitacoes', numSolicite), novaSolicitacao);
       setSuccess(true);
       setAlertModalContent({ title: 'Sucesso', message: 'Solicitação enviada com sucesso!', showOkButton: true });
+
+      // Buscar tokens e enviar notificações
+      const tokens = await fetchTITokens();
+      const notification = {
+        title: 'Nova Solicitação',
+        body: `Uma nova solicitação: ${nomeItem}`,
+        click_action: "https://admhelpti.netlify.app/",
+        icon: "https://iili.io/duTTt8Q.png"
+      };
+
+      await sendNotification(tokens, notification);
+
+      // Limpar os campos após envio bem-sucedido
+      setTipo('Reposição');
+      setNomeItem('');
+      setMotivo('');
+      setWhatsapp('');
+      setSelectedCidade('');
+      setSelectedLoja('');
     } catch (error) {
       setError('Erro ao adicionar solicitação');
       setAlertModalContent({ title: 'Erro', message: 'Erro ao adicionar solicitação', showOkButton: true });
@@ -206,6 +284,7 @@ const Solicitacao = () => {
                   options={lojas}
                   selected={selectedLoja || "Loja"}
                   onSelectedChange={(option) => setSelectedLoja(option)}
+                  required
                 />
               </div>
             </div>
@@ -311,6 +390,7 @@ const Solicitacao = () => {
                         options={lojas}
                         selected={selectedLoja || "Loja"}
                         onSelectedChange={(option) => setSelectedLoja(option)}
+                        required
                       />
                     </div>
                   </div>
