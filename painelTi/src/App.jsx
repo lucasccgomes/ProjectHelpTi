@@ -110,28 +110,39 @@ const FCMHandler = ({ currentUser }) => {
         try {
           const status = await Notification.requestPermission();
           if (status === 'granted') {
-            const currentToken = await getToken(messaging, { vapidKey: "BE5sqRiJ8biSfqOey7rpe7SFvbQmnp8mm5R71wtQfW45l-eWs5MHDZBtLGQ3yS4NE5u-Y_LDAWBoREkYlK0I_FU" });
-            if (currentToken) {
-              console.log('Token FCM obtido:', currentToken);
-              const userId = currentUser.user; // Ajuste conforme necessário
-              const userCity = currentUser.cidade; // Ajuste conforme necessário
-              if (typeof userId === 'string' && userId.trim() !== '' && typeof userCity === 'string' && userCity.trim() !== '') {
-                const userDocRef = doc(db, 'usuarios', userCity);
-                await updateDoc(userDocRef, {
-                  [`${userId}.token`]: currentToken
-                });
-                console.log('Token salvo com sucesso no Firestore');
-              } else {
-                console.error('Usuário ou cidade inválido:', currentUser);
+            let tokenCaptured = false;
+            while (!tokenCaptured) {
+              try {
+                const currentToken = await getToken(messaging, { vapidKey: "BE5sqRiJ8biSfqOey7rpe7SFvbQmnp8mm5R71wtQfW45l-eWs5MHDZBtLGQ3yS4NE5u-Y_LDAWBoREkYlK0I_FU" });
+                if (currentToken) {
+                  console.log('Token FCM obtido:', currentToken);
+                  const userId = currentUser.user; // Ajuste conforme necessário
+                  const userCity = currentUser.cidade; // Ajuste conforme necessário
+                  if (typeof userId === 'string' && userId.trim() !== '' && typeof userCity === 'string' && userCity.trim() !== '') {
+                    const userDocRef = doc(db, 'usuarios', userCity);
+                    await updateDoc(userDocRef, {
+                      [`${userId}.token`]: currentToken
+                    });
+                    console.log('Token salvo com sucesso no Firestore');
+                  } else {
+                    console.error('Usuário ou cidade inválido:', currentUser);
+                  }
+                  tokenCaptured = true;
+                } else {
+                  console.log('Nenhum token FCM disponível. Tentando novamente...');
+                }
+              } catch (err) {
+                console.error('Erro ao obter o token FCM:', err);
               }
-            } else {
-              console.log('Nenhum token FCM disponível. Solicite permissão para gerar um.');
+              if (!tokenCaptured) {
+                await new Promise(resolve => setTimeout(resolve, 1500)); // Aguarda 1,5 segundos antes de tentar novamente
+              }
             }
           } else {
             console.log('Permissão de notificação não concedida.');
           }
         } catch (err) {
-          console.error('Erro ao obter o token FCM:', err);
+          console.error('Erro ao solicitar permissão de notificação:', err);
         }
       } else {
         console.warn('Firebase Messaging não é suportado neste navegador ou Service Worker não está disponível.');

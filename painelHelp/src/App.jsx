@@ -1,5 +1,5 @@
 //App.jsx
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Navbar from './components/NavBar/NavBar';
 import LoginPage from './pages/LoginPage';
@@ -10,6 +10,8 @@ import UserTickets from './pages/UserTickets';
 import Solicitacao from './pages/Solicitacoes';
 import NoPermission from './pages/NoPermission';
 import AssignTasksPage from './pages/AssignTaskPage';
+import { messaging, getToken, db, isSupported } from './firebase'; // Ajuste o caminho conforme necessário
+import { doc, updateDoc } from 'firebase/firestore';
 
 const App = () => {
   return (
@@ -55,6 +57,7 @@ const App = () => {
                 />
                 <Route path="/nopermission" element={<NoPermission />} />
               </Routes>
+              {isAuthenticated && <FCMHandler currentUser={currentUser} />}
             </>
           )}
         </AuthConsumer>
@@ -66,6 +69,104 @@ const App = () => {
 const AuthConsumer = ({ children }) => {
   const authContext = useAuth();
   return children(authContext);
+};
+
+const FCMHandler = ({ currentUser }) => {
+  const [messagingInitialized, setMessagingInitialized] = useState(false);
+
+  useEffect(() => {
+    const initializeMessaging = async () => {
+      const supported = await isSupported();
+      if (supported) {
+        console.log("Firebase Messaging é suportado neste navegador.");
+        if ('serviceWorker' in navigator) {
+          try {
+            const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+            console.log('Service Worker registrado com sucesso:', registration);
+
+            const waitForServiceWorkerActivation = async () => {
+              return new Promise((resolve) => {
+                if (registration.active) {
+                  resolve();
+                } else {
+                  const interval = setInterval(() => {
+                    if (registration.active) {
+                      clearInterval(interval);
+                      resolve();
+                    }
+                  }, 100); // Verifica a cada 100ms
+                }
+              });
+            };
+
+            await waitForServiceWorkerActivation();
+            setMessagingInitialized(true);
+
+          } catch (error) {
+            console.error('Erro ao registrar o Service Worker:', error);
+          }
+        } else {
+          console.warn('Service Worker não está disponível neste navegador.');
+        }
+      } else {
+        console.warn('Firebase Messaging não é suportado neste navegador.');
+      }
+    };
+
+    initializeMessaging();
+  }, []);
+
+  useEffect(() => {
+    const initializeFCM = async () => {
+      if (messagingInitialized && currentUser && messaging) {
+        try {
+          const status = await Notification.requestPermission();
+          if (status === 'granted') {
+            console.log('Permissão de notificação concedida. Tentando obter o token FCM...');
+            
+            let tokenCaptured = false;
+            while (!tokenCaptured) {
+              try {
+                const currentToken = await getToken(messaging, { vapidKey: "BE5sqRiJ8biSfqOey7rpe7SFvbQmnp8mm5R71wtQfW45l-eWs5MHDZBtLGQ3yS4NE5u-Y_LDAWBoREkYlK0I_FU" });
+                if (currentToken) {
+                  console.log('Token FCM obtido:', currentToken);
+                  const userId = currentUser.user; // Ajuste conforme necessário
+                  const userCity = currentUser.cidade; // Ajuste conforme necessário
+                  if (typeof userId === 'string' && userId.trim() !== '' && typeof userCity === 'string' && userCity.trim() !== '') {
+                    const userDocRef = doc(db, 'usuarios', userCity);
+                    await updateDoc(userDocRef, {
+                      [`${userId}.token`]: currentToken
+                    });
+                    console.log('Token salvo com sucesso no Firestore');
+                  } else {
+                    console.error('Usuário ou cidade inválido:', currentUser);
+                  }
+                  tokenCaptured = true;
+                } else {
+                  console.log('Nenhum token FCM disponível. Tentando novamente...');
+                }
+              } catch (err) {
+                console.error('Erro ao obter o token FCM:', err);
+              }
+              if (!tokenCaptured) {
+                await new Promise(resolve => setTimeout(resolve, 1500)); // Aguarda 1.5 segundos antes de tentar novamente
+              }
+            }
+          } else {
+            console.log('Permissão de notificação não concedida.');
+          }
+        } catch (err) {
+          console.error('Erro ao solicitar permissão de notificação:', err);
+        }
+      } else {
+        console.warn('Firebase Messaging não é suportado neste navegador ou Service Worker não está disponível.');
+      }
+    };
+
+    initializeFCM();
+  }, [messagingInitialized, currentUser]);
+
+  return null;
 };
 
 export default App;
