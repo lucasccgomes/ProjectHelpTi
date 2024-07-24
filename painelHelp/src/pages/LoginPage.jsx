@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import logo from '../assets/logo.png';
 import OfflineNotice from '../components/OffLineNotice/OfflineNotice';
-import { IoLogoAndroid } from "react-icons/io";
+import { IoLogoAndroid, IoDesktopSharp } from 'react-icons/io5';
+import { isDesktop } from 'react-device-detect';
 
 const LoginPage = () => {
   const [username, setUsername] = useState('');
@@ -17,14 +18,14 @@ const LoginPage = () => {
     const handleBeforeInstallPrompt = (e) => {
       e.preventDefault();
       setInstallPrompt(e);
-      console.log("beforeinstallprompt event captured");  // Debugging
+      console.log("beforeinstallprompt event captured");
     };
 
     const checkInstalledStatus = async () => {
       if ('getInstalledRelatedApps' in navigator) {
         const relatedApps = await navigator.getInstalledRelatedApps();
         setIsInstalled(relatedApps.length > 0);
-        console.log("Installed apps:", relatedApps);  // Debugging
+        console.log("Installed apps:", relatedApps);
       }
     };
 
@@ -55,10 +56,26 @@ const LoginPage = () => {
 
     try {
       await login(username, password);
+      requestNotificationPermission(); // Solicitar permissão de notificação após login
       navigate('/');
     } catch (error) {
       console.error('Erro ao fazer login:', error);
       alert('Usuário ou senha incorretos');
+    }
+  };
+
+  const requestNotificationPermission = async () => {
+    if ('Notification' in window) {
+      try {
+        const status = await Notification.requestPermission();
+        if (status === 'granted') {
+          console.log('Permissão de notificação concedida.');
+        } else {
+          console.log('Permissão de notificação não concedida.');
+        }
+      } catch (error) {
+        console.error('Erro ao solicitar permissão de notificação:', error);
+      }
     }
   };
 
@@ -116,11 +133,16 @@ const LoginPage = () => {
 
         {!isInstalled && installPrompt && (
           <button
-            onClick={handleInstallClick}
-            className="mt-4 w-full p-2 rounded-md flex justify-center items-center text-white bg-green-600 hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
-          >
-            <IoLogoAndroid className='text-xl' />&nbsp;Instalar App
-          </button>
+          onClick={handleInstallClick}
+          className="mt-4 w-full p-2 rounded-md flex justify-center items-center text-white bg-green-600 hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
+        >
+          {isDesktop ? (
+            <IoDesktopSharp className='text-xl' />
+          ) : (
+            <IoLogoAndroid className='text-xl' />
+          )}
+          &nbsp;Instalar App
+        </button>
         )}
       </div>
       <OfflineNotice />

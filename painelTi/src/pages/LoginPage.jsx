@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import logo from '../assets/logo.png';
-import { IoLogoAndroid } from "react-icons/io";
+import { IoLogoAndroid, IoDesktopSharp } from 'react-icons/io5';
+import { isDesktop } from 'react-device-detect';
 import OfflineNotice from '../components/OffLineNotice/OfflineNotice';
 
 const LoginPage = () => {
@@ -19,7 +20,7 @@ const LoginPage = () => {
     });
 
     return () => {
-      window.removeEventListener('beforeinstallprompt', () => {});
+      window.removeEventListener('beforeinstallprompt', () => { });
     };
   }, []);
 
@@ -86,19 +87,24 @@ const LoginPage = () => {
           <div className="flex items-center justify-between">
             <button
               type="submit"
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+              className="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
             >
               Login
             </button>
           </div>
         </form>
         {deferredPrompt && (
-         <button
-         onClick={handleInstallClick}
-         className="mt-4 w-full p-2 rounded-md flex justify-center items-center text-white bg-green-600 hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
-       >
-         <IoLogoAndroid className='text-xl' />&nbsp;Instalar App
-       </button>
+          <button
+            onClick={handleInstallClick}
+            className="mt-4 w-full p-2 rounded-md flex justify-center items-center text-white bg-green-600 hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
+          >
+            {isDesktop ? (
+              <IoDesktopSharp className='text-xl' />
+            ) : (
+              <IoLogoAndroid className='text-xl' />
+            )}
+            &nbsp;Instalar App
+          </button>
         )}
       </div>
       <OfflineNotice />
