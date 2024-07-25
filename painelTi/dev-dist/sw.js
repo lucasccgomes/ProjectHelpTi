@@ -67,7 +67,7 @@ if (!self.define) {
     });
   };
 }
-define(['./workbox-07658ed7'], (function (workbox) { 'use strict';
+define(['./workbox-95dee3cf'], (function (workbox) { 'use strict';
 
   importScripts("/firebase-messaging-sw.js");
   self.skipWaiting();
@@ -83,7 +83,7 @@ define(['./workbox-07658ed7'], (function (workbox) { 'use strict';
     "revision": "3ca0b8505b4bec776b69afdba2768812"
   }, {
     "url": "/",
-    "revision": "0.6r01439qs8o"
+    "revision": "0.ihugsvhnag8"
   }], {});
   workbox.cleanupOutdatedCaches();
   workbox.registerRoute(new workbox.NavigationRoute(workbox.createHandlerBoundToURL("/"), {
@@ -108,6 +108,13 @@ define(['./workbox-07658ed7'], (function (workbox) { 'use strict';
     plugins: [new workbox.ExpirationPlugin({
       maxEntries: 10,
       maxAgeSeconds: 31536000
+    })]
+  }), 'GET');
+  workbox.registerRoute(/\/.*\.(?:js|css|html|png|jpg|jpeg|svg|gif)/, new workbox.NetworkFirst({
+    "cacheName": "static-resources",
+    plugins: [new workbox.ExpirationPlugin({
+      maxEntries: 50,
+      maxAgeSeconds: 2592000
     })]
   }), 'GET');
 

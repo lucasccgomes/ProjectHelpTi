@@ -1,3 +1,4 @@
+//firebase-messaging-sw.js
 importScripts('https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/9.1.3/firebase-messaging-compat.js');
 
@@ -9,7 +10,6 @@ firebase.initializeApp({
   messagingSenderId: "987449578842",
   appId: "1:987449578842:web:b1e11a7e97b5af905b8f63"
 });
-
 
 const messaging = firebase.messaging();
 

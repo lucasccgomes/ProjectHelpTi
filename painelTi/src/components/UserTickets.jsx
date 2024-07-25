@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { collection, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
 import Modal from 'react-modal';
 import { db } from '../firebase';
@@ -9,6 +9,7 @@ import { MdReportProblem, MdOutlineReportProblem } from "react-icons/md";
 import { CiNoWaitingSign } from "react-icons/ci";
 import { LuImageOff } from "react-icons/lu";
 import "react-responsive-carousel/lib/styles/carousel.min.css";
+import NotificationHandler from '../components/NotificationHandler/NotificationHandler';
 
 Modal.setAppElement('#root');
 
@@ -28,41 +29,44 @@ const UserTickets = () => {
   const [checkboxes, setCheckboxes] = useState([]);
   const [newCheckbox, setNewCheckbox] = useState('');
   const [checkproblema, setCheckproblema] = useState([]);
+  const [notificationTicket, setNotificationTicket] = useState(null);
+  const [newStatus, setNewStatus] = useState('');
+  const sentNotifications = useRef(new Set()); // Ref para armazenar notificações enviadas
+
+  const handleCheckboxChange = (event) => {
+    const { value, checked } = event.target;
+    if (checked) {
+      setCheckproblema([...checkproblema, value]);
+    } else {
+      setCheckproblema(checkproblema.filter(item => item !== value));
+    }
+  };
+
+  const addNewCheckbox = async () => {
+    if (newCheckbox) {
+      try {
+        const checkboxDocRef = doc(db, 'ordersControl', 'checkbox');
+        const docSnapshot = await getDoc(checkboxDocRef);
+
+        let updatedCheckboxes = [];
+        if (docSnapshot.exists()) {
+          const data = docSnapshot.data();
+          updatedCheckboxes = data.checkProblemas ? [...data.checkProblemas, newCheckbox] : [newCheckbox];
+        } else {
+          updatedCheckboxes = [newCheckbox];
+        }
+
+        await updateDoc(checkboxDocRef, { checkProblemas: updatedCheckboxes });
+
+        setCheckboxes(updatedCheckboxes);
+        setNewCheckbox('');
+      } catch (error) {
+        console.error('Erro ao adicionar novo checkbox:', error);
+      }
+    }
+  };
 
   useEffect(() => {
-    const handleCheckboxChange = (event) => {
-      const { value, checked } = event.target;
-      if (checked) {
-        setCheckproblema([...checkproblema, value]);
-      } else {
-        setCheckproblema(checkproblema.filter(item => item !== value));
-      }
-    };
-
-    const addNewCheckbox = async () => {
-      if (newCheckbox) {
-        try {
-          const checkboxDocRef = doc(db, 'ordersControl', 'checkbox');
-          const docSnapshot = await getDoc(checkboxDocRef);
-
-          let updatedCheckboxes = [];
-          if (docSnapshot.exists()) {
-            const data = docSnapshot.data();
-            updatedCheckboxes = data.checkProblemas ? [...data.checkProblemas, newCheckbox] : [newCheckbox];
-          } else {
-            updatedCheckboxes = [newCheckbox];
-          }
-
-          await updateDoc(checkboxDocRef, { checkProblemas: updatedCheckboxes });
-
-          setCheckboxes(updatedCheckboxes);
-          setNewCheckbox('');
-        } catch (error) {
-          console.error('Erro ao adicionar novo checkbox:', error);
-        }
-      }
-    };
-
     const fetchCheckboxes = async () => {
       try {
         const checkboxDocRef = doc(db, 'ordersControl', 'checkbox');
@@ -148,11 +152,16 @@ const UserTickets = () => {
     try {
       const ticketDocRef = doc(db, 'chamados', 'aberto', 'tickets', id);
       await updateDoc(ticketDocRef, { status, descricaoFinalizacao, checkproblema });
+      const updatedTicket = tickets.find(ticket => ticket.id === id);
       setTickets(prevTickets =>
         prevTickets.map(ticket =>
           ticket.id === id ? { ...ticket, status, descricaoFinalizacao, checkproblema } : ticket
         )
       );
+      if (status === 'Andamento') {
+        setNotificationTicket(updatedTicket);
+        setNewStatus(status);
+      }
       setSelectedTicket(null);
       setFinalizadoDescricao('');
       setCheckproblema([]);
@@ -188,6 +197,16 @@ const UserTickets = () => {
 
   return (
     <div className="p-4 w-full flex flex-col justify-center items-center">
+      {notificationTicket && !sentNotifications.current.has(notificationTicket.id) && (
+        <NotificationHandler 
+          user={{ user: notificationTicket.user, cidade: notificationTicket.cidade }} 
+          message={{ title: notificationTicket.order, body: `Status alterado para ${newStatus}` }} 
+          onSent={() => {
+            console.log(`Notificação enviada para o ticket ${notificationTicket.id}`);
+            sentNotifications.current.add(notificationTicket.id);
+          }} // Adiciona o ID ao set após envio
+        />
+      )}
       <div className='flex flex-col lg:flex-row gap-4 mb-4'>
         <h2 className="text-2xl font-bold">Chamados</h2>
         <div className=''>
@@ -311,14 +330,14 @@ const UserTickets = () => {
                     <div className='bg-orange-100 mb-1 rounded-md'>
                       {ticket.checkproblema && ticket.checkproblema.length > 0 ? (
                         <ul>
-
                           {ticket.checkproblema.map((checkbox, index) => (
                             <li key={index} className='flex justify-center items-center font-bold'><MdOutlineReportProblem />{checkbox}</li>
                           ))}
                         </ul>
                       ) : (
                         <p className='flex justify-center items-center'><CiNoWaitingSign />Aguardando</p>
-                      )}</div>
+                      )}
+                    </div>
                     {ticket.descricaoFinalizacao ? (
                       <div className='bg-blue-100 pt-0 px-2 pb-1 rounded-md '>
                         <p className='text-center font-bold'>Conclusão</p>
@@ -326,7 +345,6 @@ const UserTickets = () => {
                           {ticket.descricaoFinalizacao}
                         </p>
                       </div>
-
                     ) : (
                       <div className='bg-red-100 pt-0 px-2 pb-1 rounded-md '>
                         <p className='text-center font-bold'>Conclusão</p>
@@ -334,8 +352,7 @@ const UserTickets = () => {
                           Aguardando
                         </p>
                       </div>
-                    )
-                    }
+                    )}
                     <div className="flex flex-col gap-2 mt-2">
                       <div className=''>
                         <button

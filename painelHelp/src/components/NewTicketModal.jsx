@@ -47,7 +47,7 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
 
   const sendNotification = async (tokens, notification) => {
     try {
-      await fetch('https://83c4-2804-1784-30b3-6700-4540-4ef3-8fee-3bf2.ngrok-free.app/send-notification', {
+      await fetch('https://8404-170-233-64-252.ngrok-free.app/send-notification', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
