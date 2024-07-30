@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import UserTickets from '../components/UserTickets';
+import UserTickets from '../components/UserTickets/UserTickets';
 
 
 
