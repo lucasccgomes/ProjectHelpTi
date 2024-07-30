@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { collection, getDoc, doc, getDocs, setDoc, updateDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db } from '../firebase';
-import { useAuth } from '../context/AuthContext';
+import { db } from '../../firebase';
+import { useAuth } from '../../context/AuthContext';
 
 const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
   const { currentUser } = useAuth();
@@ -46,33 +46,47 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
   }, [currentUser]);
 
   const sendNotification = async (tokens, notification) => {
+    console.log('Tokens para envio de notificação:', tokens);
+    console.log('Dados da notificação:', notification);
     try {
-      await fetch('https://8404-170-233-64-252.ngrok-free.app/send-notification', {
+      const response = await fetch('https://f022-2804-1784-30b3-6700-fc2d-cc1b-c8a7-66e9.ngrok-free.app/send-notification', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ tokens, notification })
+        body: JSON.stringify({
+          tokens,
+          notification: {
+            title: notification.title,
+            body: notification.body,
+            click_action: notification.click_action,
+            icon: notification.icon
+          }
+        })
       });
+      const responseData = await response.json();
+      console.log('Resposta do servidor:', responseData);
+      console.log('Notificação enviada com sucesso.');
     } catch (error) {
       console.error('Erro ao enviar notificação:', error);
     }
   };
+  
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-
+  
     if (!localProblema) {
       setModalMessage('Por favor, selecione o local do problema.');
       setLoading(false);
       return;
     }
-
+  
     try {
       const orderControlRef = doc(db, 'ordersControl', 'orders');
       const orderControlSnap = await getDoc(orderControlRef);
-
+  
       let nextOrder = 'A001';
       if (orderControlSnap.exists()) {
         const lastOrderArray = orderControlSnap.data().ordersNumber;
@@ -84,7 +98,7 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
           const newLetter = String.fromCharCode(nextOrderLetter.charCodeAt(0) + 1);
           nextOrder = 'Chamado' + newLetter + '001';
         }
-
+  
         await updateDoc(orderControlRef, {
           ordersNumber: [nextOrder]
         });
@@ -93,7 +107,7 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
           ordersNumber: [nextOrder]
         });
       }
-
+  
       // Upload de imagens
       const imageUrls = [];
       for (let i = 0; i < images.length; i++) {
@@ -103,7 +117,7 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
         const url = await getDownloadURL(snapshot.ref);
         imageUrls.push(url);
       }
-
+  
       const newTicket = {
         cidade: userDetails.cidade,
         data: new Date(),
@@ -117,16 +131,16 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
         localProblema: localProblema,
         whatsapp: userDetails.whatsapp
       };
-
+  
       const newTicketRef = doc(db, 'chamados', 'aberto', 'tickets', nextOrder);
       await setDoc(newTicketRef, newTicket);
-
+  
       addTicket({ id: nextOrder, ...newTicket });
-
+  
       // Coletar tokens dos usuários com cargo "T.I"
       const usersRef = collection(db, 'usuarios');
       const citiesSnapshot = await getDocs(usersRef);
-
+  
       const tokens = [];
       citiesSnapshot.forEach((cityDoc) => {
         const cityData = cityDoc.data();
@@ -137,14 +151,18 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
           }
         });
       });
-
+  
+      console.log('Tokens coletados:', tokens);
+  
       const notification = {
         title: nextOrder,
-        body: description
+        body: description,
+        click_action: "https://admhelpti.netlify.app/",
+        icon: "https://iili.io/duTTt8Q.png"
       };
-
+  
       await sendNotification(tokens, notification);
-
+  
       setDescription('');
       setAttempt('');
       setLocalProblema('');
@@ -156,6 +174,7 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
       setLoading(false);
     }
   };
+  
 
   const handleImageChange = (e) => {
     if (e.target.files.length + images.length > 4) {

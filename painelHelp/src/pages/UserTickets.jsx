@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
-import NewTicketModal from '../components/NewTicketModal';
+import NewTicketModal from '../components/NewTicketModal/NewTicketModal';
 import { FaCity, FaUser, FaStoreAlt } from "react-icons/fa";
 import { MdReportProblem, MdHelp } from "react-icons/md";
 import { Carousel } from 'react-responsive-carousel';
 import "react-responsive-carousel/lib/styles/carousel.min.css";
 import Dropdown from '../components/Dropdown/Dropdown';
+import NotificationModal from '../components/NotificationModal/NotificationModal';
 
 const UserTickets = () => {
   const { currentUser } = useAuth();
@@ -15,9 +16,8 @@ const UserTickets = () => {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [slidesToShow, setSlidesToShow] = useState(3);
-  const [statusFilter, setStatusFilter] = useState('Aberto');
+  const [statusFilter, setStatusFilter] = useState('Todos');
   const [showArrows, setShowArrows] = useState(false);
-
 
   const getStatusClass = (status) => {
     switch (status) {
@@ -35,17 +35,15 @@ const UserTickets = () => {
   };
 
   useEffect(() => {
-    const fetchTickets = async () => {
-      try {
-        let abertoRef = collection(db, 'chamados', 'aberto', 'tickets');
-        let q = query(abertoRef, where('user', '==', currentUser));
+    const fetchTickets = () => {
+      let abertoRef = collection(db, 'chamados', 'aberto', 'tickets');
+      let q = query(abertoRef, where('user', '==', currentUser.user));
 
-        if (statusFilter !== 'Todos') {
-          q = query(abertoRef, where('user', '==', currentUser), where('status', '==', statusFilter));
-        }
+      if (statusFilter !== 'Todos') {
+        q = query(abertoRef, where('user', '==', currentUser.user), where('status', '==', statusFilter));
+      }
 
-        const querySnapshot = await getDocs(q);
-
+      const unsubscribe = onSnapshot(q, (querySnapshot) => {
         const ticketsData = querySnapshot.docs.map(doc => {
           const data = doc.data();
           return {
@@ -57,16 +55,18 @@ const UserTickets = () => {
 
         setTickets(ticketsData);
         setLoading(false);
-      } catch (error) {
+      }, (error) => {
         console.error('Erro ao buscar chamados:', error);
         setLoading(false);
-      }
+      });
+
+      return () => unsubscribe();
     };
 
-    if (currentUser) {
+    if (currentUser.user) {
       fetchTickets();
     }
-  }, [currentUser, statusFilter]);
+  }, [currentUser.user, statusFilter]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -84,7 +84,13 @@ const UserTickets = () => {
   }, []);
 
   const addTicket = (ticket) => {
-    setTickets((prevTickets) => [ticket, ...prevTickets]);
+    setTickets((prevTickets) => {
+      const isTicketAlreadyAdded = prevTickets.some(prevTicket => prevTicket.id === ticket.id);
+      if (!isTicketAlreadyAdded) {
+        return [ticket, ...prevTickets];
+      }
+      return prevTickets;
+    });
   };
 
   if (loading) {
@@ -177,6 +183,7 @@ const UserTickets = () => {
           </Carousel>
         </div>
       )}
+      <NotificationModal />
     </div>
   );
 };

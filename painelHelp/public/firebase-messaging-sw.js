@@ -1,4 +1,3 @@
-//firebase-messaging-sw.js
 importScripts('https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/9.1.3/firebase-messaging-compat.js');
 
@@ -15,11 +14,17 @@ const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
   console.log('Recebido mensagem em background ', payload);
+  
   const notificationTitle = payload.notification.title;
   const notificationOptions = {
     body: payload.notification.body,
     icon: payload.notification.icon || '/icon/android-launchericon-144-144.png'
   };
 
-  self.registration.showNotification(notificationTitle, notificationOptions);
+  self.registration.getNotifications().then(notifications => {
+    let alreadyShown = notifications.some(notification => notification.title === notificationTitle);
+    if (!alreadyShown) {
+      self.registration.showNotification(notificationTitle, notificationOptions);
+    }
+  });
 });
