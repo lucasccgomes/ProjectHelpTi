@@ -64,7 +64,7 @@ const LoginPage = () => {
     }
   };
 
-  const requestNotificationPermission = async () => {
+ const requestNotificationPermission = async () => {
     if ('Notification' in window) {
       try {
         const status = await Notification.requestPermission();
@@ -77,7 +77,7 @@ const LoginPage = () => {
         console.error('Erro ao solicitar permissão de notificação:', error);
       }
     }
-  };
+  }; 
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100">
