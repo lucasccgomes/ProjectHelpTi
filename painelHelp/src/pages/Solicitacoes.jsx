@@ -9,6 +9,7 @@ import { useTransition, animated } from '@react-spring/web';
 import AlertModal from '../components/AlertModal/AlertModal';
 import { IoClose } from "react-icons/io5";
 import Dropdown from '../components/Dropdown/Dropdown';
+import NotificationModal from '../components/NotificationModal/NotificationModal';
 
 const Solicitacao = () => {
   const { currentUser, currentUserRole } = useAuth();
@@ -114,8 +115,8 @@ const Solicitacao = () => {
         tipo,
         nomeItem,
         motivo,
-        whatsapp,
-        user: currentUser,
+        whatsapp: currentUser.whatsapp,
+        user: currentUser.user,
         cargo: currentUserRole,
         cidade: selectedCidade,
         loja: selectedLoja,
@@ -338,6 +339,7 @@ const Solicitacao = () => {
       <div className="">
         <ListaSolicitacoes statusFilter={statusFilter} />
       </div>
+      <NotificationModal />
     </div>
   );
 };
