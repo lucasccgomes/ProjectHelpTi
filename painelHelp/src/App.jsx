@@ -1,4 +1,3 @@
-// App.jsx
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Navbar from './components/NavBar/NavBar';
@@ -10,8 +9,9 @@ import UserTickets from './pages/UserTickets';
 import Solicitacao from './pages/Solicitacoes';
 import NoPermission from './pages/NoPermission';
 import AssignTasksPage from './pages/AssignTaskPage';
-import { messaging, getToken, db, isSupported } from './firebase'; // Ajuste o caminho conforme necessário
+import { messaging, getToken, db, isSupported } from './firebase';
 import { doc, updateDoc } from 'firebase/firestore';
+import TimeClock from './pages/TimeClock';
 
 const App = () => {
   return (
@@ -22,39 +22,12 @@ const App = () => {
             <>
               {isAuthenticated && <Navbar currentUser={currentUser} />}
               <Routes>
-                <Route
-                  path="/"
-                  element={
-                    <ProtectedRoute>
-                      <HomePage />
-                    </ProtectedRoute>
-                  }
-                />
+                <Route path="/" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
                 <Route path="/login" element={<LoginPage />} />
-                <Route
-                  path="/usertickets"
-                  element={
-                    <ProtectedRoute>
-                      <UserTickets />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/solicitacao"
-                  element={
-                    <ProtectedRoute allowedRoles={['Gerente', 'Supervisor', 'T.I']}>
-                      <Solicitacao />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/atribute"
-                  element={
-                    <ProtectedRoute>
-                      <AssignTasksPage />
-                    </ProtectedRoute>
-                  }
-                />
+                <Route path="/usertickets" element={<ProtectedRoute><UserTickets /></ProtectedRoute>} />
+                <Route path="/solicitacao" element={<ProtectedRoute allowedRoles={['T.I']}><Solicitacao /></ProtectedRoute>} />
+                <Route path="/atribute" element={<ProtectedRoute allowedRoles={['T.I']}><AssignTasksPage /></ProtectedRoute>} />
+                <Route path="/horacerta" element={<ProtectedRoute><TimeClock /></ProtectedRoute>} />
                 <Route path="/nopermission" element={<NoPermission />} />
               </Routes>
               {isAuthenticated && <FCMHandler currentUser={currentUser} />}
@@ -94,7 +67,7 @@ const FCMHandler = ({ currentUser }) => {
                       clearInterval(interval);
                       resolve();
                     }
-                  }, 100); // Verifica a cada 100ms
+                  }, 100);
                 }
               });
             };
@@ -148,7 +121,7 @@ const FCMHandler = ({ currentUser }) => {
                 console.error('Erro ao obter o token FCM:', err);
               }
               if (!tokenCaptured) {
-                await new Promise(resolve => setTimeout(resolve, 1500)); // Aguarda 1.5 segundos antes de tentar novamente
+                await new Promise(resolve => setTimeout(resolve, 1500));
               }
             }
           } else {
