@@ -1,0 +1,19 @@
+.ticket-item {
+  max-width: 300px; /* Defina uma largura máxima adequada */
+  margin: auto; /* Centraliza o item */
+  text-align: left; /* Alinha o texto à esquerda */
+}
+
+.swiper {
+  padding: 20px;
+}
+
+.swiper-slide {
+  display: flex;
+  justify-content: center; /* Centraliza os itens no carrossel */
+  align-items: center;
+}
+
+.swiper-pagination-bullets {
+  bottom: -30px; /* Ajusta a posição dos pontos de navegação */
+}
