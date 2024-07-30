@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from 'react-router-dom';
 import { MdHelp } from "react-icons/md";
-import { FaBars, FaTimes, FaUserCircle, FaHome, FaSignOutAlt, FaSignInAlt, FaChevronDown, FaChevronRight } from 'react-icons/fa';
+import { FaBars, FaTimes, FaTasks, FaUserCircle, FaHome, FaSignOutAlt, FaSignInAlt, FaChevronDown, FaChevronRight, FaClock } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext';
 import OfflineNotice from '../OffLineNotice/OfflineNotice';
-import { IoLogoAndroid } from "react-icons/io";
+import { IoLogoAndroid, IoDesktopSharp } from 'react-icons/io5';
+import { isDesktop } from 'react-device-detect';
 
 const Navbar = ({ currentUser }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -21,6 +22,11 @@ const Navbar = ({ currentUser }) => {
       href: '/'
     },
     {
+      name: 'Hora Certa',
+      icon: FaClock,
+      href: '/horacerta'
+    },
+    {
       name: 'Suporte Ti',
       icon: MdHelp,
       subItems: [
@@ -30,7 +36,7 @@ const Navbar = ({ currentUser }) => {
     },
     {
       name: 'Tarefas',
-      icon: FaHome,
+      icon: FaTasks,
       href: '/atribute'
     },
   ];
@@ -90,13 +96,18 @@ const Navbar = ({ currentUser }) => {
       {/* Botão para abrir o menu lateral */}
       <div className="bg-primary w-full h-14 fixed flex items-center z-10 justify-end">
 
-        {!isInstalled && installPrompt && (
+      {!isInstalled && installPrompt && (
           <button
-            onClick={handleInstallClick}
-            className="p-2 rounded-md flex items-center text-white bg-green-600 hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white mr-auto ml-4"
-          >
-            <IoLogoAndroid className="text-xl"/>&nbsp;Instalar App
-          </button>
+          onClick={handleInstallClick}
+          className="p-2 rounded-md flex items-center text-white bg-green-600 hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white mr-auto ml-4"
+        >
+          {isDesktop ? (
+            <IoDesktopSharp className='text-xl' />
+          ) : (
+            <IoLogoAndroid className='text-xl' />
+          )}
+          &nbsp;Instalar App
+        </button>
         )}
         <button
           onClick={() => setIsOpen(!isOpen)}
