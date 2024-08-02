@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from 'react-router-dom';
 import { FaBars, FaTimes, FaHome, FaUsers, FaSignOutAlt, FaSignInAlt, FaUserCircle } from 'react-icons/fa';
+import { FaCodePullRequest } from "react-icons/fa6";
 import { MdOutlineBugReport } from "react-icons/md";
 import { IoPrintSharp } from "react-icons/io5";
 import { CgShutterstock } from "react-icons/cg";
@@ -17,6 +18,7 @@ const Navbar = ({ currentUser }) => {
     { name: 'Home', icon: FaHome, href: '/' },
     { name: 'Novo Usuario', icon: FaUsers, href: '/userform' },
     { name: 'Relatório', icon: MdOutlineBugReport, href: '/relatorio' },
+    { name: 'Solicitações', icon: FaCodePullRequest , href: '/solicitacao' },
     { name: 'Estoque', icon: CgShutterstock, href: '/estoque' },
     { name: 'Impressoras', icon: IoPrintSharp , href: '/impressora' },
   ];
