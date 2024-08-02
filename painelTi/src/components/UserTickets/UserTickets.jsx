@@ -30,8 +30,10 @@ const UserTickets = () => {
   const [newCheckbox, setNewCheckbox] = useState('');
   const [checkproblema, setCheckproblema] = useState([]);
   const [notificationTicket, setNotificationTicket] = useState(null);
-  const [newStatus, setNewStatus] = useState('');
   const sentNotifications = useRef(new Set()); // Ref para armazenar notificações enviadas
+
+  const [tratativaModalIsOpen, setTratativaModalIsOpen] = useState(false);
+  const [treatment, setTreatment] = useState('');
 
   const handleCheckboxChange = (event) => {
     const { value, checked } = event.target;
@@ -110,7 +112,7 @@ const UserTickets = () => {
   useEffect(() => {
     const fetchTickets = async () => {
       const abertoRef = collection(db, 'chamados', 'aberto', 'tickets');
-  
+
       const unsubscribe = onSnapshot(abertoRef, (querySnapshot) => {
         const ticketsData = querySnapshot.docs.map(doc => {
           const data = doc.data();
@@ -120,7 +122,7 @@ const UserTickets = () => {
             data: data.data.toDate()
           };
         });
-  
+
         const uniqueTickets = Array.from(new Map(ticketsData.map(ticket => [ticket.id, ticket])).values());
         setTickets(uniqueTickets);
         setLoading(false);
@@ -128,13 +130,13 @@ const UserTickets = () => {
         console.error('Erro ao buscar chamados:', error);
         setLoading(false);
       });
-  
+
       return () => unsubscribe();
     };
-  
+
     fetchTickets();
   }, []);
-  
+
 
   useEffect(() => {
     const handleResize = () => {
@@ -151,23 +153,23 @@ const UserTickets = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const updateTicketStatus = async (id, status, descricaoFinalizacao = '') => {
+  const updateTicketStatus = async (id, status, descricaoFinalizacao = '', treatment = '') => {
     try {
       const ticketDocRef = doc(db, 'chamados', 'aberto', 'tickets', id);
-      await updateDoc(ticketDocRef, { status, descricaoFinalizacao, checkproblema });
-  
+      await updateDoc(ticketDocRef, { status, descricaoFinalizacao, treatment, checkproblema });
+
       const updatedTicket = tickets.find(ticket => ticket.id === id);
       setTickets(prevTickets =>
         prevTickets.map(ticket =>
-          ticket.id === id ? { ...ticket, status, descricaoFinalizacao, checkproblema } : ticket
+          ticket.id === id ? { ...ticket, status, descricaoFinalizacao, treatment, checkproblema } : ticket
         )
       );
-  
+
       // Enviar notificação se o status for atualizado para 'Andamento' ou 'Finalizado'
       if (status === 'Andamento' || status === 'Finalizado') {
         const userDocRef = doc(db, 'usuarios', updatedTicket.cidade);
         const userDocSnap = await getDoc(userDocRef);
-  
+
         if (userDocSnap.exists()) {
           const userData = userDocSnap.data()[updatedTicket.user];
           if (userData && userData.token) {
@@ -177,8 +179,8 @@ const UserTickets = () => {
               click_action: "https://drogalira.com.br/usertickets",
               icon: "https://iili.io/duTTt8Q.png"
             };
-  
-            const response = await fetch('https://f022-2804-1784-30b3-6700-fc2d-cc1b-c8a7-66e9.ngrok-free.app/send-notification', {
+
+            const response = await fetch('https://8bef-2804-1784-30b3-6700-a555-89b1-9fd5-7d87.ngrok-free.app/send-notification', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json'
@@ -195,9 +197,10 @@ const UserTickets = () => {
           console.error('Documento do usuário não encontrado.');
         }
       }
-  
+
       setSelectedTicket(null);
       setFinalizadoDescricao('');
+      setTreatment('');
       setCheckproblema([]);
     } catch (error) {
       console.error('Erro ao atualizar status do chamado:', error);
@@ -229,12 +232,32 @@ const UserTickets = () => {
 
   const renderedTicketIds = new Set();
 
+  const openTratativaModal = (ticket) => {
+    setSelectedTicket(ticket);
+    setTreatment(ticket.treatment || '');  // Adiciona esta linha para definir o estado treatment com o valor atual do tratamento
+    setTratativaModalIsOpen(true);
+  };
+
+
+  const closeTratativaModal = () => {
+    setSelectedTicket(null);
+    setTratativaModalIsOpen(false);
+  };
+
+  const openFinalizarModal = (ticket) => {
+    setSelectedTicket(ticket);
+  };
+
+  const closeFinalizarModal = () => {
+    setSelectedTicket(null);
+  };
+
   return (
     <div className="p-4 w-full flex flex-col justify-center items-center">
       {notificationTicket && !sentNotifications.current.has(notificationTicket.id) && (
-        <NotificationHandler 
-          user={{ user: notificationTicket.user, cidade: notificationTicket.cidade }} 
-          message={{ title: notificationTicket.order, body: `Status alterado para ${newStatus}` }} 
+        <NotificationHandler
+          user={{ user: notificationTicket.user, cidade: notificationTicket.cidade }}
+          message={{ title: notificationTicket.order, body: `Status alterado para ${newStatus}` }}
           onSent={() => {
             console.log(`Notificação enviada para o ticket ${notificationTicket.id}`);
             sentNotifications.current.add(notificationTicket.id);
@@ -372,20 +395,31 @@ const UserTickets = () => {
                         <p className='flex justify-center items-center'><CiNoWaitingSign />Aguardando</p>
                       )}
                     </div>
-                    {ticket.descricaoFinalizacao ? (
+                    {ticket.treatment ? (
                       <div className='bg-blue-100 pt-0 px-2 pb-1 rounded-md '>
-                        <p className='text-center font-bold'>Conclusão</p>
+                        <p className='text-center font-bold'>Tratativa</p>
                         <p className=' overflow-y-auto break-words max-h-14 min-h-14' >
-                          {ticket.descricaoFinalizacao}
+                          {ticket.treatment}
                         </p>
                       </div>
                     ) : (
-                      <div className='bg-red-100 pt-0 px-2 pb-1 rounded-md '>
-                        <p className='text-center font-bold'>Conclusão</p>
-                        <p className=' overflow-y-auto break-words max-h-14 min-h-14' >
-                          Aguardando
-                        </p>
-                      </div>
+                      <>
+                        {ticket.descricaoFinalizacao ? (
+                          <div className='bg-blue-100 pt-0 px-2 pb-1 rounded-md '>
+                            <p className='text-center font-bold'>Conclusão</p>
+                            <p className=' overflow-y-auto break-words max-h-14 min-h-14' >
+                              {ticket.descricaoFinalizacao}
+                            </p>
+                          </div>
+                        ) : (
+                          <div className='bg-red-100 pt-0 px-2 pb-1 rounded-md '>
+                            <p className='text-center font-bold'>Conclusão</p>
+                            <p className=' overflow-y-auto break-words max-h-14 min-h-14' >
+                              Aguardando
+                            </p>
+                          </div>
+                        )}
+                      </>
                     )}
                     <div className="flex flex-col gap-2 mt-2">
                       <div className=''>
@@ -397,14 +431,14 @@ const UserTickets = () => {
                           Aberto
                         </button>
                         <button
-                          onClick={() => updateTicketStatus(ticket.id, 'Andamento')}
+                          onClick={() => openTratativaModal(ticket)}
                           className={`bg-orange-400 text-white px-4 py-2 rounded ${ticket.status === 'Finalizado' ? 'opacity-50 cursor-not-allowed' : ''} ${ticket.status === 'Andamento' ? 'bg-orange-600 ring-2 ring-white' : ''}`}
                           disabled={ticket.status === 'Finalizado'}
                         >
                           Andamento
                         </button>
                         <button
-                          onClick={() => setSelectedTicket(ticket)}
+                          onClick={() => openFinalizarModal(ticket)}
                           className={`bg-green-400 text-white px-4 py-2 rounded ml-2 ${ticket.status === 'Finalizado' ? 'opacity-50 cursor-not-allowed' : ''} ${ticket.status === 'Finalizado' ? 'bg-green-600 ring-2 ring-white' : ''}`}
                           disabled={ticket.status === 'Finalizado'}
                         >
@@ -428,8 +462,8 @@ const UserTickets = () => {
           </Carousel>
         </div>
       )}
-  
-      {selectedTicket && (
+
+      {selectedTicket && !tratativaModalIsOpen && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white p-4 rounded min-w-[300px]">
             <h2 className="text-xl mb-2 font-bold text-center">Finalizar Chamado</h2>
@@ -471,14 +505,14 @@ const UserTickets = () => {
               <button
                 onClick={() => {
                   updateTicketStatus(selectedTicket.id, 'Finalizado', finalizadoDescricao);
-                  setSelectedTicket(null);
+                  closeFinalizarModal();
                 }}
                 className="bg-green-500 text-white px-4 py-2 rounded"
               >
                 Salvar
               </button>
               <button
-                onClick={() => setSelectedTicket(null)}
+                onClick={closeFinalizarModal}
                 className="bg-gray-500 text-white px-4 py-2 rounded"
               >
                 Cancelar
@@ -487,7 +521,43 @@ const UserTickets = () => {
           </div>
         </div>
       )}
-  
+
+      {tratativaModalIsOpen && (
+        <Modal
+          isOpen={tratativaModalIsOpen}
+          onRequestClose={closeTratativaModal}
+          contentLabel="Tratativa"
+          className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50"
+        >
+          <div className="bg-white p-4 rounded min-w-[300px]">
+            <h2 className="text-xl mb-2 font-bold text-center">Tratativa</h2>
+            <textarea
+              className="border p-2 w-full mb-2"
+              rows="4"
+              value={treatment}
+              onChange={(e) => setTreatment(e.target.value)}
+              placeholder="Descreva a tratativa..."
+            ></textarea>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => {
+                  updateTicketStatus(selectedTicket.id, 'Andamento', '', treatment);
+                  closeTratativaModal();
+                }}
+                className="bg-green-500 text-white px-4 py-2 rounded"
+              >
+                Salvar
+              </button>
+              <button
+                onClick={closeTratativaModal}
+                className="bg-gray-500 text-white px-4 py-2 rounded"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
       <Modal
         isOpen={modalIsOpen}
         onRequestClose={closeImageModal}
@@ -517,7 +587,7 @@ const UserTickets = () => {
         </div>
       </Modal>
     </div>
-  );  
+  );
 };
 
 export default UserTickets;
