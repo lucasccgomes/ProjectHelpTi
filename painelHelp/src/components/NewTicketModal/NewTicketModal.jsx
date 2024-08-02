@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { collection, getDoc, doc, getDocs, setDoc, updateDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import Dropdown from '../Dropdown/Dropdown';
 import { db } from '../../firebase';
 import { useAuth } from '../../context/AuthContext';
 
@@ -13,7 +14,34 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
   const [localProblema, setLocalProblema] = useState('');
   const [modalMessage, setModalMessage] = useState('');
   const [images, setImages] = useState([]);
+  const [cities, setCities] = useState([]);
+  const [stores, setStores] = useState([]);
+  const [selectedCity, setSelectedCity] = useState('Todas');
+  const [selectedStore, setSelectedStore] = useState('Todas');
+
   const storage = getStorage();
+
+  useEffect(() => {
+    const fetchCitiesAndStores = async () => {
+      const citiesDoc = await getDoc(doc(db, 'ordersControl', 'cidades'));
+      if (citiesDoc.exists()) {
+        const citiesData = citiesDoc.data();
+        const cityNames = Object.keys(citiesData);
+
+        setCities(cityNames);
+
+        if (selectedCity && selectedCity !== 'Todas') {
+          setStores(citiesData[selectedCity] || []);
+        } else {
+          const allStores = cityNames.flatMap(city => citiesData[city] || []);
+          setStores(allStores);
+        }
+      }
+    };
+
+    fetchCitiesAndStores();
+  }, [selectedCity]);
+
 
   useEffect(() => {
     const fetchUserDetails = async () => {
@@ -49,7 +77,7 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
     console.log('Tokens para envio de notificação:', tokens);
     console.log('Dados da notificação:', notification);
     try {
-      const response = await fetch('https://f022-2804-1784-30b3-6700-fc2d-cc1b-c8a7-66e9.ngrok-free.app/send-notification', {
+      const response = await fetch('https://8bef-2804-1784-30b3-6700-a555-89b1-9fd5-7d87.ngrok-free.app/send-notification', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -71,22 +99,22 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
       console.error('Erro ao enviar notificação:', error);
     }
   };
-  
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-  
+
     if (!localProblema) {
       setModalMessage('Por favor, selecione o local do problema.');
       setLoading(false);
       return;
     }
-  
+
     try {
       const orderControlRef = doc(db, 'ordersControl', 'orders');
       const orderControlSnap = await getDoc(orderControlRef);
-  
+
       let nextOrder = 'A001';
       if (orderControlSnap.exists()) {
         const lastOrderArray = orderControlSnap.data().ordersNumber;
@@ -98,7 +126,7 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
           const newLetter = String.fromCharCode(nextOrderLetter.charCodeAt(0) + 1);
           nextOrder = 'Chamado' + newLetter + '001';
         }
-  
+
         await updateDoc(orderControlRef, {
           ordersNumber: [nextOrder]
         });
@@ -107,7 +135,7 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
           ordersNumber: [nextOrder]
         });
       }
-  
+
       // Upload de imagens
       const imageUrls = [];
       for (let i = 0; i < images.length; i++) {
@@ -117,13 +145,13 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
         const url = await getDownloadURL(snapshot.ref);
         imageUrls.push(url);
       }
-  
+
       const newTicket = {
-        cidade: userDetails.cidade,
+        cidade: currentUser.cargo === 'Supervisor' ? selectedCity : userDetails.cidade,
         data: new Date(),
         descricao: description,
         imgUrl: imageUrls,
-        loja: userDetails.loja,
+        loja: currentUser.cargo === 'Supervisor' ? selectedStore : userDetails.loja,
         order: nextOrder,
         status: 'Aberto',
         tentou: attempt,
@@ -131,16 +159,16 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
         localProblema: localProblema,
         whatsapp: userDetails.whatsapp
       };
-  
+
       const newTicketRef = doc(db, 'chamados', 'aberto', 'tickets', nextOrder);
       await setDoc(newTicketRef, newTicket);
-  
+
       addTicket({ id: nextOrder, ...newTicket });
-  
+
       // Coletar tokens dos usuários com cargo "T.I"
       const usersRef = collection(db, 'usuarios');
       const citiesSnapshot = await getDocs(usersRef);
-  
+
       const tokens = [];
       citiesSnapshot.forEach((cityDoc) => {
         const cityData = cityDoc.data();
@@ -151,18 +179,18 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
           }
         });
       });
-  
+
       console.log('Tokens coletados:', tokens);
-  
+
       const notification = {
         title: nextOrder,
         body: description,
         click_action: "https://admhelpti.netlify.app/",
         icon: "https://iili.io/duTTt8Q.png"
       };
-  
+
       await sendNotification(tokens, notification);
-  
+
       setDescription('');
       setAttempt('');
       setLocalProblema('');
@@ -174,7 +202,8 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
       setLoading(false);
     }
   };
-  
+
+
 
   const handleImageChange = (e) => {
     if (e.target.files.length + images.length > 4) {
@@ -188,11 +217,37 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
 
   return (
     <div className="fixed inset-0 z-40 pt-1 bg-black bg-opacity-50 flex items-center justify-center">
-      <div className="bg-white m-4 p-3 px-5 border-gray-400 border-2 rounded-xl shadow-lg ">
-        <h2 className="text-2xl font-bold mb-4">Novo Chamado</h2>
+      <div className="bg-white m-4  px-5 border-gray-400 border-2 rounded-xl shadow-lg ">
+        <h2 className="text-2xl font-bold mb-1">Novo Chamado</h2>
         <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="description">
+          {currentUser.cargo === 'Supervisor' && (
+            <div className='flex gap-2 text-center mb-2 bg-primary p-2 rounded-xl justify-center items-center'>
+              <div className="min-w-36">
+                <label className="block text-white text-sm font-bold mb-2">
+                  Cidade
+                </label>
+                <Dropdown
+                  label=""
+                  options={['Todas', ...cities]}
+                  selected={selectedCity}
+                  onSelectedChange={setSelectedCity}
+                />
+              </div>
+              <div className="min-w-28">
+                <label className="block text-white text-sm font-bold mb-2">
+                  Loja
+                </label>
+                <Dropdown
+                  label=""
+                  options={['Todas', ...stores]}
+                  selected={selectedStore}
+                  onSelectedChange={setSelectedStore}
+                />
+              </div>
+            </div>
+          )}
+          <div className="mb-3">
+            <label className="block text-gray-700 text-sm font-bold" htmlFor="description">
               Descrição
               <p className='text-gray-500 font-semibold'>
                 (descreva detalhadamente o problema.)
@@ -206,8 +261,8 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
               required
             />
           </div>
-          <div className="mb-6">
-            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="attempt">
+          <div className="mb-3">
+            <label className="block text-gray-700 text-sm font-bold" htmlFor="attempt">
               Tentativa
               <p className='text-gray-500 font-semibold'>
                 (Descreva as ações que você tomou para tentar resolver o problema)
@@ -221,8 +276,8 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
               required
             />
           </div>
-          <div className="mb-6">
-            <label className="block text-gray-700 text-sm font-bold mb-2 text-center">
+          <div className="mb-3">
+            <label className="block text-gray-700 text-sm font-bold mb-1 text-center">
               Local do Problema
             </label>
             <div className="flex gap-4 justify-center">
@@ -250,8 +305,8 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
             </div>
             {modalMessage && <p className="text-red-500 text-xs italic">{modalMessage}</p>}
           </div>
-          <div className="mb-6">
-            <label className="block text-gray-700 text-sm font-bold mb-2">
+          <div className="mb-3">
+            <label className="block text-gray-700 text-sm font-bold">
               Imagens
               <p className='text-gray-500 font-semibold'>
                 (Se possível, envie fotos do problema.)
@@ -272,17 +327,17 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
               </div>
             )}
           </div>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-2">
             <button
               type="button"
-              className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+              className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
               onClick={onClose}
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="bg-green-600 hover:bg-green-500 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+              className="bg-primary hover:bg-primaryOpaci text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
               disabled={loading}
             >
               {loading ? 'Enviando...' : 'Enviar'}
@@ -292,6 +347,7 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
       </div>
     </div>
   );
+
 };
 
 export default NewTicketModal;
