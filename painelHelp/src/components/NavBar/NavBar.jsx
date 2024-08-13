@@ -5,11 +5,12 @@ import { FaBars, FaTimes, FaTasks, FaUserCircle, FaHome, FaSignOutAlt, FaSignInA
 import { useAuth } from '../../context/AuthContext';
 import OfflineNotice from '../OffLineNotice/OfflineNotice';
 import { IoLogoAndroid, IoDesktopSharp } from 'react-icons/io5';
+import { FaCartShopping } from "react-icons/fa6";
 import { isDesktop } from 'react-device-detect';
 
 const Navbar = ({ currentUser }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [isSubMenuOpen, setIsSubMenuOpen] = useState(false);
+  const [openSubMenu, setOpenSubMenu] = useState(null);
   const [installPrompt, setInstallPrompt] = useState(null);
   const [isInstalled, setIsInstalled] = useState(false);
   const { isAuthenticated, logout } = useAuth();
@@ -32,6 +33,13 @@ const Navbar = ({ currentUser }) => {
       subItems: [
         { name: 'Chamados', href: '/usertickets' },
         { name: 'Solicitações', href: '/solicitacao' },
+      ]
+    },
+    {
+      name: 'Compras',
+      icon: FaCartShopping,
+      subItems: [
+        { name: 'Solicitações', href: '/solicitacompras' },
       ]
     },
     {
@@ -81,6 +89,7 @@ const Navbar = ({ currentUser }) => {
   const handleClickOutside = (event) => {
     if (navRef.current && !navRef.current.contains(event.target)) {
       setIsOpen(false);
+      setOpenSubMenu(null);
     }
   };
 
@@ -91,23 +100,26 @@ const Navbar = ({ currentUser }) => {
     };
   }, []);
 
+  const handleSubMenuClick = (index) => {
+    setOpenSubMenu(openSubMenu === index ? null : index);
+  };
+
   return (
     <div className="flex">
       {/* Botão para abrir o menu lateral */}
       <div className="bg-primary w-full h-14 fixed flex items-center z-10 justify-end">
-
-      {!isInstalled && installPrompt && (
+        {!isInstalled && installPrompt && (
           <button
-          onClick={handleInstallClick}
-          className="p-2 rounded-md flex items-center text-white bg-green-600 hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white mr-auto ml-4"
-        >
-          {isDesktop ? (
-            <IoDesktopSharp className='text-xl' />
-          ) : (
-            <IoLogoAndroid className='text-xl' />
-          )}
-          &nbsp;Instalar App
-        </button>
+            onClick={handleInstallClick}
+            className="p-2 rounded-md flex items-center text-white bg-green-600 hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white mr-auto ml-4"
+          >
+            {isDesktop ? (
+              <IoDesktopSharp className='text-xl' />
+            ) : (
+              <IoLogoAndroid className='text-xl' />
+            )}
+            &nbsp;Instalar App
+          </button>
         )}
         <button
           onClick={() => setIsOpen(!isOpen)}
@@ -139,7 +151,7 @@ const Navbar = ({ currentUser }) => {
             <FaUserCircle /> {currentUser ? currentUser.user : ''}
           </div>
           <div className="space-y-2">
-            {navItems.map((item) => (
+            {navItems.map((item, index) => (
               <div key={item.name}>
                 {!item.subItems ? (
                   <Link
@@ -153,17 +165,17 @@ const Navbar = ({ currentUser }) => {
                 ) : (
                   <div
                     className="flex justify-between items-center text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium cursor-pointer"
-                    onClick={() => setIsSubMenuOpen(prev => !prev)}
+                    onClick={() => handleSubMenuClick(index)}
                   >
                     <div className="flex items-center">
                       <item.icon className="mr-2" /> {item.name}
                     </div>
                     <div className="transition-transform duration-300">
-                      {isSubMenuOpen ? <FaChevronDown /> : <FaChevronRight />}
+                      {openSubMenu === index ? <FaChevronDown /> : <FaChevronRight />}
                     </div>
                   </div>
                 )}
-                {item.subItems && isSubMenuOpen && (
+                {item.subItems && openSubMenu === index && (
                   <div className="pl-8 space-y-1">
                     {item.subItems.map((subItem) => (
                       <Link
@@ -197,7 +209,7 @@ const Navbar = ({ currentUser }) => {
           </div>
         </div>
       </nav>
-      <OfflineNotice /> {/* Add the OfflineNotice component */}
+      <OfflineNotice />
     </div>
   );
 };
