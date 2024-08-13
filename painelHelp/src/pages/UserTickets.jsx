@@ -5,12 +5,13 @@ import { useAuth } from '../context/AuthContext';
 import NewTicketModal from '../components/NewTicketModal/NewTicketModal';
 import { FaCity, FaUser, FaStoreAlt, FaFilter } from "react-icons/fa";
 import { IoCalendarNumber } from "react-icons/io5";
-import { MdReportProblem, MdHelp } from "react-icons/md";
+import { MdReportProblem, MdHelp, MdToggleOff, MdToggleOn } from "react-icons/md";
 import { Carousel } from 'react-responsive-carousel';
 import "react-responsive-carousel/lib/styles/carousel.min.css";
 import Dropdown from '../components/Dropdown/Dropdown';
 import NotificationModal from '../components/NotificationModal/NotificationModal';
 import Modal from '../components/Modal/Modal';
+import { useSpring, animated } from '@react-spring/web';
 
 const UserTickets = () => {
   const { currentUser } = useAuth();
@@ -27,6 +28,7 @@ const UserTickets = () => {
   const [cities, setCities] = useState([]);
   const [stores, setStores] = useState([]);
   const [users, setUsers] = useState([]);
+  const [showStoreTickets, setShowStoreTickets] = useState(false);
 
   const getStatusClass = (status) => {
     switch (status) {
@@ -93,10 +95,20 @@ const UserTickets = () => {
         if (storeFilter !== 'Todas') q = query(q, where('loja', '==', storeFilter));
         if (userFilter !== 'Todos') q = query(q, where('user', '==', userFilter));
         if (statusFilter !== 'Todos') q = query(q, where('status', '==', statusFilter));
+        console.log("Supervisor query:", q);
       } else {
-        q = query(abertoRef, where('user', '==', currentUser.user));
-        if (statusFilter !== 'Todos') {
-          q = query(q, where('status', '==', statusFilter));
+        if (showStoreTickets) {
+          q = query(abertoRef, where('loja', '==', currentUser.loja));
+          if (statusFilter !== 'Todos') {
+            q = query(q, where('status', '==', statusFilter));
+          }
+          console.log("User with store tickets query:", q);
+        } else {
+          q = query(abertoRef, where('user', '==', currentUser.user));
+          if (statusFilter !== 'Todos') {
+            q = query(q, where('status', '==', statusFilter));
+          }
+          console.log("User tickets query:", q);
         }
       }
 
@@ -112,6 +124,7 @@ const UserTickets = () => {
 
         setTickets(ticketsData);
         setLoading(false);
+        console.log("Fetched tickets:", ticketsData);
       }, (error) => {
         console.error('Erro ao buscar chamados:', error);
         setLoading(false);
@@ -123,7 +136,7 @@ const UserTickets = () => {
     if (currentUser.user) {
       fetchTickets();
     }
-  }, [currentUser, statusFilter, cityFilter, storeFilter, userFilter]);
+  }, [currentUser, statusFilter, cityFilter, storeFilter, userFilter, showStoreTickets]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -150,15 +163,35 @@ const UserTickets = () => {
     });
   };
 
+  const toggleSpring = useSpring({
+    config: { tension: 100, friction: 52 },
+  });
+
   if (loading) {
     return <div>Loading...</div>;
   }
 
   return (
-    <div className="p-4 w-full pt-20 flex flex-col justify-center items-center text-gray-700">
-      <div className='flex flex-col lg:flex-row gap-4 w-full items-center mb-4'>
-        <h2 className="text-2xl w-full font-bold mb-1 text-center lg:text-end text-gray-700">Meus Chamados</h2>
-        <div className="flex w-full items-center lg:justify-start justify-center gap-2 ">
+    <div className="p-4 w-full pt-12 flex lg:pt-20 flex-col justify-center items-center text-gray-700">
+      {currentUser.cargo !== 'Supervisor' && (
+        <div className='w-full flex'>
+          <div className='flex items-center px-1 text-white rounded-b-xl bg-primary lg:hidden'>
+            <animated.button
+              style={toggleSpring}
+              className={`flex items-center ${showStoreTickets ? '' : ''} hover:bg-${showStoreTickets ? 'green-500' : 'gray-500'} text-white font-bold ml-4`}
+              onClick={() => setShowStoreTickets(!showStoreTickets)}
+            >
+              {showStoreTickets ?
+                <MdToggleOn className='text-6xl text-green-500' /> : <MdToggleOff className='text-6xl text-red-500' />}
+            </animated.button>
+            <p className='mr-1'> Todos da {currentUser.loja}</p>
+          </div>
+        </div>
+      )}
+      <div className='flex flex-col lg:flex-row lg:gap-4 w-full items-center mb-4 mt-4 lg:mt-0'>
+
+        <h2 className="text-2xl w-full font-bold text-center lg:text-end text-gray-700">Meus Chamados</h2>
+        <div className="flex w-full items-center lg:justify-start justify-center gap-2">
           <button
             className=" bg-primary flex justify-center items-center hover:bg-secondary text-white font-bold py-2 px-4 rounded"
             onClick={() => setIsModalOpen(true)}
@@ -171,17 +204,29 @@ const UserTickets = () => {
           >
             <FaFilter className='text-xl' /> Filtrar
           </button>
+
         </div>
 
         <NewTicketModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} addTicket={addTicket} />
-
       </div>
-
-
 
       <div className="hidden bg-primary p-3 rounded-xl text-white lg:flex flex-row w-full mb-8 justify-center items-center text-center gap-4">
         <div className='flex justify-center items-center'>
-          <FaFilter /><p className=''>Filtrar</p>
+         
+        </div>
+        <div className='flex justify-center items-center flex-col min-w-28'>
+          <p className='text-center -mb-2 ml-4'>
+            Status
+          </p>
+          <div className='flex justify-center items-center gap-2'>
+          <FaFilter />
+            <Dropdown
+              label=""
+              options={['Todos', 'Aberto', 'Andamento', 'Finalizado', 'VSM']}
+              selected={statusFilter}
+              onSelectedChange={(option) => setStatusFilter(option)}
+            />
+          </div>
         </div>
         {currentUser.cargo === 'Supervisor' && (
           <>
@@ -220,17 +265,19 @@ const UserTickets = () => {
             </div>
           </>
         )}
-        <div className='flex flex-col min-w-28'>
-          <p className='-mb-2'>
-            Status
-          </p>
-          <Dropdown
-            label=""
-            options={['Todos', 'Aberto', 'Andamento', 'Finalizado', 'VSM']}
-            selected={statusFilter}
-            onSelectedChange={(option) => setStatusFilter(option)}
-          />
-        </div>
+        {currentUser.cargo !== 'Supervisor' && (
+          <div className='flex items-center w-full justify-end'>
+            Todos da {currentUser.loja}
+            <animated.button
+              style={toggleSpring}
+              className={`flex items-center ${showStoreTickets ? '' : ''} hover:bg-${showStoreTickets ? 'green-500' : 'gray-500'} text-white font-bold `}
+              onClick={() => setShowStoreTickets(!showStoreTickets)}
+            >
+              {showStoreTickets ?
+                <MdToggleOn className='text-6xl text-green-500' /> : <MdToggleOff className='text-6xl text-red-500' />}
+            </animated.button>
+          </div>
+        )}
       </div>
 
       <Modal isOpen={isFilterModalOpen} onClose={() => setIsFilterModalOpen(false)}>
