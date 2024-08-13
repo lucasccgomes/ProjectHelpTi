@@ -32,3 +32,8 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #555; /* Cor do "polegar" da barra de rolagem ao passar o mouse */
 }
+
+ul, ol {
+  padding-left: 20px;
+  list-style-position: inside;
+}
