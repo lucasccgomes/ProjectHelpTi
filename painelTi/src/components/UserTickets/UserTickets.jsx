@@ -10,10 +10,15 @@ import { CiNoWaitingSign } from "react-icons/ci";
 import { LuImageOff } from "react-icons/lu";
 import "react-responsive-carousel/lib/styles/carousel.min.css";
 import NotificationHandler from '../NotificationHandler/NotificationHandler';
+import Dropdown from '../Dropdown/Dropdown';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
+import MyModal from '../Modal/MyModal';
 
 Modal.setAppElement('#root');
 
 const UserTickets = () => {
+  const [selectedProblem, setSelectedProblem] = useState('');
   const { currentUser } = useAuth();
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -22,7 +27,7 @@ const UserTickets = () => {
   const [storeFilter, setStoreFilter] = useState('');
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [finalizadoDescricao, setFinalizadoDescricao] = useState('');
-  const [modalIsOpen, setModalIsOpen] = useState(false);
+  const [imageModalIsOpen, setImageModalIsOpen] = useState(false);
   const [selectedImages, setSelectedImages] = useState([]);
   const [slidesToShow, setSlidesToShow] = useState(1);
   const [showArrows, setShowArrows] = useState(false);
@@ -30,19 +35,22 @@ const UserTickets = () => {
   const [newCheckbox, setNewCheckbox] = useState('');
   const [checkproblema, setCheckproblema] = useState([]);
   const [notificationTicket, setNotificationTicket] = useState(null);
-  const sentNotifications = useRef(new Set()); // Ref para armazenar notificações enviadas
+  const sentNotifications = useRef(new Set());
+  const [conclusaoModalIsOpen, setConclusaoModalIsOpen] = useState(false);
+  const [tratativaViewModalIsOpen, setTratativaViewModalIsOpen] = useState(false);
+  const [tratativaEditModalIsOpen, setTratativaEditModalIsOpen] = useState(false);
+  const [finalizarModalIsOpen, setFinalizarModalIsOpen] = useState(false);
+
+  const modules = {
+    toolbar: [
+      ['bold', 'italic', 'underline'],  // Ferramentas de texto
+      [{ 'list': 'ordered' }, { 'list': 'bullet' }],  // Listas ordenadas e não ordenadas
+      ['clean']  // Botão para limpar formatação
+    ],
+  };
 
   const [tratativaModalIsOpen, setTratativaModalIsOpen] = useState(false);
   const [treatment, setTreatment] = useState('');
-
-  const handleCheckboxChange = (event) => {
-    const { value, checked } = event.target;
-    if (checked) {
-      setCheckproblema([...checkproblema, value]);
-    } else {
-      setCheckproblema(checkproblema.filter(item => item !== value));
-    }
-  };
 
   const addNewCheckbox = async () => {
     if (newCheckbox) {
@@ -137,7 +145,6 @@ const UserTickets = () => {
     fetchTickets();
   }, []);
 
-
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 1024) {
@@ -156,7 +163,7 @@ const UserTickets = () => {
   const updateTicketStatus = async (id, status, descricaoFinalizacao = '', treatment = '') => {
     try {
       const ticketDocRef = doc(db, 'chamados', 'aberto', 'tickets', id);
-      await updateDoc(ticketDocRef, { status, descricaoFinalizacao, treatment, checkproblema });
+      await updateDoc(ticketDocRef, { status, descricaoFinalizacao, treatment, checkproblema: [selectedProblem] });
 
       const updatedTicket = tickets.find(ticket => ticket.id === id);
       setTickets(prevTickets =>
@@ -165,7 +172,6 @@ const UserTickets = () => {
         )
       );
 
-      // Enviar notificação se o status for atualizado para 'Andamento' ou 'Finalizado'
       if (status === 'Andamento' || status === 'Finalizado') {
         const userDocRef = doc(db, 'usuarios', updatedTicket.cidade);
         const userDocSnap = await getDoc(userDocRef);
@@ -213,43 +219,61 @@ const UserTickets = () => {
     (storeFilter ? ticket.loja === storeFilter : true)
   );
 
+  // Aqui definimos `uniqueUsers` e `uniqueStores` com base nos tickets carregados
+  const uniqueUsers = [...new Set(tickets.map(ticket => ticket.user))];
+  const uniqueStores = [...new Set(tickets.map(ticket => ticket.loja))];
+
   if (loading) {
     return <div>Loading...</div>;
   }
 
-  const uniqueUsers = [...new Set(tickets.map(ticket => ticket.user))];
-  const uniqueStores = [...new Set(tickets.map(ticket => ticket.loja))];
-
   const openImageModal = (images) => {
     setSelectedImages(images);
-    setModalIsOpen(true);
+    setImageModalIsOpen(true);
   };
 
   const closeImageModal = () => {
     setSelectedImages([]);
-    setModalIsOpen(false);
+    setImageModalIsOpen(false);
   };
 
   const renderedTicketIds = new Set();
 
-  const openTratativaModal = (ticket) => {
+  const openTratativaViewModal = (ticket) => {
     setSelectedTicket(ticket);
-    setTreatment(ticket.treatment || '');  // Adiciona esta linha para definir o estado treatment com o valor atual do tratamento
-    setTratativaModalIsOpen(true);
+    setTratativaViewModalIsOpen(true);
   };
 
+  const closeTratativaViewModal = () => {
+    setTratativaViewModalIsOpen(false);
+  };
 
-  const closeTratativaModal = () => {
-    setSelectedTicket(null);
-    setTratativaModalIsOpen(false);
+  const openTratativaEditModal = (ticket) => {
+    setSelectedTicket(ticket);
+    setTreatment(ticket.treatment || '');
+    setTratativaEditModalIsOpen(true);
+  };
+
+  const closeTratativaEditModal = () => {
+    setTratativaEditModalIsOpen(false);
   };
 
   const openFinalizarModal = (ticket) => {
     setSelectedTicket(ticket);
+    setFinalizarModalIsOpen(true);
   };
 
   const closeFinalizarModal = () => {
-    setSelectedTicket(null);
+    setFinalizarModalIsOpen(false);
+  };
+
+  const openConclusaoModal = (ticket) => {
+    setSelectedTicket(ticket);
+    setConclusaoModalIsOpen(true);
+  };
+
+  const closeConclusaoModal = () => {
+    setConclusaoModalIsOpen(false);
   };
 
   return (
@@ -261,7 +285,7 @@ const UserTickets = () => {
           onSent={() => {
             console.log(`Notificação enviada para o ticket ${notificationTicket.id}`);
             sentNotifications.current.add(notificationTicket.id);
-          }} // Adiciona o ID ao set após envio
+          }}
         />
       )}
       <div className='flex flex-col lg:flex-row gap-4 mb-4'>
@@ -309,7 +333,7 @@ const UserTickets = () => {
           onMouseLeave={() => setShowArrows(false)}
         >
           <Carousel
-            key={filteredTickets.map(ticket => ticket.id).join(',')} // Adiciona uma chave única para o Carousel
+            key={filteredTickets.map(ticket => ticket.id).join(',')}
             showArrows={showArrows}
             showStatus={false}
             showIndicators={false}
@@ -321,7 +345,7 @@ const UserTickets = () => {
           >
             {filteredTickets.map(ticket => {
               if (renderedTicketIds.has(ticket.id)) {
-                return null; // Ocultar tickets duplicados
+                return null;
               }
               renderedTicketIds.add(ticket.id);
               return (
@@ -356,7 +380,7 @@ const UserTickets = () => {
                         {ticket.data.toLocaleString()}
                       </p>
                     </div>
-                    <div className='bg-white pt-0 px-2 pb-1 rounded-md mb-2'>
+                    <div className='bg-white pt-0 px-2 pb-1 roundFed-md mb-2'>
                       <p className='text-center font-bold'>Descrição</p>
                       <p className=' overflow-y-auto break-words max-h-14 min-h-14' >{ticket.descricao}</p>
                     </div>
@@ -396,27 +420,34 @@ const UserTickets = () => {
                       )}
                     </div>
                     {ticket.treatment ? (
-                      <div className='bg-blue-100 pt-0 px-2 pb-1 rounded-md '>
-                        <p className='text-center font-bold'>Tratativa</p>
-                        <p className=' overflow-y-auto break-words max-h-14 min-h-14' >
-                          {ticket.treatment}
-                        </p>
+                      <div className='bg-blue-100 px-2 py-1 rounded-md '>
+                        <button
+                          onClick={() => openTratativaViewModal(ticket)}
+                          className='bg-orange-600 text-white px-4 py-2 rounded w-full'
+                        >
+                          Ver Tratativa
+                        </button>
                       </div>
                     ) : (
                       <>
                         {ticket.descricaoFinalizacao ? (
-                          <div className='bg-blue-100 pt-0 px-2 pb-1 rounded-md '>
-                            <p className='text-center font-bold'>Conclusão</p>
-                            <p className=' overflow-y-auto break-words max-h-14 min-h-14' >
-                              {ticket.descricaoFinalizacao}
-                            </p>
+                          <div className='bg-blue-100 px-2 py-1 rounded-md '>
+                            <button
+                              onClick={() => openConclusaoModal(ticket)}
+                              className='bg-green-600 text-white px-4 py-2 rounded w-full'
+                            >
+                              Ver Conclusão
+                            </button>
                           </div>
                         ) : (
-                          <div className='bg-red-100 pt-0 px-2 pb-1 rounded-md '>
-                            <p className='text-center font-bold'>Conclusão</p>
-                            <p className=' overflow-y-auto break-words max-h-14 min-h-14' >
-                              Aguardando
-                            </p>
+                          <div className='bg-red-100 pt-1 px-2 pb-1 rounded-md '>
+                            <p className='text-center font-bold'></p>
+                            <button
+                             
+                              className='bg-gray-400 text-white px-4 py-2 cursor-not-allowed rounded w-full'
+                            >
+                           Conclusão aguardando
+                            </button>
                           </div>
                         )}
                       </>
@@ -431,7 +462,7 @@ const UserTickets = () => {
                           Aberto
                         </button>
                         <button
-                          onClick={() => openTratativaModal(ticket)}
+                          onClick={() => openTratativaEditModal(ticket)}
                           className={`bg-orange-400 text-white px-4 py-2 rounded ${ticket.status === 'Finalizado' ? 'opacity-50 cursor-not-allowed' : ''} ${ticket.status === 'Andamento' ? 'bg-orange-600 ring-2 ring-white' : ''}`}
                           disabled={ticket.status === 'Finalizado'}
                         >
@@ -463,31 +494,25 @@ const UserTickets = () => {
         </div>
       )}
 
-      {selectedTicket && !tratativaModalIsOpen && (
+      {selectedTicket && finalizarModalIsOpen && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white p-4 rounded min-w-[300px]">
+          <div className="bg-white p-4 rounded min-w-[350px]">
             <h2 className="text-xl mb-2 font-bold text-center">Finalizar Chamado</h2>
-            <textarea
-              className="border p-2 w-full mb-2"
-              rows="4"
+            <ReactQuill
               value={finalizadoDescricao}
-              onChange={(e) => setFinalizadoDescricao(e.target.value)}
+              onChange={setFinalizadoDescricao}
+              modules={modules}
               placeholder="Adicione uma descrição de finalização..."
-            ></textarea>
+              className="mb-12 h-28"
+            />
             <div className="mb-2">
               <h3 className='font-bold text-center'>Problemas encontrados</h3>
-              {checkboxes.map((checkbox, index) => (
-                <div className='grid items-center' key={index}>
-                  <div>
-                    <input
-                      type="checkbox"
-                      value={checkbox}
-                      onChange={handleCheckboxChange}
-                    />
-                    <label className='ml-1'>{checkbox}</label>
-                  </div>
-                </div>
-              ))}
+              <Dropdown
+                options={checkboxes}
+                label="Selecione um problema"
+                selected={selectedProblem}
+                onSelectedChange={(problem) => setSelectedProblem(problem)}
+              />
               <div className="flex gap-2 mt-2">
                 <input
                   type="text"
@@ -522,34 +547,34 @@ const UserTickets = () => {
         </div>
       )}
 
-      {tratativaModalIsOpen && (
+      {tratativaEditModalIsOpen && (
         <Modal
-          isOpen={tratativaModalIsOpen}
-          onRequestClose={closeTratativaModal}
+          isOpen={tratativaEditModalIsOpen}
+          onRequestClose={closeTratativaEditModal}
           contentLabel="Tratativa"
           className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50"
         >
           <div className="bg-white p-4 rounded min-w-[300px]">
             <h2 className="text-xl mb-2 font-bold text-center">Tratativa</h2>
-            <textarea
-              className="border p-2 w-full mb-2"
-              rows="4"
+            <ReactQuill
               value={treatment}
-              onChange={(e) => setTreatment(e.target.value)}
+              onChange={setTreatment}
+              modules={modules}
               placeholder="Descreva a tratativa..."
-            ></textarea>
+              className="mb-12 h-28"
+            />
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => {
                   updateTicketStatus(selectedTicket.id, 'Andamento', '', treatment);
-                  closeTratativaModal();
+                  closeTratativaEditModal();
                 }}
                 className="bg-green-500 text-white px-4 py-2 rounded"
               >
                 Salvar
               </button>
               <button
-                onClick={closeTratativaModal}
+                onClick={closeTratativaEditModal}
                 className="bg-gray-500 text-white px-4 py-2 rounded"
               >
                 Cancelar
@@ -558,8 +583,9 @@ const UserTickets = () => {
           </div>
         </Modal>
       )}
+
       <Modal
-        isOpen={modalIsOpen}
+        isOpen={imageModalIsOpen}
         onRequestClose={closeImageModal}
         contentLabel="Imagens"
         className="fixed inset-0 flex !z-[1000] items-center justify-center bg-black bg-opacity-50"
@@ -586,6 +612,26 @@ const UserTickets = () => {
           </button>
         </div>
       </Modal>
+
+      <MyModal isOpen={conclusaoModalIsOpen} onClose={closeConclusaoModal}>
+        <h2 className="text-xl font-bold mb-4">Conclusão</h2>
+        {selectedTicket && (
+          <div
+            className="overflow-y-auto break-words"
+            dangerouslySetInnerHTML={{ __html: selectedTicket.descricaoFinalizacao }}
+          ></div>
+        )}
+      </MyModal>
+
+      <MyModal isOpen={tratativaViewModalIsOpen} onClose={closeTratativaViewModal}>
+        <h2 className="text-xl font-bold mb-4">Tratativa</h2>
+        {selectedTicket && (
+          <div
+            className="overflow-y-auto break-words"
+            dangerouslySetInnerHTML={{ __html: selectedTicket.treatment }}
+          ></div>
+        )}
+      </MyModal>
     </div>
   );
 };
