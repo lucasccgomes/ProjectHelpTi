@@ -18,6 +18,8 @@ const ListaSolicitacoes = () => {
     const [showModal, setShowModal] = useState(false);
     const [modalText, setModalText] = useState('');
     const [currentSolicitacaoId, setCurrentSolicitacaoId] = useState(null);
+    const [showPrintModal, setShowPrintModal] = useState(false);
+    const [currentSolicitacao, setCurrentSolicitacao] = useState(null);
 
     const handleResize = useCallback(() => {
         if (window.innerWidth >= 1024) {
@@ -81,6 +83,11 @@ const ListaSolicitacoes = () => {
         setShowModal(true);
     };
 
+    const openPrintModal = (solicitacao) => {
+        setCurrentSolicitacao(solicitacao);
+        setShowPrintModal(true);
+    };
+
     const handleSave = async () => {
         if (!modalText) {
             alert("O campo 'Quem está levando?' é obrigatório.");
@@ -111,6 +118,70 @@ const ListaSolicitacoes = () => {
             }
         }
     };
+
+    const removeAccents = (str) => {
+        return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    }
+
+    const handlePrint = async () => {
+        const solicitacao = {
+            numSolicite: currentSolicitacao?.numSolicite ? removeAccents(currentSolicitacao?.numSolicite) : '',
+            cidade: currentSolicitacao?.cidade ? removeAccents(currentSolicitacao?.cidade) : '',
+            loja: currentSolicitacao?.loja ? removeAccents(currentSolicitacao?.loja) : '',
+            user: currentSolicitacao?.user ? removeAccents(currentSolicitacao?.user) : '',
+            tipo: currentSolicitacao?.tipo ? removeAccents(currentSolicitacao?.tipo) : '',
+            nomeItem: currentSolicitacao?.nomeItem ? removeAccents(currentSolicitacao?.nomeItem) : ''
+        };
+    
+        const labelContent = `
+            ^XA
+            ^CF0,30
+            ^FO100,50^FD${solicitacao.numSolicite}^FS
+            ^CF0,60
+            ^FO100,100^FD${solicitacao.loja}^FS
+            ^CF0,30
+            ^FO100,180^FDCidade: ${solicitacao.cidade}^FS
+            ^FO100,220^FDUsuario: ${solicitacao.user}^FS
+            ^CF0,40
+            ^FO100,260^FDITEM^FS
+            ^CF0,30
+            ^FO100,300^FD${solicitacao.nomeItem}^FS
+            ^XZ
+        `;
+    
+        try {
+            console.log('Enviando solicitação de impressão:', labelContent);
+            const response = await fetch('https://1a6a-2804-1784-30b3-6700-2dd3-8ace-756d-8aad.ngrok-free.app/print', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ labelContent })
+            });
+    
+            const responseBody = await response.text();
+            console.log('Resposta do servidor (Status):', response.status);
+            console.log('Resposta do servidor (Body):', responseBody);
+    
+            if (response.ok) {
+                console.log('Etiqueta enviada para a impressora com sucesso.');
+                alert('Etiqueta enviada para a impressora');
+            } else {
+                console.error('Erro ao enviar a etiqueta para a impressora:', responseBody);
+                alert('Erro ao enviar a etiqueta para a impressora');
+                // Pode-se implementar uma tentativa de novo envio se necessário
+            }
+            
+            // Adicionar um pequeno atraso para evitar congestionamento
+            await new Promise(resolve => setTimeout(resolve, 2000)); // Atraso de 2 segundos
+    
+        } catch (error) {
+            console.error('Erro ao conectar ao servidor de impressão:', error);
+            alert('Erro ao conectar ao servidor de impressão');
+        }
+        setShowPrintModal(false);
+    };
+    
 
     if (error) {
         return <div className="text-center mt-4 text-lg font-semibold text-red-500">{error}</div>;
@@ -174,15 +245,15 @@ const ListaSolicitacoes = () => {
                                     {solicitacao.dateSend && (
                                         <p className="text-gray-700">
                                             <strong>Enviado: </strong>
-                                            {new Date(solicitacao.dateSend.toDate()).toLocaleDateString()}
+                                            {new Date(solicitacao.dateSend).toLocaleDateString()}
                                         </p>
                                     )}
                                     {solicitacao.send && (
-                                    <p className="text-gray-700">
-                                        <strong>Envio: </strong>
-                                        {solicitacao.send}
-                                    </p>
-                                     )}
+                                        <p className="text-gray-700">
+                                            <strong>Envio: </strong>
+                                            {solicitacao.send}
+                                        </p>
+                                    )}
                                     <div className="flex flex-col gap-2 mt-4">
                                         <div className='flex flex-row gap-2'>
                                             <div className='w-full'>
@@ -224,6 +295,14 @@ const ListaSolicitacoes = () => {
                                                 </button>
                                             </div>
                                         </div>
+                                        <div className='w-full mt-2'>
+                                            <button
+                                                className="w-full bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded"
+                                                onClick={() => openPrintModal(solicitacao)}
+                                            >
+                                                Imprimir etiqueta
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -248,6 +327,48 @@ const ListaSolicitacoes = () => {
                     <div className="flex justify-end gap-2">
                         <button className="bg-gray-500 text-white py-2 px-4 rounded" onClick={() => setShowModal(false)}>Cancelar</button>
                         <button className="bg-blue-500 text-white py-2 px-4 rounded" onClick={handleSave}>Salvar</button>
+                    </div>
+                </div>
+            </Modal>
+            <Modal
+                isOpen={showPrintModal}
+                onRequestClose={() => setShowPrintModal(false)}
+                contentLabel="Imprimir Etiqueta"
+                className="fixed inset-0 flex items-center justify-center"
+                overlayClassName="fixed inset-0 bg-gray-600 bg-opacity-50"
+            >
+                <div className="bg-white p-4 rounded-lg w-1/3">
+                    <h2 className="text-xl font-bold mb-4">Imprimir Etiqueta</h2>
+                    <div className="mb-4 flex items-center flex-col">
+                        <label className="block text-gray-700 text-sm font-bold mb-2">Prévia da Etiqueta</label>
+                        <div
+                            style={{
+                                width: '80mm',
+                                height: '80mm',
+                            }}
+                            className="gap-2 rounded-xl border-2 border-gray-200 flex flex-col pt-3 pl-6 items-start bg-lightgray"
+                        >
+                            <div className="font-bold text-md">{currentSolicitacao?.numSolicite}</div>
+                            <div className="flex gap-1">
+                                <p className="uppercase font-bold text-3xl">{currentSolicitacao?.loja}</p>
+                            </div>
+                            <div className="flex gap-1">
+                                <p className="font-bold">Cidade:</p>
+                                <p className="uppercase">{currentSolicitacao?.cidade}</p>
+                            </div>
+                            <div className="flex gap-1">
+                                <p className="font-bold">Usuário:</p>
+                                <p className="uppercase">{currentSolicitacao?.user}</p>
+                            </div>
+                            <div className="flex gap-1 flex-col justify-center items-start">
+                                <p className="font-bold uppercase">Item</p>
+                                <p>{currentSolicitacao?.nomeItem}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="flex justify-between gap-2">
+                        <button className="bg-gray-500 text-white py-2 px-4 rounded" onClick={() => setShowPrintModal(false)}>Cancelar</button>
+                        <button className="bg-primary hover:bg-primaryOpaci text-white py-2 px-4 rounded" onClick={handlePrint}>Imprimir</button>
                     </div>
                 </div>
             </Modal>
