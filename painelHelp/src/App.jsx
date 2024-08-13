@@ -12,6 +12,7 @@ import AssignTasksPage from './pages/AssignTaskPage';
 import { messaging, getToken, db, isSupported } from './firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import TimeClock from './pages/TimeClock';
+import SoliciteCompras from './pages/SoliciteCompras';
 
 const App = () => {
   return (
@@ -24,10 +25,26 @@ const App = () => {
               <Routes>
                 <Route path="/" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
                 <Route path="/login" element={<LoginPage />} />
-                <Route path="/usertickets" element={<ProtectedRoute><UserTickets /></ProtectedRoute>} />
-                <Route path="/solicitacao" element={<ProtectedRoute allowedRoles={['T.I']}><Solicitacao /></ProtectedRoute>} />
-                <Route path="/atribute" element={<ProtectedRoute allowedRoles={['T.I']}><AssignTasksPage /></ProtectedRoute>} />
-                <Route path="/horacerta" element={<ProtectedRoute><TimeClock /></ProtectedRoute>} />
+                <Route path="/usertickets" element={<ProtectedRoute>
+                  <UserTickets />
+                  </ProtectedRoute>} 
+                  />
+                <Route path="/solicitacao" element={<ProtectedRoute allowedRoles={['T.I', 'Gerente', 'Supervisor']}>
+                  <Solicitacao />
+                  </ProtectedRoute>}
+                   />
+                <Route path="/atribute" element={<ProtectedRoute allowedRoles={['T.I']}>
+                  <AssignTasksPage />
+                  </ProtectedRoute>} 
+                  />
+                  <Route path="/solicitacompras" element={<ProtectedRoute allowedRoles={['T.I']}>
+                  <SoliciteCompras />
+                  </ProtectedRoute>} 
+                  />
+                <Route path="/horacerta" element={<ProtectedRoute>
+                  <TimeClock />
+                  </ProtectedRoute>} 
+                  />
                 <Route path="/nopermission" element={<NoPermission />} />
               </Routes>
               {isAuthenticated && <FCMHandler currentUser={currentUser} />}
