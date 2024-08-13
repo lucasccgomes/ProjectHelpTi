@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { collection, query, where, onSnapshot, doc, updateDoc, getDoc } from 'firebase/firestore';
-import { db } from '../firebase';
-import { useAuth } from '../context/AuthContext';
+import { db } from '../../firebase';
+import { useAuth } from '../../context/AuthContext';
 import { FaCity, FaUser, FaStoreAlt, FaWhatsapp, FaFilter } from "react-icons/fa";
 import { SiReasonstudios } from "react-icons/si";
 import 'react-responsive-carousel/lib/styles/carousel.min.css'; // Importando o CSS padrão do Carousel
-import Dropdown from './Dropdown/Dropdown';
-import Modal from './Modal/Modal';
+import Dropdown from '../Dropdown/Dropdown';
+import Modal from '../Modal/Modal';
 
-const ListaSolicitacoes = () => {
+const ListaSolicitCompras = () => {
     const { currentUser } = useAuth();
     const [solicitacoes, setSolicitacoes] = useState([]);
     const [error, setError] = useState(null);
@@ -39,7 +39,7 @@ const ListaSolicitacoes = () => {
         if (!selectedSolicitacao) return;
 
         try {
-            const solicitacaoRef = doc(db, 'solicitacoes', selectedSolicitacao.id);
+            const solicitacaoRef = doc(db, 'solicitCompras', selectedSolicitacao.id);
             await updateDoc(solicitacaoRef, {
                 dateReceived: new Date(),
                 status: 'Concluído'  // Atualize o status para 'concluído'
@@ -91,7 +91,7 @@ const ListaSolicitacoes = () => {
             return;
         }
 
-        const solicitacoesRef = collection(db, 'solicitacoes');
+        const solicitacoesRef = collection(db, 'solicitCompras');
         let q;
 
         if (currentUser.cargo === 'Supervisor') {
@@ -291,4 +291,4 @@ const ListaSolicitacoes = () => {
     );
 };
 
-export default ListaSolicitacoes;
+export default ListaSolicitCompras;
