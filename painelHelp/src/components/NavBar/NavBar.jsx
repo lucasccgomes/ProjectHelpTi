@@ -107,7 +107,7 @@ const Navbar = ({ currentUser }) => {
   return (
     <div className="flex">
       {/* Botão para abrir o menu lateral */}
-      <div className="bg-primary w-full h-14 fixed flex items-center z-10 justify-end">
+      <div className="bg-primaryBlueDark w-full h-14 fixed flex items-center z-10 justify-end">
         {!isInstalled && installPrompt && (
           <button
             onClick={handleInstallClick}
@@ -142,7 +142,7 @@ const Navbar = ({ currentUser }) => {
         </div>
       </div>
       {/* Menu lateral */}
-      <nav ref={navRef} className={`fixed inset-y-0 left-0 bg-primary z-50 text-white w-64 transform ${isOpen ? "translate-x-0" : "-translate-x-full"} transition-transform duration-300 ease-in-out`}>
+      <nav ref={navRef} className={`fixed inset-y-0 left-0 bg-primaryBlueDark z-50 text-white w-64 transform ${isOpen ? "translate-x-0" : "-translate-x-full"} transition-transform duration-300 ease-in-out`}>
         <div className="p-4">
           <div
             className={`flex items-center justify-center gap-1 uppercase mb-4 transition-transform duration-300 ease-in-out ${isOpen ? "opacity-100 transform translate-x-0 delay-300" : "opacity-0 transform -translate-x-10"

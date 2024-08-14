@@ -175,7 +175,7 @@ const UserTickets = () => {
     <div className="p-4 w-full pt-12 flex lg:pt-20 flex-col justify-center items-center text-gray-700">
       {currentUser.cargo !== 'Supervisor' && (
         <div className='w-full flex'>
-          <div className='flex items-center px-1 text-white rounded-b-xl bg-primary lg:hidden'>
+          <div className='flex items-center px-1 text-white rounded-b-xl bg-primaryBlueDark lg:hidden'>
             <animated.button
               style={toggleSpring}
               className={`flex items-center ${showStoreTickets ? '' : ''} hover:bg-${showStoreTickets ? 'green-500' : 'gray-500'} text-white font-bold ml-4`}
@@ -193,13 +193,13 @@ const UserTickets = () => {
         <h2 className="text-2xl w-full font-bold text-center lg:text-end text-gray-700">Meus Chamados</h2>
         <div className="flex w-full items-center lg:justify-start justify-center gap-2">
           <button
-            className=" bg-primary flex justify-center items-center hover:bg-secondary text-white font-bold py-2 px-4 rounded"
+            className=" bg-primaryBlueDark flex justify-center items-center hover:bg-secondary text-white font-bold py-2 px-4 rounded"
             onClick={() => setIsModalOpen(true)}
           >
             <MdHelp className='text-xl mr-1' /> Novo Chamado
           </button>
           <button
-            className=" lg:hidden bg-primary flex justify-center items-center hover:bg-secondary text-white font-bold py-2 px-4 rounded"
+            className=" lg:hidden bg-primaryBlueDark flex justify-center items-center hover:bg-secondary text-white font-bold py-2 px-4 rounded"
             onClick={() => setIsFilterModalOpen(true)}
           >
             <FaFilter className='text-xl' /> Filtrar
@@ -210,7 +210,7 @@ const UserTickets = () => {
         <NewTicketModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} addTicket={addTicket} />
       </div>
 
-      <div className="hidden bg-primary p-3 rounded-xl text-white lg:flex flex-row w-full mb-8 justify-center items-center text-center gap-4">
+      <div className="hidden bg-primaryBlueDark p-3 rounded-xl text-white lg:flex flex-row w-full mb-8 justify-center items-center text-center gap-4">
         <div className='flex justify-center items-center'>
          
         </div>
@@ -326,7 +326,7 @@ const UserTickets = () => {
           />
         </div>
         <button
-          className="bg-primary flex justify-center items-center hover:bg-secondary text-white font-bold py-2 px-4 rounded"
+          className="bg-primaryBlueDark flex justify-center items-center hover:bg-secondary text-white font-bold py-2 px-4 rounded"
           onClick={() => setIsFilterModalOpen(false)}
         >
           Filtrar
@@ -353,7 +353,7 @@ const UserTickets = () => {
           >
             {tickets.map(ticket => (
               <div key={ticket.id} className='gap-4'>
-                <div className="bg-primary text-white shadow lg:min-w-[250px] mb-4 p-4 border-2 rounded-xl">
+                <div className="bg-primaryBlueDark text-white shadow lg:min-w-[250px] mb-4 p-4 border-2 rounded-xl">
                   <div className="text-xl text-gray-700 bg-white font-bold uppercase rounded-b-xl -mt-5 mb-2 pb-1 text-center">
                     {ticket.order}
                   </div>

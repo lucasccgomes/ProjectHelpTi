@@ -176,7 +176,7 @@ const AssignTasksPage = () => {
     <div className="flex mt-14">
       <div className="flex flex-row-reverse w-full justify-between h-screen">
 
-        <div className='flex flex-col lg:h-screen min-w-[370px] bg-primary   p-4 lg:overflow-y-scroll'>
+        <div className='flex flex-col lg:h-screen min-w-[370px] bg-primaryBlueDark   p-4 lg:overflow-y-scroll'>
           <h2 className="text-xl font-bold mb-4 text-white3">
             Usuários e suas Tarefas
           </h2>

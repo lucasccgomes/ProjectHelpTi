@@ -221,7 +221,7 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
         <h2 className="text-2xl font-bold mb-1">Novo Chamado</h2>
         <form onSubmit={handleSubmit}>
           {currentUser.cargo === 'Supervisor' && (
-            <div className='flex gap-2 text-center mb-2 bg-primary p-2 rounded-xl justify-center items-center'>
+            <div className='flex gap-2 text-center mb-2 bg-primaryBlueDark p-2 rounded-xl justify-center items-center'>
               <div className="min-w-36">
                 <label className="block text-white text-sm font-bold mb-2">
                   Cidade
@@ -337,7 +337,7 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
             </button>
             <button
               type="submit"
-              className="bg-primary hover:bg-primaryOpaci text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+              className="bg-primaryBlueDark hover:bg-primaryOpaci text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
               disabled={loading}
             >
               {loading ? 'Enviando...' : 'Enviar'}

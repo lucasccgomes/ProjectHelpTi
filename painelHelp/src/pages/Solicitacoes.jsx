@@ -321,7 +321,7 @@ const Solicitacao = () => {
             </div>
             <button
               type="submit"
-              className="w-full bg-primary text-white p-2 rounded hover:bg-primaryOpaci focus:outline-none focus:ring focus:ring-gray-200"
+              className="w-full bg-primaryBlueDark text-white p-2 rounded hover:bg-primaryOpaci focus:outline-none focus:ring focus:ring-gray-200"
               disabled={loading}
             >
               {loading ? 'Enviando...' : 'Enviar'}
@@ -332,7 +332,7 @@ const Solicitacao = () => {
       <div className="block lg:hidden p-4 pt-20">
         <button
           onClick={() => setModalIsOpen(true)}
-          className="w-full bg-primary text-white p-2 flex justify-center items-center rounded hover:bg-primaryOpaci focus:outline-none focus:ring focus:ring-gray-200"
+          className="w-full bg-primaryBlueDark text-white p-2 flex justify-center items-center rounded hover:bg-primaryOpaci focus:outline-none focus:ring focus:ring-gray-200"
         >
           <MdOutlineRequestQuote className='text-xl' /> Nova Solicitação
         </button>
@@ -427,7 +427,7 @@ const Solicitacao = () => {
                   </div>
                   <button
                     type="submit"
-                    className="w-full bg-primary text-white p-2 rounded hover:bg-primaryOpaci focus:outline-none focus:ring focus:ring-gray-200"
+                    className="w-full bg-primaryBlueDark text-white p-2 rounded hover:bg-primaryOpaci focus:outline-none focus:ring focus:ring-gray-200"
                     disabled={loading}
                   >
                     {loading ? 'Enviando...' : 'Enviar'}

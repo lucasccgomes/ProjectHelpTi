@@ -128,7 +128,7 @@ const ListaSolicitacoes = () => {
     }
 
     return (
-        <div className="flex flex-col w-full lg:h-screen min-w-[370px] bg-primary lg:pt-16 text-white p-4 lg:overflow-y-scroll">
+        <div className="flex flex-col w-full lg:h-screen min-w-[370px] bg-primaryBlueDark lg:pt-16 text-white p-4 lg:overflow-y-scroll">
 
             <div className='mb-4'>
                 <div className="flex flex-col justify-center items-center gap-4 mb-4">
@@ -138,7 +138,7 @@ const ListaSolicitacoes = () => {
                     {currentUser.cargo === 'Supervisor' && (
                         <button
                             onClick={openFilterModal}
-                            className="bg-primary flex justify-center items-center hover:bg-secondary text-white px-4 py-2 rounded"
+                            className="bg-primaryBlueDark flex justify-center items-center hover:bg-secondary text-white px-4 py-2 rounded"
                         >
                             <FaFilter className='text-xl' /> Filtrar
                         </button>
@@ -261,7 +261,7 @@ const ListaSolicitacoes = () => {
                     )}
                     <button
                         onClick={closeFilterModal}
-                        className="bg-primary hover:bg-primaryOpaci text-white px-4 py-2 rounded mt-4"
+                        className="bg-primaryBlueDark hover:bg-primaryOpaci text-white px-4 py-2 rounded mt-4"
                     >
                         Aplicar Filtros
                     </button>
