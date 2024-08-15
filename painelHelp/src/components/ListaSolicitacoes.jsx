@@ -133,7 +133,7 @@ const ListaSolicitacoes = () => {
             <div className='mb-4'>
                 <div className="flex flex-col justify-center items-center gap-4 mb-4">
                     <h2 className="text-2xl font-bold">
-                        Minhas Solicitações
+                        T.I Solicitações
                     </h2>
                     {currentUser.cargo === 'Supervisor' && (
                         <button

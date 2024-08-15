@@ -131,9 +131,9 @@ const ListaSolicitCompras = () => {
         <div className="flex flex-col w-full lg:h-screen min-w-[370px] bg-primaryBlueDark lg:pt-16 text-white p-4 lg:overflow-y-scroll">
 
             <div className='mb-4'>
-                <div className="flex flex-col justify-center items-center gap-4 mb-4">
+                <div className="flex bg-primaryBlueDark lg:min-w-[340px] lg:fixed flex-col justify-center items-center gap-4 lg:-mt-3 lg:pb-3">
                     <h2 className="text-2xl font-bold">
-                        Minhas Solicitações
+                        Compras Solicitações
                     </h2>
                     {currentUser.cargo === 'Supervisor' && (
                         <button
@@ -159,7 +159,7 @@ const ListaSolicitCompras = () => {
                 {solicitacoes.length === 0 ? (
                     <div className="text-center text-gray-500">Nenhuma solicitação encontrada</div>
                 ) : (
-                    <div className="space-y-4 lg:max-w-4xl lg:overflow-hidden">
+                    <div className="space-y-4 lg:max-w-4xl lg:block flex flex-col justify-center items-center lg:overflow-hidden lg:pt-32 pt-4">
                         {solicitacoes.map(solicitacao => (
                             <div key={solicitacao.id} className="p-6 lg:block max-w-[370px] bg-white text-black border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200">
                                 <h3 className="text-xl font-semibold mb-2">
