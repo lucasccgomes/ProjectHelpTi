@@ -12,6 +12,7 @@ import Dropdown from '../components/Dropdown/Dropdown';
 import NotificationModal from '../components/NotificationModal/NotificationModal';
 import Modal from '../components/Modal/Modal';
 import { useSpring, animated } from '@react-spring/web';
+import LoadingSpinner from '../components/LoadingSpinner/LoadingSpinner';
 
 const UserTickets = () => {
   const { currentUser } = useAuth();
@@ -168,7 +169,7 @@ const UserTickets = () => {
   });
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <div><LoadingSpinner /></div>;
   }
 
   return (
@@ -212,14 +213,14 @@ const UserTickets = () => {
 
       <div className="hidden bg-primaryBlueDark p-3 rounded-xl text-white lg:flex flex-row w-full mb-8 justify-center items-center text-center gap-4">
         <div className='flex justify-center items-center'>
-         
+
         </div>
         <div className='flex justify-center items-center flex-col min-w-28'>
           <p className='text-center -mb-2 ml-4'>
             Status
           </p>
           <div className='flex justify-center items-center gap-2'>
-          <FaFilter />
+            <FaFilter />
             <Dropdown
               label=""
               options={['Todos', 'Aberto', 'Andamento', 'Finalizado', 'VSM']}
@@ -362,7 +363,7 @@ const UserTickets = () => {
                   </p>
 
                   <div className='flex gap-4 mb-1'>
-                    <p className='flex uppercase items-center'><FaCity />: {ticket.cidade}</p>
+                    <p className='flex uppercase items-center'><FaCity />: {ticket.cidade === 'Presidente Prudente' ? 'P. Prudente' : ticket.cidade}</p>
                     <p className='flex uppercase items-center'><FaUser />: {ticket.user}</p>
                   </div>
 
