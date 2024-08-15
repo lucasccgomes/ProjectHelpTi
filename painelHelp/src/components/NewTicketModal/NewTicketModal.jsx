@@ -77,7 +77,7 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
     console.log('Tokens para envio de notificação:', tokens);
     console.log('Dados da notificação:', notification);
     try {
-      const response = await fetch('https://8bef-2804-1784-30b3-6700-a555-89b1-9fd5-7d87.ngrok-free.app/send-notification', {
+      const response = await fetch('https://6f46-2804-1784-30b3-6700-6c8d-e16-5377-9e5c.ngrok-free.app/send-notification', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

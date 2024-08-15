@@ -156,7 +156,7 @@ const SoliciteCompras = () => {
 
   const sendNotification = async (tokens, notification) => {
     try {
-      const response = await fetch('https://8bef-2804-1784-30b3-6700-a555-89b1-9fd5-7d87.ngrok-free.app/send-notification', {
+      const response = await fetch('https://6f46-2804-1784-30b3-6700-6c8d-e16-5377-9e5c.ngrok-free.app/send-notification', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -253,7 +253,7 @@ const SoliciteCompras = () => {
   });
 
   return (
-    <div className="flex lg:justify-between lg:flex-row flex-col">
+    <div className="flex bg-altBlue lg:justify-between lg:flex-row flex-col">
       <div className="pt-20 hidden lg:block">
         <div className='p-5 bg-white border min-w-[400px] lg:ml-[13rem] m-4 lg:m-0 border-gray-300 rounded-xl shadow-lg'>
           <h2 className="text-xl font-bold mb-4 block  text-gray-700">Nova Solicitação</h2>
