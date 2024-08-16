@@ -253,9 +253,9 @@ const Solicitacao = () => {
   });
 
   return (
-    <div className="flex lg:justify-between lg:flex-row flex-col">
+    <div className="flex lg:justify-between lg:flex-row flex-col bg-altBlue">
       <div className="pt-20 hidden lg:block">
-        <div className='p-5 bg-altBlue border min-w-[400px] lg:ml-[13rem] m-4 lg:m-0 border-gray-300 rounded-xl shadow-lg'>
+        <div className='p-5 bg-white border min-w-[400px] lg:ml-[13rem] m-4 lg:m-0 border-gray-300 rounded-xl shadow-lg'>
           <h2 className="text-xl font-bold mb-4 block  text-gray-700">Nova Solicitação</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className='flex gap-4 flex-col'>
