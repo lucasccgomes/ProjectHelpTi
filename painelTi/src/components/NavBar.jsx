@@ -6,6 +6,7 @@ import { MdOutlineBugReport } from "react-icons/md";
 import { IoPrintSharp } from "react-icons/io5";
 import { CgShutterstock } from "react-icons/cg";
 import { useAuth } from '../context/AuthContext';
+import { RiAlertFill } from "react-icons/ri";
 import OfflineNotice from "./OffLineNotice/OfflineNotice";
 
 const Navbar = ({ currentUser }) => {
@@ -21,6 +22,7 @@ const Navbar = ({ currentUser }) => {
     { name: 'Solicitações', icon: FaCodePullRequest , href: '/solicitacao' },
     { name: 'Estoque', icon: CgShutterstock, href: '/estoque' },
     { name: 'Impressoras', icon: IoPrintSharp , href: '/impressora' },
+    { name: 'Alertas', icon: RiAlertFill , href: '/alertnotifica' },
   ];
 
   const handleClickOutside = (event) => {
