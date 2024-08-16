@@ -4,9 +4,8 @@ import { db } from '../../firebase'; // Ajuste o caminho conforme necessário
 import { collection, query, where, onSnapshot, doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { useAuth } from '../../context/AuthContext'; // Ajuste o caminho conforme necessário
 
-const NotificationModal = () => {
+const NotificationModals = () => {
   const { currentUser } = useAuth();
-  const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
 
   useEffect(() => {
@@ -26,11 +25,11 @@ const NotificationModal = () => {
             confirm: data.confirm || [],
             allUsers: data.users.includes('Todos'),
             usersDelet: data.usersDelet || [],
+            isOpen: true, // Adiciona estado de abertura do modal para cada notificação
           });
         }
       });
       setNotifications(newNotifications);
-      setIsOpen(newNotifications.filter(shouldShowNotification).length > 0);
     });
 
     return () => unsubscribe();
@@ -51,9 +50,10 @@ const NotificationModal = () => {
       });
     }
     setNotifications((prevNotifications) =>
-      prevNotifications.filter((notification) => notification.id !== notificationId)
+      prevNotifications.map((notification) =>
+        notification.id === notificationId ? { ...notification, isOpen: false } : notification
+      )
     );
-    setIsOpen(false);
   };
 
   const shouldShowNotification = (notification) => {
@@ -64,22 +64,34 @@ const NotificationModal = () => {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={() => setIsOpen(false)}>
+    <>
       {notifications.filter(shouldShowNotification).map((notification) => (
-        <div key={notification.id} className="mb-4">
-          <h2 className="text-2xl font-bold mb-2">{notification.title}</h2>
-          <p className="mb-2">{notification.message}</p>
-          <p className="text-sm text-gray-600">{`Usuário(s): ${notification.users}`}</p>
-          <button
-            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700"
-            onClick={() => handleConfirm(notification.id, notification.allUsers)}
-          >
-            Ok
-          </button>
-        </div>
+        <Modal
+          key={notification.id}
+          isOpen={notification.isOpen}
+          onClose={() =>
+            setNotifications((prevNotifications) =>
+              prevNotifications.map((n) =>
+                n.id === notification.id ? { ...n, isOpen: false } : n
+              )
+            )
+          }
+        >
+          <div className="mb-4">
+            <h2 className="text-2xl font-bold mb-2">{notification.title}</h2>
+            <div className="max-w-[330px] break-words whitespace-normal" dangerouslySetInnerHTML={{ __html: notification.message }} >
+            </div>
+            <button
+              className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700"
+              onClick={() => handleConfirm(notification.id, notification.allUsers)}
+            >
+              Ok
+            </button>
+          </div>
+        </Modal>
       ))}
-    </Modal>
+    </>
   );
 };
 
-export default NotificationModal;
+export default NotificationModals;
