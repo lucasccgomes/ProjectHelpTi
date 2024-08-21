@@ -40,7 +40,7 @@ const AlertModal = ({ isOpen, onRequestClose, title, message, showOkButton = tru
                                 <div className="mt-4 flex justify-end">
                                     <button
                                         onClick={onRequestClose}
-                                        className="bg-green-500 text-white p-2 rounded hover:bg-green-600 focus:outline-none focus:ring focus:ring-green-200"
+                                        className="bg-primaryBlueDark text-white p-2 rounded hover:bg-primary focus:outline-none focus:ring focus:ring-green-200"
                                     >
                                         OK
                                     </button>
