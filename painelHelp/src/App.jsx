@@ -13,6 +13,7 @@ import { messaging, getToken, db, isSupported } from './firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import TimeClock from './pages/TimeClock';
 import SoliciteCompras from './pages/SoliciteCompras';
+import Estoque from './pages/Estoque';
 
 const App = () => {
   return (
@@ -24,28 +25,41 @@ const App = () => {
               {isAuthenticated && <Navbar currentUser={currentUser} />}
               <Routes>
                 <Route path="/" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
+
                 <Route path="/login" element={<LoginPage />} />
+
                 <Route path="/usertickets" element={<ProtectedRoute>
                   <UserTickets />
-                  </ProtectedRoute>} 
-                  />
+                </ProtectedRoute>}
+                />
+
                 <Route path="/solicitacao" element={<ProtectedRoute allowedRoles={['T.I', 'Gerente', 'Supervisor']}>
                   <Solicitacao />
-                  </ProtectedRoute>}
-                   />
+                </ProtectedRoute>}
+                />
+
                 <Route path="/atribute" element={<ProtectedRoute allowedRoles={['T.I']}>
                   <AssignTasksPage />
-                  </ProtectedRoute>} 
-                  />
-                  <Route path="/solicitacompras" element={<ProtectedRoute allowedRoles={['T.I']}>
+                </ProtectedRoute>}
+                />
+
+                <Route path="/solicitacompras" element={<ProtectedRoute allowedRoles={['T.I', 'Compras']}>
                   <SoliciteCompras />
-                  </ProtectedRoute>} 
-                  />
+                </ProtectedRoute>}
+                />
+
                 <Route path="/horacerta" element={<ProtectedRoute>
                   <TimeClock />
-                  </ProtectedRoute>} 
-                  />
+                </ProtectedRoute>}
+                />
+
+                <Route path="/estoque"  element={<ProtectedRoute allowedRoles={['T.I', 'Compras']}>
+                  <Estoque />
+                </ProtectedRoute>}
+                />
+
                 <Route path="/nopermission" element={<NoPermission />} />
+
               </Routes>
               {isAuthenticated && <FCMHandler currentUser={currentUser} />}
             </>
@@ -113,7 +127,7 @@ const FCMHandler = ({ currentUser }) => {
           const status = await Notification.requestPermission();
           if (status === 'granted') {
             console.log('Permissão de notificação concedida. Tentando obter o token FCM...');
-            
+
             let tokenCaptured = false;
             while (!tokenCaptured) {
               try {
