@@ -40,6 +40,7 @@ const Navbar = ({ currentUser }) => {
       icon: FaCartShopping,
       subItems: [
         { name: 'Solicitações', href: '/solicitacompras' },
+        { name: 'Estoque', href: '/estoque' },
       ]
     },
     {
