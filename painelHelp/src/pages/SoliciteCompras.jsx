@@ -7,9 +7,13 @@ import { MdOutlineRequestQuote } from "react-icons/md";
 import Modal from 'react-modal';
 import { useTransition, animated } from '@react-spring/web';
 import AlertModal from '../components/AlertModal/AlertModal';
-import { IoClose } from "react-icons/io5";
 import Dropdown from '../components/Dropdown/Dropdown';
 import NotificationModal from '../components/NotificationModal/NotificationModal';
+import { IoIosSend } from "react-icons/io";
+import { IoIosRemoveCircle } from "react-icons/io";
+
+Modal.setAppElement('#root'); // Ajuste o seletor conforme necessário
+
 
 const SoliciteCompras = () => {
   const { currentUser, currentUserRole } = useAuth();
@@ -27,7 +31,76 @@ const SoliciteCompras = () => {
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [alertModalOpen, setAlertModalOpen] = useState(false);
   const [alertModalContent, setAlertModalContent] = useState({ title: '', message: '', showOkButton: true });
-  const [statusFilter, setStatusFilter] = useState('Todos');
+  const [statusFilter, setStatusFilter] = useState('Todos'); // Adicionado statusFilter
+  const [categorias, setCategorias] = useState([]);
+  const [selectedCategoria, setSelectedCategoria] = useState('');
+  const [itens, setItens] = useState([]);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [quantidade, setQuantidade] = useState(1);
+  const [quantidadeLimite, setQuantidadeLimite] = useState(null);
+  const [itensSolicitados, setItensSolicitados] = useState([{ categoria: '', item: '', quantidade: 1 }]);
+  const [isSendingModalOpen, setIsSendingModalOpen] = useState(false); // Novo estado para o modal de envio
+
+  const handleAddItem = () => {
+    if (itensSolicitados.length < 3) {
+      setItensSolicitados([...itensSolicitados, { categoria: '', item: '', quantidade: 1 }]);
+    } else {
+      setAlertModalContent({ title: 'Atenção', message: 'Você só pode adicionar até 3 itens.', showOkButton: true });
+      setAlertModalOpen(true);
+    }
+  };
+
+  const handleRemoveItem = (index) => {
+    if (itensSolicitados.length > 1) {
+      const novosItens = itensSolicitados.filter((_, i) => i !== index);
+      setItensSolicitados(novosItens);
+    } else {
+      setAlertModalContent({ title: 'Atenção', message: 'Você deve ter pelo menos um item na solicitação.', showOkButton: true });
+      setAlertModalOpen(true);
+    }
+  };
+
+  useEffect(() => {
+    const fetchCategorias = async () => {
+      const estoqueRef = doc(db, 'estoqueCompras', 'estoque');
+      const estoqueDoc = await getDoc(estoqueRef);
+      if (estoqueDoc.exists()) {
+        setCategorias(Object.keys(estoqueDoc.data()));
+      }
+    };
+    fetchCategorias();
+  }, []);
+
+  useEffect(() => {
+    const fetchItens = async (categoria) => {
+      if (categoria) {
+        const estoqueRef = doc(db, 'estoqueCompras', 'estoque');
+        const estoqueDoc = await getDoc(estoqueRef);
+        if (estoqueDoc.exists()) {
+          const categoriaData = estoqueDoc.data()[categoria];
+          return Object.keys(categoriaData);
+        }
+      }
+      return [];
+    };
+
+    const atualizarItens = async () => {
+      const novosItensSolicitados = await Promise.all(
+        itensSolicitados.map(async (solicitado) => {
+          if (solicitado.categoria) {
+            const itensDaCategoria = await fetchItens(solicitado.categoria);
+            return { ...solicitado, itensDisponiveis: itensDaCategoria };
+          }
+          return solicitado;
+        })
+      );
+      setItensSolicitados(novosItensSolicitados);
+    };
+
+    if (itensSolicitados.length > 0) {
+      atualizarItens();
+    }
+  }, [JSON.stringify(itensSolicitados)]);
 
   useEffect(() => {
     const fetchUserDetails = async () => {
@@ -91,7 +164,6 @@ const SoliciteCompras = () => {
       fetchLojas();
     }
   }, [selectedCidade, currentUserRole]);
-
 
   useEffect(() => {
     if (selectedCidade) {
@@ -184,26 +256,24 @@ const SoliciteCompras = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setError(null);
-    setSuccess(false);
 
-    setAlertModalContent({ title: 'Enviando', message: 'Enviando solicitação...', showOkButton: false });
-    setAlertModalOpen(true);
-
-    if (!selectedLoja) {
-      setError('Por favor, selecione uma loja.');
-      setAlertModalContent({ title: 'Erro', message: 'Por favor, selecione uma loja.', showOkButton: true });
-      setLoading(false);
+    if (!validateForm()) {
       return;
     }
+
+    setLoading(true);
+    setIsSendingModalOpen(true); // Abrir o modal de envio
 
     try {
       const numSolicite = await getNextSolicitacaoNumber();
 
+      const itensAgrupados = itensSolicitados.reduce((acc, { item, quantidade }) => {
+        acc[item] = quantidade;
+        return acc;
+      }, {});
+
       const novaSolicitacao = {
         tipo,
-        nomeItem,
         motivo,
         whatsapp: currentUser.whatsapp,
         user: currentUser.user,
@@ -212,37 +282,36 @@ const SoliciteCompras = () => {
         loja: selectedLoja,
         data: new Date(),
         status: "Pendente",
-        numSolicite
+        numSolicite,
+        item: itensAgrupados
       };
 
       await setDoc(doc(db, 'solicitCompras', numSolicite), novaSolicitacao);
+
       setSuccess(true);
       setAlertModalContent({ title: 'Sucesso', message: 'Solicitação enviada com sucesso!', showOkButton: true });
 
-      // Buscar tokens e enviar notificações
-      const tokens = await fetchTITokens();
-      const notification = {
-        title: 'Nova Solicitação',
-        body: `Uma nova solicitação: ${nomeItem}`,
-        click_action: "https://admhelpti.netlify.app/",
-        icon: "https://iili.io/duTTt8Q.png"
-      };
-
-      await sendNotification(tokens, notification);
-
-      // Limpar os campos após envio bem-sucedido
+      // Limpar os campos após o envio
       setTipo('Reposição');
       setNomeItem('');
       setMotivo('');
-      setWhatsapp('');
       setSelectedCidade('');
       setSelectedLoja('');
+      setItensSolicitados([{ categoria: '', item: '', quantidade: 1 }]);
     } catch (error) {
       setError('Erro ao adicionar solicitação');
       setAlertModalContent({ title: 'Erro', message: 'Erro ao adicionar solicitação', showOkButton: true });
       console.error('Erro ao adicionar solicitação:', error);
     } finally {
       setLoading(false);
+      setIsSendingModalOpen(false); // Fechar o modal de envio
+    }
+  };
+
+  const handleExternalSubmit = () => {
+    const form = document.getElementById('soliciteForm');
+    if (form) {
+      form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
     }
   };
 
@@ -252,31 +321,182 @@ const SoliciteCompras = () => {
     leave: { opacity: 0, transform: 'translateY(-50%)' },
   });
 
+  const validateForm = () => {
+    if (!tipo || !motivo || !selectedCidade || !selectedLoja || itensSolicitados.some(item => !item.categoria || !item.item || item.quantidade < 1)) {
+      setAlertModalContent({ title: 'Atenção', message: 'Por favor, preencha todos os campos antes de enviar.', showOkButton: true });
+      setAlertModalOpen(true);
+      return false;
+    }
+    return true;
+  };
+
   return (
     <div className="flex bg-altBlue lg:justify-between lg:flex-row flex-col">
       <div className="pt-20 hidden lg:block">
         <div className='p-5 bg-white border min-w-[400px] lg:ml-[13rem] m-4 lg:m-0 border-gray-300 rounded-xl shadow-lg'>
-          <h2 className="text-xl font-bold mb-4 block  text-gray-700">Nova Solicitação</h2>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className='flex gap-4 flex-col'>
+          <div className='flex justify-between'>
+            <h2 className="text-xl font-bold mb-4 block text-gray-700">Nova Solicitação</h2>
+            <button
+              type="button"
+              onClick={handleExternalSubmit}  // Use a função para disparar a submissão do React
+              className="max-w-20 gap-1 flex justify-center items-center bg-primaryBlueDark text-white p-2 rounded hover:bg-primaryOpaci focus:outline-none focus:ring focus:ring-gray-200"
+              disabled={loading}
+            >
+              <p>{loading ? 'Enviando...' : 'Enviar'}</p>
+              <IoIosSend />
+            </button>
+
+          </div>
+          <form id="soliciteForm" onSubmit={handleSubmit} className="space-y-2">
+            <div className='flex gap-2 flex-col'>
               <div className="">
                 <Dropdown
                   label="Tipo de Solicitação"
                   options={['Reposição', 'Novo']}
                   selected={tipo}
                   onSelectedChange={(option) => setTipo(option)}
-                />
-              </div>
-              <div>
-                <label className="block mb-2 text-sm font-medium text-gray-700">Nome do Item</label>
-                <input
-                  type="text"
-                  value={nomeItem}
-                  onChange={(e) => setNomeItem(e.target.value)}
-                  className="w-full border border-gray-300 p-2 rounded focus:ring focus:ring-blue-200"
                   required
                 />
               </div>
+              {itensSolicitados.map((solicitado, index) => (
+                <div key={index} className="flex gap-2 items-center -mt-1">
+                  <Dropdown
+                    options={categorias}
+                    selected={solicitado.categoria || "Categoria"}
+                    onSelectedChange={(categoria) => {
+                      const novosItens = [...itensSolicitados];
+                      novosItens[index].categoria = categoria;
+                      novosItens[index].item = ''; // Resetar item ao mudar de categoria
+                      setItensSolicitados(novosItens);
+                    }}
+                  />
+                  <div className='min-w-36'>
+                    <Dropdown
+                      options={solicitado.itensDisponiveis || []}
+                      selected={solicitado.item || "item"}
+                      onSelectedChange={async (item) => {
+                        const novosItens = [...itensSolicitados];
+                        novosItens[index].item = item;
+
+                        // Buscar o limite de quantidade do item selecionado
+                        const estoqueRef = doc(db, 'estoqueCompras', 'estoque');
+                        const estoqueDoc = await getDoc(estoqueRef);
+                        if (estoqueDoc.exists()) {
+                          const categoriaData = estoqueDoc.data()[novosItens[index].categoria];
+                          const itemData = categoriaData[item];
+
+                          if (itemData && itemData.quantityLimit !== undefined) {
+                            novosItens[index].quantidadeLimite = itemData.quantityLimit;
+                          } else {
+                            novosItens[index].quantidadeLimite = 0;
+                          }
+                        }
+
+                        setItensSolicitados(novosItens);
+                      }}
+                      disabled={!solicitado.categoria}
+                    />
+                  </div>
+                  <div className="mt-2 flex items-center">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!solicitado.categoria || !solicitado.item) {
+                          setAlertModalContent({ title: 'Atenção', message: 'Selecione uma categoria e um item antes de definir a quantidade.', showOkButton: true });
+                          setAlertModalOpen(true);
+                          return;
+                        }
+
+                        const novosItens = [...itensSolicitados];
+                        const limite = solicitado.quantidadeLimite;
+
+                        if (solicitado.quantidade > 1) {
+                          novosItens[index].quantidade -= 1;
+                          setItensSolicitados(novosItens);
+                        } else {
+                          setAlertModalContent({ title: 'Atenção', message: 'A quantidade mínima é 1.', showOkButton: true });
+                          setAlertModalOpen(true);
+                        }
+                      }}
+                      className="bg-gray-300 text-black p-2 rounded-l"
+                    >
+                      -
+                    </button>
+                    <input
+                      type="number"
+                      label="Qtd"
+                      value={solicitado.quantidade}
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value, 10);
+
+                        if (!solicitado.categoria || !solicitado.item) {
+                          setAlertModalContent({ title: 'Atenção', message: 'Selecione uma categoria e um item antes de definir a quantidade.', showOkButton: true });
+                          setAlertModalOpen(true);
+                          return;
+                        }
+
+                        const novosItens = [...itensSolicitados];
+                        const limite = solicitado.quantidadeLimite;
+
+                        if (limite !== undefined && value <= limite) {
+                          novosItens[index].quantidade = value;
+                          setItensSolicitados(novosItens);
+                        } else {
+                          setAlertModalContent({ title: 'Atenção', message: `Você não pode pedir mais que ${limite || 0} deste item`, showOkButton: true });
+                          setAlertModalOpen(true);
+                        }
+                      }}
+                      className="w-12 border-t border-b border-gray-300 p-2 text-center focus:ring focus:ring-blue-200"
+                      min="1"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!solicitado.categoria || !solicitado.item) {
+                          setAlertModalContent({ title: 'Atenção', message: 'Selecione uma categoria e um item antes de definir a quantidade.', showOkButton: true });
+                          setAlertModalOpen(true);
+                          return;
+                        }
+
+                        const novosItens = [...itensSolicitados];
+                        const limite = solicitado.quantidadeLimite;
+
+                        if (limite !== undefined && solicitado.quantidade < limite) {
+                          novosItens[index].quantidade += 1;
+                          setItensSolicitados(novosItens);
+                        } else {
+                          setAlertModalContent({ title: 'Atenção', message: `Você não pode pedir mais que ${limite || 0} deste item`, showOkButton: true });
+                          setAlertModalOpen(true);
+                        }
+                      }}
+                      className="bg-gray-300 text-black p-2 rounded-r"
+                    >
+                      +
+                    </button>
+                  </div>
+                  <div className='mt-2'>
+                    {itensSolicitados.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveItem(index)}
+                        className="bg-red-500 text-white p-2 rounded mr-1"
+                      >
+                        -
+                      </button>
+                    )}
+                    {index === itensSolicitados.length - 1 && itensSolicitados.length < 3 && (
+                      <button
+                        type="button"
+                        onClick={handleAddItem}
+                        className="bg-primaryBlueDark text-white p-2 rounded"
+                      >
+                        +
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
             <div>
               <label className="block mb-2 text-sm font-medium text-gray-700">Motivo</label>
@@ -319,16 +539,10 @@ const SoliciteCompras = () => {
                 />
               </div>
             </div>
-            <button
-              type="submit"
-              className="w-full bg-primaryBlueDark text-white p-2 rounded hover:bg-primaryOpaci focus:outline-none focus:ring focus:ring-gray-200"
-              disabled={loading}
-            >
-              {loading ? 'Enviando...' : 'Enviar'}
-            </button>
           </form>
         </div>
       </div>
+
       <div className="block lg:hidden p-4 pt-20">
         <button
           onClick={() => setModalIsOpen(true)}
@@ -337,12 +551,14 @@ const SoliciteCompras = () => {
           <MdOutlineRequestQuote className='text-xl' /> Nova Solicitação
         </button>
       </div>
+
+
       {transitions(
         (styles, item) => item && (
           <Modal
             isOpen={modalIsOpen}
             onRequestClose={() => setModalIsOpen(false)}
-            className="modal"
+            className="modal flex items-center justify-center"
             overlayClassName="overlay"
             style={{
               overlay: { backgroundColor: 'rgba(0, 0, 0, 0.5)' },
@@ -350,38 +566,180 @@ const SoliciteCompras = () => {
             }}
           >
             <animated.div style={styles}>
-              <div className='p-4 bg-white border border-gray-300 rounded-xl shadow-lg '>
-                <div className='flex justify-between mb-1'>
-                  <h2 className="text-xl font-bold mb-4">Nova Solicitação</h2>
+              <div className='p-3 bg-white border min-w-[150px] border-gray-300 rounded-xl shadow-lg '>
+                <div className='flex justify-between'>
+                  <h2 className="text-xl font-bold mb-4 block text-gray-700">Nova Solicitação</h2>
                   <button
-                    onClick={() => setModalIsOpen(false)}
-                    className='bg-red-600 text-white p-2 rounded-full h-7 w-7 flex justify-center items-center shadow-xl'
+                    type="button"
+                    onClick={handleExternalSubmit}  // Use a função para disparar a submissão do React
+                    className="max-w-20 gap-1 flex justify-center items-center bg-primaryBlueDark text-white p-2 rounded hover:bg-primaryOpaci focus:outline-none focus:ring focus:ring-gray-200"
+                    disabled={loading}
                   >
-                    <IoClose className='' />
+                    <p>{loading ? 'Enviando...' : 'Enviar'}</p>
+                    <IoIosSend />
                   </button>
+
                 </div>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className='flex gap-4 flex-col'>
-                    <div>
-                      <div className='w-full'>
-                        <Dropdown
-                          label="Tipo de Solicitação"
-                          options={['Reposição', 'Novo']}
-                          selected={tipo}
-                          onSelectedChange={(option) => setTipo(option)}
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block mb-2 text-sm font-medium text-gray-700">Nome do Item</label>
-                      <input
-                        type="text"
-                        value={nomeItem}
-                        onChange={(e) => setNomeItem(e.target.value)}
-                        className="w-full border border-gray-300 p-2 rounded focus:ring focus:ring-blue-200"
+                <form id="soliciteForm" onSubmit={handleSubmit} className="space-y-2">
+                  <div className='flex gap-2 flex-col'>
+                    <div className="">
+                      <Dropdown
+                        label="Tipo de Solicitação"
+                        options={['Reposição', 'Novo']}
+                        selected={tipo}
+                        onSelectedChange={(option) => setTipo(option)}
                         required
                       />
                     </div>
+                    {itensSolicitados.map((solicitado, index) => (
+
+                      <div className='flex justify-center'>
+                        <div className='w-[70%]'>
+                          <div key={index} className="flex gap-2 items-center -mt-1">
+                            <div className='text-sm'>
+                              <Dropdown
+                                className="text-sm"
+                                options={categorias}
+                                selected={solicitado.categoria || "Categoria"}
+                                onSelectedChange={(categoria) => {
+                                  const novosItens = [...itensSolicitados];
+                                  novosItens[index].categoria = categoria;
+                                  novosItens[index].item = ''; // Resetar item ao mudar de categoria
+                                  setItensSolicitados(novosItens);
+                                }}
+                              />
+                            </div>
+                            <div className="mt-2 flex items-center">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (!solicitado.categoria || !solicitado.item) {
+                                    setAlertModalContent({ title: 'Atenção', message: 'Selecione uma categoria e um item antes de definir a quantidade.', showOkButton: true });
+                                    setAlertModalOpen(true);
+                                    return;
+                                  }
+
+                                  const novosItens = [...itensSolicitados];
+                                  const limite = solicitado.quantidadeLimite;
+
+                                  if (solicitado.quantidade > 1) {
+                                    novosItens[index].quantidade -= 1;
+                                    setItensSolicitados(novosItens);
+                                  } else {
+                                    setAlertModalContent({ title: 'Atenção', message: 'A quantidade mínima é 1.', showOkButton: true });
+                                    setAlertModalOpen(true);
+                                  }
+                                }}
+                                className="bg-gray-300 text-black p-2 rounded-l"
+                              >
+                                -
+                              </button>
+                              <input
+                                type="number"
+                                label="Qtd"
+                                value={solicitado.quantidade}
+                                onChange={(e) => {
+                                  const value = parseInt(e.target.value, 10);
+
+                                  if (!solicitado.categoria || !solicitado.item) {
+                                    setAlertModalContent({ title: 'Atenção', message: 'Selecione uma categoria e um item antes de definir a quantidade.', showOkButton: true });
+                                    setAlertModalOpen(true);
+                                    return;
+                                  }
+
+                                  const novosItens = [...itensSolicitados];
+                                  const limite = solicitado.quantidadeLimite;
+
+                                  if (limite !== undefined && value <= limite) {
+                                    novosItens[index].quantidade = value;
+                                    setItensSolicitados(novosItens);
+                                  } else {
+                                    setAlertModalContent({ title: 'Atenção', message: `Você não pode pedir mais que ${limite || 0} deste item`, showOkButton: true });
+                                    setAlertModalOpen(true);
+                                  }
+                                }}
+                                className="w-12 border-t border-b border-gray-300 p-2 text-center focus:ring focus:ring-blue-200"
+                                min="1"
+                                required
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (!solicitado.categoria || !solicitado.item) {
+                                    setAlertModalContent({ title: 'Atenção', message: 'Selecione uma categoria e um item antes de definir a quantidade.', showOkButton: true });
+                                    setAlertModalOpen(true);
+                                    return;
+                                  }
+
+                                  const novosItens = [...itensSolicitados];
+                                  const limite = solicitado.quantidadeLimite;
+
+                                  if (limite !== undefined && solicitado.quantidade < limite) {
+                                    novosItens[index].quantidade += 1;
+                                    setItensSolicitados(novosItens);
+                                  } else {
+                                    setAlertModalContent({ title: 'Atenção', message: `Você não pode pedir mais que ${limite || 0} deste item`, showOkButton: true });
+                                    setAlertModalOpen(true);
+                                  }
+                                }}
+                                className="bg-gray-300 text-black p-2 rounded-r"
+                              >
+                                +
+                              </button>
+                            </div>
+                          </div>
+                          <div className='text-sm'>
+                            <Dropdown
+                              options={solicitado.itensDisponiveis || []}
+                              selected={solicitado.item || "item"}
+                              onSelectedChange={async (item) => {
+                                const novosItens = [...itensSolicitados];
+                                novosItens[index].item = item;
+
+                                // Buscar o limite de quantidade do item selecionado
+                                const estoqueRef = doc(db, 'estoqueCompras', 'estoque');
+                                const estoqueDoc = await getDoc(estoqueRef);
+                                if (estoqueDoc.exists()) {
+                                  const categoriaData = estoqueDoc.data()[novosItens[index].categoria];
+                                  const itemData = categoriaData[item];
+
+                                  if (itemData && itemData.quantityLimit !== undefined) {
+                                    novosItens[index].quantidadeLimite = itemData.quantityLimit;
+                                  } else {
+                                    novosItens[index].quantidadeLimite = 0;
+                                  }
+                                }
+
+                                setItensSolicitados(novosItens);
+                              }}
+                              disabled={!solicitado.categoria}
+                            />
+                          </div>
+                        </div>
+
+                        <div className='h-full mt-1 ml-1'>
+                          {itensSolicitados.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveItem(index)}
+                              className="bg-red-500 text-white p-2 rounded mr-1 !h-[90px]"
+                            >
+                              -
+                            </button>
+                          )}
+                          {index === itensSolicitados.length - 1 && itensSolicitados.length < 3 && (
+                            <button
+                              type="button"
+                              onClick={handleAddItem}
+                              className="bg-primaryBlueDark text-white p-2 rounded !h-[90px]"
+                            >
+                              +
+                            </button>
+                          )}
+                        </div>
+
+                      </div>
+                    ))}
                   </div>
                   <div>
                     <label className="block mb-2 text-sm font-medium text-gray-700">Motivo</label>
@@ -391,8 +749,7 @@ const SoliciteCompras = () => {
                       className="w-full border border-gray-300 p-2 rounded max-h-14 focus:ring focus:ring-blue-200"
                       rows="4"
                       required
-                    >
-                    </textarea>
+                    ></textarea>
                   </div>
                   {whatsapp && (
                     <div className='hidden'>
@@ -415,7 +772,7 @@ const SoliciteCompras = () => {
                         onSelectedChange={(option) => setSelectedCidade(option)}
                       />
                     </div>
-                    <div>
+                    <div className='w-24'>
                       <Dropdown
                         label="Loja"
                         options={lojas}
@@ -425,13 +782,6 @@ const SoliciteCompras = () => {
                       />
                     </div>
                   </div>
-                  <button
-                    type="submit"
-                    className="w-full bg-primaryBlueDark text-white p-2 rounded hover:bg-primaryOpaci focus:outline-none focus:ring focus:ring-gray-200"
-                    disabled={loading}
-                  >
-                    {loading ? 'Enviando...' : 'Enviar'}
-                  </button>
                 </form>
               </div>
             </animated.div>
@@ -445,6 +795,14 @@ const SoliciteCompras = () => {
         title={alertModalContent.title}
         message={alertModalContent.message}
         showOkButton={alertModalContent.showOkButton}
+      />
+      <AlertModal
+        isOpen={isSendingModalOpen}
+        onRequestClose={() => setIsSendingModalOpen(false)}
+        title="Enviando"
+        message="Sua solicitação está sendo enviada..."
+        showOkButton={false}
+        loading={true}
       />
 
       <div className="">
