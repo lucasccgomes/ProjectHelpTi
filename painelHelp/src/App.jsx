@@ -14,6 +14,7 @@ import { doc, updateDoc } from 'firebase/firestore';
 import TimeClock from './pages/TimeClock';
 import SoliciteCompras from './pages/SoliciteCompras';
 import Estoque from './pages/Estoque';
+import FullReportCompras from './pages/RelatorioCompras';
 
 const App = () => {
   return (
@@ -33,7 +34,7 @@ const App = () => {
                 </ProtectedRoute>}
                 />
 
-                <Route path="/solicitacao" element={<ProtectedRoute allowedRoles={['T.I', 'Gerente', 'Supervisor']}>
+                <Route path="/solicitacao" element={<ProtectedRoute allowedRoles={['T.I', 'Gerente', 'Supervisor', 'Compras']}>
                   <Solicitacao />
                 </ProtectedRoute>}
                 />
@@ -43,7 +44,7 @@ const App = () => {
                 </ProtectedRoute>}
                 />
 
-                <Route path="/solicitacompras" element={<ProtectedRoute allowedRoles={['T.I', 'Compras']}>
+                <Route path="/solicitacompras" element={<ProtectedRoute allowedRoles={['T.I', 'Compras', 'Gerente', 'Supervisor']}>
                   <SoliciteCompras />
                 </ProtectedRoute>}
                 />
@@ -53,8 +54,13 @@ const App = () => {
                 </ProtectedRoute>}
                 />
 
-                <Route path="/estoque"  element={<ProtectedRoute allowedRoles={['T.I', 'Compras']}>
+                <Route path="/estoque" element={<ProtectedRoute allowedRoles={['T.I', 'Compras']}>
                   <Estoque />
+                </ProtectedRoute>}
+                />
+
+                <Route path="/reportcompras" element={<ProtectedRoute allowedRoles={['T.I', 'Compras']}>
+                  <FullReportCompras />
                 </ProtectedRoute>}
                 />
 
