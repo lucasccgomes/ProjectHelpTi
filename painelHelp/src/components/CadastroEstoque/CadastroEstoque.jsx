@@ -133,96 +133,97 @@ const CadastroEstoque = () => {
     };
 
     return (
-        <div className="p-5 bg-white border min-w-[400px] lg:ml-[13rem] m-4 lg:m-0 border-gray-300 rounded-xl shadow-lg">
-            <div className='flex justify-between'>
-                <h2 className="text-xl font-bold mb-4 block text-gray-700">Cadastro de Novo Item</h2>
-                <button
-                    type="button"
-                    onClick={handleSave}
-                    className="max-w-20 gap-1 flex justify-center items-center bg-primaryBlueDark text-white p-2 rounded hover:bg-primaryOpaci focus:outline-none focus:ring focus:ring-gray-200"
-                    disabled={saving}
-                >
-                    <p>{saving ? 'Salvando...' : 'Salvar'}</p>
-                    <IoIosSend />
-                </button>
-            </div>
-            <div className="space-y-2">
-                <div className="">
-                    <Dropdown
-                        label="Categoria"
-                        options={['Nova Categoria', ...categorias]} // Adicione a opção "Nova Categoria"
-                        selected={categoriaSelecionada}
-                        onSelectedChange={(option) => {
-                            if (option === 'Nova Categoria') {
-                                setCategoriaSelecionada('');
-                                setNovaCategoria(''); // Limpa o campo de nova categoria para entrada do usuário
-                            } else {
-                                setCategoriaSelecionada(option);
-                                setNovaCategoria('');
-                            }
-                        }}
-                    />
-                    {categoriaSelecionada === '' && (
+        <div className="p-5 bg-white border lg:min-w-[400px] flex justify-between flex-col m-4 lg:m-0 border-gray-300 rounded-xl shadow-lg">
+            <div className='flex flex-col justify-between'>
+                <div className='flex justify-between'>
+                    <h2 className="text-xl font-bold mb-4 block text-gray-700">Cadastro de Novo Item</h2>
+                    <button
+                        type="button"
+                        onClick={handleSave}
+                        className="max-w-20 gap-1 flex justify-center items-center bg-primaryBlueDark text-white p-2 rounded hover:bg-primaryOpaci focus:outline-none focus:ring focus:ring-gray-200"
+                        disabled={saving}
+                    >
+                        <p>{saving ? 'Salvando...' : 'Salvar'}</p>
+                        <IoIosSend />
+                    </button>
+                </div>
+                <div className="space-y-2">
+                    <div className="">
+                        <Dropdown
+                            label="Categoria"
+                            options={['Nova Categoria', ...categorias]}
+                            selected={categoriaSelecionada}
+                            onSelectedChange={(option) => {
+                                if (option === 'Nova Categoria') {
+                                    setCategoriaSelecionada('');
+                                    setNovaCategoria(''); // Limpa o campo de nova categoria para entrada do usuário
+                                } else {
+                                    setCategoriaSelecionada(option);
+                                    setNovaCategoria('');
+                                }
+                            }}
+                        />
+                        {categoriaSelecionada === '' && (
+                            <input
+                                type="text"
+                                placeholder="Digite o nome da nova categoria"
+                                value={novaCategoria}
+                                onChange={(e) => setNovaCategoria(e.target.value)}
+                                className="w-full border border-gray-300 p-2 rounded focus:ring focus:ring-blue-200 mt-2"
+                            />
+                        )}
+                    </div>
+                    <div className="">
+                        <label className="block mb-1 text-sm font-medium text-gray-700">Nome do Item</label>
                         <input
                             type="text"
-                            placeholder="Digite o nome da nova categoria"
-                            value={novaCategoria}
-                            onChange={(e) => setNovaCategoria(e.target.value)}
-                            className="w-full border border-gray-300 p-2 rounded focus:ring focus:ring-blue-200 mt-2"
-                        />
-                    )}
-                </div>
-                <div className="">
-                    <label className="block mb-1 text-sm font-medium text-gray-700">Nome do Item</label>
-                    <input
-                        type="text"
-                        value={nomeItem}
-                        onChange={(e) => setNomeItem(e.target.value)}
-                        className="w-full border border-gray-300 p-2 rounded focus:ring focus:ring-blue-200"
-                    />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <label className="block mb-1 text-sm font-medium text-gray-700">Quantidade</label>
-                        <input
-                            type="number"
-                            value={amount}
-                            onChange={(e) => setAmount(Number(e.target.value))}
+                            value={nomeItem}
+                            onChange={(e) => setNomeItem(e.target.value)}
                             className="w-full border border-gray-300 p-2 rounded focus:ring focus:ring-blue-200"
                         />
                     </div>
-                    <div>
-                        <label className="block mb-1 text-sm font-medium text-gray-700">Preço</label>
-                        <input
-                            type="number"
-                            step="0.01"
-                            value={price}
-                            onChange={(e) => setPrice(Number(e.target.value))}
-                            className="w-full border border-gray-300 p-2 rounded focus:ring focus:ring-blue-200"
-                        />
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block mb-1 text-sm font-medium text-gray-700">Quantidade</label>
+                            <input
+                                type="number"
+                                value={amount}
+                                onChange={(e) => setAmount(Number(e.target.value))}
+                                className="w-full border border-gray-300 p-2 rounded focus:ring focus:ring-blue-200"
+                            />
+                        </div>
+                        <div>
+                            <label className="block mb-1 text-sm font-medium text-gray-700">Preço</label>
+                            <input
+                                type="number"
+                                step="0.01"
+                                value={price}
+                                onChange={(e) => setPrice(Number(e.target.value))}
+                                className="w-full border border-gray-300 p-2 rounded focus:ring focus:ring-blue-200"
+                            />
+                        </div>
+                        <div>
+                            <label className="block mb-1 text-sm font-medium text-gray-700">Limite de Quantidade</label>
+                            <input
+                                type="number"
+                                value={quantityLimit}
+                                onChange={(e) => setQuantityLimit(Number(e.target.value))}
+                                className="w-full border border-gray-300 p-2 rounded focus:ring focus:ring-blue-200"
+                            />
+                        </div>
+                        <div>
+                            <label className="block mb-1 text-sm font-medium text-gray-700">Quantidade Real</label>
+                            <input
+                                type="number"
+                                value={trueAmount}
+                                onChange={(e) => setTrueAmount(Number(e.target.value))}
+                                className="w-full border border-gray-300 p-2 rounded focus:ring focus:ring-blue-200"
+                            />
+                        </div>
                     </div>
-                    <div>
-                        <label className="block mb-1 text-sm font-medium text-gray-700">Limite de Quantidade</label>
-                        <input
-                            type="number"
-                            value={quantityLimit}
-                            onChange={(e) => setQuantityLimit(Number(e.target.value))}
-                            className="w-full border border-gray-300 p-2 rounded focus:ring focus:ring-blue-200"
-                        />
-                    </div>
-                    <div>
-                        <label className="block mb-1 text-sm font-medium text-gray-700">Quantidade Real</label>
-                        <input
-                            type="number"
-                            value={trueAmount}
-                            onChange={(e) => setTrueAmount(Number(e.target.value))}
-                            className="w-full border border-gray-300 p-2 rounded focus:ring focus:ring-blue-200"
-                        />
-                    </div>
-                </div>
 
+                </div>
             </div>
-
             <AlertModal
                 isOpen={alertModalOpen}
                 onRequestClose={() => setAlertModalOpen(false)}
