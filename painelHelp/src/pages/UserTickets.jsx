@@ -173,7 +173,7 @@ const UserTickets = () => {
   }
 
   return (
-    <div className="p-4 w-full pt-12 flex lg:pt-20 flex-col justify-center items-center text-gray-700">
+    <div className="p-4 w-full bg-altBlue text-white pt-12 flex lg:pt-20 flex-col justify-center items-center">
       {currentUser.cargo !== 'Supervisor' && (
         <div className='w-full flex'>
           <div className='flex items-center px-1 text-white rounded-b-xl bg-primaryBlueDark lg:hidden'>
@@ -191,7 +191,7 @@ const UserTickets = () => {
       )}
       <div className='flex flex-col lg:flex-row lg:gap-4 w-full items-center mb-4 mt-4 lg:mt-0'>
 
-        <h2 className="text-2xl w-full font-bold text-center lg:text-end text-gray-700">Meus Chamados</h2>
+        <h2 className="text-2xl w-full font-bold text-center lg:text-end text-white">Meus Chamados</h2>
         <div className="flex w-full items-center lg:justify-start justify-center gap-2">
           <button
             className=" bg-primaryBlueDark flex justify-center items-center hover:bg-secondary text-white font-bold py-2 px-4 rounded"
@@ -354,8 +354,8 @@ const UserTickets = () => {
           >
             {tickets.map(ticket => (
               <div key={ticket.id} className='gap-4'>
-                <div className="bg-primaryBlueDark text-white shadow lg:min-w-[250px] mb-4 p-4 border-2 rounded-xl">
-                  <div className="text-xl text-gray-700 bg-white font-bold uppercase rounded-b-xl -mt-5 mb-2 pb-1 text-center">
+                <div className="bg-primaryBlueDark text-white shadow-xl lg:min-w-[250px] mb-4 p-4 border border-gray-500 rounded-xl">
+                  <div className="text-xl text-white shadow-xl border border-gray-500 bg-altBlue font-bold uppercase rounded-b-xl -mt-5 mb-2 pb-1 text-center">
                     {ticket.order}
                   </div>
                   <p className={`my-1 p-1 rounded-lg text-white uppercase shadow-xl ${getStatusClass(ticket.status)}`}>

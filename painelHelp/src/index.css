@@ -9,6 +9,11 @@
     top: 10px !important;
 }
 
+#root {
+  background-color: #2a4578 !important;
+  width: 100%;
+  height: 100vh;
+}
 
 /* Estilizando a barra de rolagem para navegadores baseados em WebKit */
 ::-webkit-scrollbar {
