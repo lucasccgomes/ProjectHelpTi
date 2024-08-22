@@ -41,6 +41,7 @@ const Navbar = ({ currentUser }) => {
       subItems: [
         { name: 'Solicitações', href: '/solicitacompras' },
         { name: 'Estoque', href: '/estoque' },
+        { name: 'Relatório', href: '/reportcompras' },
       ]
     },
     {
