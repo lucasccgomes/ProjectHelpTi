@@ -131,11 +131,30 @@ const EstoqueViewer = () => {
 
     const handleDelete = async () => {
         if (!selectedItem || !currentUser) return;
-
+    
         setIsSaving(true);
-
+    
         const estoqueRef = doc(db, 'estoqueCompras', 'estoque');
-
+        const fullReportRef = doc(db, 'relatorioCompras', 'fullReport');
+        const fullReportDoc = await getDoc(fullReportRef);
+        const fullReportData = fullReportDoc.exists() ? fullReportDoc.data() : {};
+        const timestamp = new Date().toISOString();
+    
+        // Gravação no relatório para exclusão
+        const reportEntry = {
+            item: selectedItem.title,
+            data: new Date().toISOString(),
+            usuario: currentUser.user,
+        };
+    
+        await setDoc(fullReportRef, {
+            ...fullReportData,
+            [timestamp]: {
+                Exclusão: reportEntry
+            }
+        });
+    
+        // Remoção do item do estoque
         await setDoc(estoqueRef, {
             ...categorias,
             [selectedItem.categoria]: {
@@ -143,10 +162,11 @@ const EstoqueViewer = () => {
                 [selectedItem.title]: deleteField(),
             }
         }, { merge: true });
-
+    
         setIsSaving(false);
         setDeleteModalIsOpen(false);
     };
+    
 
     const openModal = (item) => {
         setSelectedItem(item);
@@ -160,7 +180,7 @@ const EstoqueViewer = () => {
     };
 
     return (
-        <div className="p-5 bg-white border min-w-[400px] m-4 border-gray-300 rounded-xl shadow-lg">
+        <div className="lg:p-5 p-3 bg-white border  lg:min-w-[400px] m-1 border-gray-300 rounded-xl shadow-lg">
             <div className='bg-white w-full px-4'>
                 <h2 className="text-xl font-bold mb-4 text-gray-700">Visualizar Estoque</h2>
                 <div className="mb-4">
@@ -174,7 +194,7 @@ const EstoqueViewer = () => {
                 </div>
             </div>
             <div>
-                <div className='max-h-[320px] overflow-auto px-2'>
+                <div className='max-h-[320px] lg:max-h-[320px] overflow-auto px-2'>
                     {Object.keys(filteredCategorias).map(categoria => (
                         <div key={categoria} className="mb-4 ">
                             <h3 className="text-lg font-semibold text-gray-800">{categoria}</h3>
@@ -188,20 +208,34 @@ const EstoqueViewer = () => {
                                                         className="bg-primaryBlueDark text-white p-1 rounded"
                                                         onClick={() => openModal(item)}
                                                     >
-                                                       <p className='text-xl'><SiGithubactions /></p>
+                                                        <p className='text-xl'><SiGithubactions /></p>
                                                     </button>
                                                 </div>
-                                                <div className='mr-1'>
-                                                    <span className="font-medium">{item.title}</span>
-                                                </div>
-                                                <div>
-                                                    <span>Qtd: {item.amount}</span>
-                                                </div>
-                                                <div>
-                                                    <span>Qtd. Real: {item.trueAmount}</span>
-                                                </div>
-                                                <div>
-                                                    <span>Preço: R${item.price.toFixed(2)}</span>
+                                                <div className=''>
+                                                    <div className='mr-1'>
+                                                        <span className="font-medium">{item.title}</span>
+                                                    </div>
+                                                    <div className='flex gap-1'>
+                                                        <div>
+                                                            <div className='flex'>
+                                                                <p className='font-semibold'>Qtd:</p>
+                                                                {item.amount}
+                                                            </div>
+                                                        </div>
+                                                        <div>
+                                                            <div className='flex'>
+                                                                <p className='font-semibold'>Qtd. Real:</p>
+                                                                {item.trueAmount}
+                                                            </div>
+                                                        </div>
+                                                        <div>
+                                                            <div className='flex'>
+                                                                <p className='font-semibold'>R$</p>
+                                                                {item.price.toFixed(2)}
+                                                            </div>
+                                                        </div>
+                                                      
+                                                    </div>
                                                 </div>
                                             </div>
                                             <div className='ml-1'>
