@@ -7,14 +7,27 @@ import OfflineNotice from '../OffLineNotice/OfflineNotice';
 import { IoLogoAndroid, IoDesktopSharp } from 'react-icons/io5';
 import { FaCartShopping } from "react-icons/fa6";
 import { isDesktop } from 'react-device-detect';
+import UserProfile from '../UserProfile/UserProfile';
+import Modal from 'react-modal';
+import { useSpring, animated } from '@react-spring/web';
+import MyModal from '../MyModal/MyModal'
 
-const Navbar = ({ currentUser }) => {
+Modal.setAppElement('#root');
+
+const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [openSubMenu, setOpenSubMenu] = useState(null);
   const [installPrompt, setInstallPrompt] = useState(null);
   const [isInstalled, setIsInstalled] = useState(false);
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, logout, currentUser } = useAuth();
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const navRef = useRef(null);
+
+  // Animação do modal
+  const animationProps = useSpring({
+    opacity: isProfileModalOpen ? 1 : 0,
+    transform: isProfileModalOpen ? 'translateY(0)' : 'translateY(-20%)',
+  });
 
   const navItems = [
     {
@@ -33,6 +46,7 @@ const Navbar = ({ currentUser }) => {
       subItems: [
         { name: 'Chamados', href: '/usertickets' },
         { name: 'Solicitações', href: '/solicitacao' },
+        { name: 'Geren. Chamados', href: '/gerenchamados' },
       ]
     },
     {
@@ -41,7 +55,8 @@ const Navbar = ({ currentUser }) => {
       subItems: [
         { name: 'Solicitações', href: '/solicitacompras' },
         { name: 'Estoque', href: '/estoque' },
-        { name: 'Relatório', href: '/reportcompras' },
+        { name: 'Relatório tipo log', href: '/reportcompras' },
+        { name: 'Relatório de Custos', href: '/custocompras' },
       ]
     },
     {
@@ -55,14 +70,14 @@ const Navbar = ({ currentUser }) => {
     const handleBeforeInstallPrompt = (e) => {
       e.preventDefault();
       setInstallPrompt(e);
-      console.log("beforeinstallprompt event captured");  // Debugging
+      console.log("beforeinstallprompt event captured");
     };
 
     const checkInstalledStatus = async () => {
       if ('getInstalledRelatedApps' in navigator) {
         const relatedApps = await navigator.getInstalledRelatedApps();
         setIsInstalled(relatedApps.length > 0);
-        console.log("Installed apps:", relatedApps);  // Debugging
+        console.log("Installed apps:", relatedApps);
       }
     };
 
@@ -106,10 +121,18 @@ const Navbar = ({ currentUser }) => {
     setOpenSubMenu(openSubMenu === index ? null : index);
   };
 
+  const openProfileModal = () => {
+    setIsProfileModalOpen(true);
+  };
+
+  const closeProfileModal = () => {
+    setIsProfileModalOpen(false);
+  };
+
   return (
-    <div className="flex">
+    <div className="flex" id='navBar'>
       {/* Botão para abrir o menu lateral */}
-      <div className="bg-primaryBlueDark w-full h-14 fixed flex items-center z-10 justify-end">
+      <div className="bg-primaryBlueDark z-10 w-full h-14 fixed flex items-center justify-end">
         {!isInstalled && installPrompt && (
           <button
             onClick={handleInstallClick}
@@ -137,20 +160,41 @@ const Navbar = ({ currentUser }) => {
           )}
         </button>
         <div
-          className={`flex items-center gap-1 mr-16 text-white uppercase transition-transform duration-300 ease-in-out ${isOpen ? "opacity-0 transform -translate-x-10" : "opacity-100 transform translate-x-0"
+          onClick={openProfileModal} // Abre o modal ao clicar no nome ou ícone do usuário
+          className={`flex items-center gap-1 mr-16 text-white uppercase cursor-pointer transition-transform duration-300 ease-in-out ${isOpen ? "opacity-0 transform -translate-x-10" : "opacity-100 transform translate-x-0"
             }`}
         >
-          <FaUserCircle /> {currentUser ? currentUser.user : ''}
+          {currentUser?.imageUrl ? (
+            <img
+              src={currentUser.imageUrl}
+              alt="User profile"
+              className="w-8 h-8 rounded-full object-cover"
+            />
+          ) : (
+            <FaUserCircle className="w-8 h-8" />
+          )}
+          {currentUser ? currentUser.user : ''}
         </div>
+
       </div>
       {/* Menu lateral */}
       <nav ref={navRef} className={`fixed inset-y-0 left-0 bg-primaryBlueDark z-50 text-white w-64 transform ${isOpen ? "translate-x-0" : "-translate-x-full"} transition-transform duration-300 ease-in-out`}>
         <div className="p-4">
           <div
-            className={`flex items-center justify-center gap-1 uppercase mb-4 transition-transform duration-300 ease-in-out ${isOpen ? "opacity-100 transform translate-x-0 delay-300" : "opacity-0 transform -translate-x-10"
+            onClick={openProfileModal} // Abre o modal ao clicar no nome ou ícone do usuário
+            className={`flex items-center justify-center gap-1 uppercase mb-4 cursor-pointer transition-transform duration-300 ease-in-out ${isOpen ? "opacity-100 transform translate-x-0 delay-300" : "opacity-0 transform -translate-x-10"
               }`}
           >
-            <FaUserCircle /> {currentUser ? currentUser.user : ''}
+            {currentUser?.imageUrl ? (
+              <img
+                src={currentUser.imageUrl}
+                alt="User profile"
+                className="w-8 h-8 rounded-full object-cover"
+              />
+            ) : (
+              <FaUserCircle className="w-8 h-8" />
+            )}
+            {currentUser ? currentUser.user : ''}
           </div>
           <div className="space-y-2">
             {navItems.map((item, index) => (
@@ -212,6 +256,17 @@ const Navbar = ({ currentUser }) => {
         </div>
       </nav>
       <OfflineNotice />
+
+      {/* Modal para exibir UserProfile */}
+      <MyModal
+        isOpen={isProfileModalOpen}
+        onClose={closeProfileModal} 
+      >
+          <div className="flex justify-between">
+            <h2 className="text-2xl font-bold mb-4 text-gray-800">Perfil</h2>
+          </div>
+          <UserProfile />
+      </MyModal>
     </div>
   );
 };
