@@ -2,11 +2,33 @@
 @tailwind components;
 @tailwind utilities;
 
+@keyframes pulseUrgent {
+  0% { color: #FFEDD5; } /* Laranja */
+  50% { color: #F87171; } /* Vermelho */
+  100% { color: #FFFFFF; } /* Branco */
+}
+
+.react-datepicker__close-icon::after {
+  font-size: 18px; /* Aumenta o tamanho do ícone "X" */
+  background-color: rgb(187, 14, 14);
+  color: rgb(255, 255, 255); /* Muda a cor do "X" para vermelho (opcional) */
+  padding: 4px; /* Adiciona espaço interno para tornar o clique mais fácil */
+
+}
+
+.react-datepicker__close-icon {
+  width: 15px; /* Aumenta a área de clique */
+  right: 8px; /* Ajusta a posição à direita */
+  top: 50%; /* Centraliza verticalmente */
+  transform: translateY(-50%); /* Ajusta para centralizar o ícone "X" */
+  border-radius: 100%;
+}
+
 .control-arrow {
-    background-color: #002d56 !important;
-    border-radius: 20px;
-    height: 90%;
-    top: 10px !important;
+  background-color: #002d56 !important;
+  border-radius: 20px;
+  height: 90%;
+  top: 10px !important;
 }
 
 #root {
@@ -17,43 +39,119 @@
 
 /* Estilizando a barra de rolagem para navegadores baseados em WebKit */
 ::-webkit-scrollbar {
-    width: 5px; /* Largura da barra de rolagem vertical */
-    height: 12px; /* Altura da barra de rolagem horizontal */
-  }
-  
-  ::-webkit-scrollbar-track {
-    background: #f1f1f1; /* Cor do fundo da barra de rolagem */
-    border-radius: 10px; /* Bordas arredondadas do fundo da barra de rolagem */
-  }
-  
-  ::-webkit-scrollbar-thumb {
-    background: #888; /* Cor do "polegar" da barra de rolagem */
-    border-radius: 10px; /* Bordas arredondadas do "polegar" da barra de rolagem */
-  }
-  
-  ::-webkit-scrollbar-thumb:hover {
-    background: #555; /* Cor do "polegar" da barra de rolagem ao passar o mouse */
+  width: 5px;
+  /* Largura da barra de rolagem vertical */
+  height: 12px;
+  /* Altura da barra de rolagem horizontal */
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  /* Cor do fundo da barra de rolagem */
+  border-radius: 10px;
+  /* Bordas arredondadas do fundo da barra de rolagem */
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  /* Cor do "polegar" da barra de rolagem */
+  border-radius: 10px;
+  /* Bordas arredondadas do "polegar" da barra de rolagem */
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+  /* Cor do "polegar" da barra de rolagem ao passar o mouse */
+}
+
+.modal {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 15px;
+  border-radius: 10px;
+  max-width: 500px;
+  width: 100%;
+}
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.75);
+  z-index: 1000;
+}
+
+@media print {
+
+  /* Ocultar elementos indesejados */
+  .filter-container, #navBar, #btPrintReport {
+    display: none !important;
   }
 
-  .modal {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    padding: 15px;
-    border-radius: 10px;
-    max-width: 500px;
+  #textMobile {
+    display: none;
+  }
+
+  #textDesktop {
+    display: flex
+  }
+
+  #textTitle {
+    font-size: 18px;
+  }
+
+  /* Garantir que a área de impressão ocupe a largura completa da página */
+  #print-area {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    page-break-inside: avoid;
+    color: black; /* Texto preto */
+    background-color: white; /* Fundo branco */
+  }
+
+  /* Ajustar para modo paisagem */
+  @page {
+    size: A4 landscape;
+    margin: 10mm;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
     width: 100%;
   }
-  
-  .overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.75);
-    z-index: 1000;
+
+  /* Garantir que o conteúdo caiba na página */
+  #print-area * {
+    box-sizing: border-box;
+    max-width: 100%;
   }
-  
- 
+
+  /* Ajustar tamanhos de fonte para impressão */
+  body, p {
+    font-size: 12pt;
+  }
+
+  /* Garantir que todos os elementos sigam o formato adequado */
+  h2, h3 {
+    font-size: 18pt;
+    font-weight: bold;
+  }
+
+  .border-b {
+    border-bottom: 1px solid black;
+  }
+
+  .font-bold {
+    font-weight: bold;
+  }
+}
+
+.ReactModal__Content {
+  z-index: 1000 !important;
+}

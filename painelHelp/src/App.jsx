@@ -10,11 +10,13 @@ import Solicitacao from './pages/Solicitacoes';
 import NoPermission from './pages/NoPermission';
 import AssignTasksPage from './pages/AssignTaskPage';
 import { messaging, getToken, db, isSupported } from './firebase';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import TimeClock from './pages/TimeClock';
 import SoliciteCompras from './pages/SoliciteCompras';
 import Estoque from './pages/Estoque';
 import FullReportCompras from './pages/RelatorioCompras';
+import CustoCompras from './pages/CustoCompras';
+import GerenciadorChamados from './pages/GerenciadorChamados';
 
 const App = () => {
   return (
@@ -44,7 +46,7 @@ const App = () => {
                 </ProtectedRoute>}
                 />
 
-                <Route path="/solicitacompras" element={<ProtectedRoute allowedRoles={['T.I', 'Compras', 'Gerente', 'Supervisor']}>
+                <Route path="/solicitacompras" element={<ProtectedRoute allowedRoles={['T.I', 'Compras']}>
                   <SoliciteCompras />
                 </ProtectedRoute>}
                 />
@@ -61,6 +63,16 @@ const App = () => {
 
                 <Route path="/reportcompras" element={<ProtectedRoute allowedRoles={['T.I', 'Compras']}>
                   <FullReportCompras />
+                </ProtectedRoute>}
+                />
+
+                <Route path="/custocompras" element={<ProtectedRoute allowedRoles={['T.I', 'Compras']}>
+                  <CustoCompras />
+                </ProtectedRoute>}
+                />
+
+                <Route path="/gerenchamados" element={<ProtectedRoute allowedRoles={['T.I']}>
+                  <GerenciadorChamados />
                 </ProtectedRoute>}
                 />
 
@@ -92,8 +104,6 @@ const FCMHandler = ({ currentUser }) => {
         if ('serviceWorker' in navigator) {
           try {
             const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-            console.log('Service Worker registrado com sucesso:', registration);
-
             const waitForServiceWorkerActivation = async () => {
               return new Promise((resolve) => {
                 if (registration.active) {
@@ -143,9 +153,12 @@ const FCMHandler = ({ currentUser }) => {
                   const { user: userId, cidade: userCity } = currentUser;
                   if (typeof userId === 'string' && userId.trim() !== '' && typeof userCity === 'string' && userCity.trim() !== '') {
                     const userDocRef = doc(db, 'usuarios', userCity);
+
+                    // Recuperar tokens existentes e adicionar o novo token ao array, se não existir
                     await updateDoc(userDocRef, {
-                      [`${userId}.token`]: currentToken
+                      [`${userId}.token`]: arrayUnion(currentToken)
                     });
+
                     console.log('Token salvo com sucesso no Firestore');
                   } else {
                     console.error('Usuário ou cidade inválido:', currentUser);
@@ -177,5 +190,6 @@ const FCMHandler = ({ currentUser }) => {
 
   return null;
 };
+
 
 export default App;
