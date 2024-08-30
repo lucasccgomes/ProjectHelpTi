@@ -3,7 +3,11 @@ import { collection, getDoc, doc, getDocs, setDoc, updateDoc } from 'firebase/fi
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import Dropdown from '../Dropdown/Dropdown';
 import { db } from '../../firebase';
+import AlertModal from '../AlertModal/AlertModal';
 import { useAuth } from '../../context/AuthContext';
+import MyModal from '../MyModal/MyModal';
+import { FaCity, FaStoreAlt } from "react-icons/fa";
+import ImageUploadButton from '../ImageUploadButton/ImageUploadButton';
 
 const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
   const { currentUser } = useAuth();
@@ -16,8 +20,10 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
   const [images, setImages] = useState([]);
   const [cities, setCities] = useState([]);
   const [stores, setStores] = useState([]);
-  const [selectedCity, setSelectedCity] = useState('Todas');
-  const [selectedStore, setSelectedStore] = useState('Todas');
+  const [selectedCity, setSelectedCity] = useState('');
+  const [selectedStore, setSelectedStore] = useState('');
+  const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
+  const [alertMessage, setAlertMessage] = useState('');
 
   const storage = getStorage();
 
@@ -74,10 +80,8 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
   }, [currentUser]);
 
   const sendNotification = async (tokens, notification) => {
-    console.log('Tokens para envio de notificação:', tokens);
-    console.log('Dados da notificação:', notification);
     try {
-      const response = await fetch('https://6f46-2804-1784-30b3-6700-6c8d-e16-5377-9e5c.ngrok-free.app/send-notification', {
+      const response = await fetch('https://bde5-2804-1784-30b3-6700-7285-c2ff-fe34-e4b0.ngrok-free.app/send-notification', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -92,21 +96,45 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
           }
         })
       });
+
       const responseData = await response.json();
-      console.log('Resposta do servidor:', responseData);
-      console.log('Notificação enviada com sucesso.');
+
+      if (response.ok) {
+        console.log('Notificação enviada com sucesso.');
+        console.log('Resposta do servidor:', responseData);
+      } else {
+        console.error('Falha ao enviar notificação. Status:', response.status);
+        console.error('Resposta do servidor:', responseData);
+      }
     } catch (error) {
       console.error('Erro ao enviar notificação:', error);
     }
   };
 
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
+    if (currentUser.cargo === 'Supervisor') {
+      // Se o usuário for Supervisor, cidade e loja devem ser obrigatórios
+      if (!selectedCity || selectedCity === 'Selecionar') {
+        setAlertMessage('Por favor, selecione uma cidade.');
+        setIsAlertModalOpen(true);
+        setLoading(false);
+        return;
+      }
+
+      if (!selectedStore || selectedStore === 'Selecionar') {
+        setAlertMessage('Por favor, selecione uma loja.');
+        setIsAlertModalOpen(true);
+        setLoading(false);
+        return;
+      }
+    }
+
     if (!localProblema) {
-      setModalMessage('Por favor, selecione o local do problema.');
+      setAlertMessage('Por favor, selecione o local do problema.');
+      setIsAlertModalOpen(true);
       setLoading(false);
       return;
     }
@@ -174,18 +202,17 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
         const cityData = cityDoc.data();
         Object.keys(cityData).forEach((userKey) => {
           const user = cityData[userKey];
-          if (user.cargo === 'T.I' && user.token) {
-            tokens.push(user.token);
+          if (user.cargo === 'T.I' && Array.isArray(user.token)) { // Certifique-se de que `token` é um array
+            tokens.push(...user.token); // Adicione todos os tokens do array
           }
         });
       });
 
-      console.log('Tokens coletados:', tokens);
 
       const notification = {
         title: nextOrder,
         body: description,
-        click_action: "https://admhelpti.netlify.app/",
+        click_action: "https://drogalira.com.br/gerenchamados",
         icon: "https://iili.io/duTTt8Q.png"
       };
 
@@ -204,7 +231,6 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
   };
 
 
-
   const handleImageChange = (e) => {
     if (e.target.files.length + images.length > 4) {
       alert('Você pode enviar no máximo 4 imagens.');
@@ -217,29 +243,25 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
 
   return (
     <div className="fixed inset-0 z-40 pt-1 bg-black bg-opacity-50 flex items-center justify-center">
-      <div className="bg-white m-4  px-5 border-gray-400 border-2 rounded-xl shadow-lg ">
-        <h2 className="text-2xl font-bold mb-1">Novo Chamado</h2>
+      <MyModal isOpen={isOpen} onClose={onClose} showCloseButton={false}>
+        <h2 className="text-2xl text-gray-800 font-bold mb-1">Novo Chamado</h2>
         <form onSubmit={handleSubmit}>
           {currentUser.cargo === 'Supervisor' && (
             <div className='flex gap-2 text-center mb-2 bg-primaryBlueDark p-2 rounded-xl justify-center items-center'>
-              <div className="min-w-36">
-                <label className="block text-white text-sm font-bold mb-2">
-                  Cidade
-                </label>
+              <div className="min-w-36 flex justify-center items-center gap-2">
+                <FaCity className="text-white text-2xl" />
                 <Dropdown
                   label=""
-                  options={['Todas', ...cities]}
+                  options={['Selecionar', ...cities]}
                   selected={selectedCity}
                   onSelectedChange={setSelectedCity}
                 />
               </div>
-              <div className="min-w-28">
-                <label className="block text-white text-sm font-bold mb-2">
-                  Loja
-                </label>
+              <div className="min-w-36 flex justify-center items-center gap-2">
+                <FaStoreAlt className="text-white text-2xl" />
                 <Dropdown
                   label=""
-                  options={['Todas', ...stores]}
+                  options={['Selecionar', ...stores]}
                   selected={selectedStore}
                   onSelectedChange={setSelectedStore}
                 />
@@ -276,58 +298,57 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
               required
             />
           </div>
-          <div className="mb-3">
-            <label className="block text-gray-700 text-sm font-bold mb-1 text-center">
-              Local do Problema
-            </label>
-            <div className="flex gap-4 justify-center">
-              <button
-                type="button"
-                className={`bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ${localProblema === 'Caixa' ? 'ring-2 ring-primary' : ''}`}
-                onClick={() => setLocalProblema('Caixa')}
-              >
-                Caixa
-              </button>
-              <button
-                type="button"
-                className={`bg-orange-600 hover:bg-orange-500 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ${localProblema === 'Balcão' ? 'ring-2 ring-primary' : ''}`}
-                onClick={() => setLocalProblema('Balcão')}
-              >
-                Balcão
-              </button>
-              <button
-                type="button"
-                className={`bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ${localProblema === 'Gerencial' ? 'ring-2 ring-primary' : ''}`}
-                onClick={() => setLocalProblema('Gerencial')}
-              >
-                Gerencial
-              </button>
-            </div>
-            {modalMessage && <p className="text-red-500 text-xs italic">{modalMessage}</p>}
-          </div>
-          <div className="mb-3">
-            <label className="block text-gray-700 text-sm font-bold">
-              Imagens
-              <p className='text-gray-500 font-semibold'>
-                (Se possível, envie fotos do problema.)
-              </p>
-            </label>
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={handleImageChange}
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            />
-            {images.length > 0 && (
-              <div className="mt-2">
-                {Array.from(images).map((image, index) => (
-                  <p key={index} className="text-sm text-gray-600">{image.name}</p>
-                ))}
+          <div className="mb-3 flex flex-col-reverse justify-between">
+
+            <div className="flex flex-col mt-2 border-2 rounded-xl p-2 justify-center">
+              <label className="block text-gray-700 text-sm font-bold text-center">
+                Local do Problema
+              </label>
+              <div className='gap-2 flex justify-between'>
+                <button
+                  type="button"
+                  className={`bg-red-600 hover:bg-red-500 text-white font-bold py-1 w-full rounded focus:outline-none focus:shadow-outline ${localProblema === 'Caixa' ? 'ring-2 ring-primary' : ''}`}
+                  onClick={() => setLocalProblema('Caixa')}
+                >
+                  Caixa
+                </button>
+                <button
+                  type="button"
+                  className={`bg-orange-600 hover:bg-orange-500 text-white font-bold py-1 w-full rounded focus:outline-none focus:shadow-outline ${localProblema === 'Balcão' ? 'ring-2 ring-primary' : ''}`}
+                  onClick={() => setLocalProblema('Balcão')}
+                >
+                  Balcão
+                </button>
+                <button
+                  type="button"
+                  className={`bg-purple-600 hover:bg-purple-500 text-white font-bold py-1 w-full rounded focus:outline-none focus:shadow-outline ${localProblema === 'Gerencial' ? 'ring-2 ring-primary' : ''}`}
+                  onClick={() => setLocalProblema('Gerencial')}
+                >
+                  Gerencial
+                </button>
               </div>
-            )}
+            </div>
+
+            <div className="w-full">
+              <label className="block text-gray-700 text-sm font-bold">
+                Imagens
+                <p className='text-gray-500 font-semibold'>
+                  (Se possível, envie fotos do problema.)
+                </p>
+              </label>
+              <ImageUploadButton handleImageChange={handleImageChange} />
+              {images.length > 0 && (
+                <div className="mt-2">
+                  {Array.from(images).map((image, index) => (
+                    <p key={index} className="text-sm text-gray-600">{image.name}</p>
+                  ))}
+                </div>
+              )}
+            </div>
+
           </div>
-          <div className="flex items-center justify-between mb-2">
+
+          <div className="flex items-center justify-between ">
             <button
               type="button"
               className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
@@ -344,7 +365,14 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
             </button>
           </div>
         </form>
-      </div>
+      </MyModal>
+      <AlertModal
+        isOpen={isAlertModalOpen}
+        onRequestClose={() => setIsAlertModalOpen(false)}
+        title="Alerta"
+        message={alertMessage}
+      />
+
     </div>
   );
 
