@@ -17,7 +17,7 @@ export const AuthProvider = ({ children }) => {
     const storedAuth = localStorage.getItem('isAuthenticated');
     const storedRole = localStorage.getItem('currentUserRole');
     if (storedUser && storedAuth && storedRole) {
-      setCurrentUser(JSON.parse(storedUser)); // Ajustado para armazenar um objeto
+      setCurrentUser(JSON.parse(storedUser)); // Recupera o objeto do usuário completo, incluindo imageUrl
       setIsAuthenticated(storedAuth === 'true');
       setCurrentUserRole(storedRole);
     }
@@ -28,11 +28,13 @@ export const AuthProvider = ({ children }) => {
     try {
       const usuariosRef = collection(db, 'usuarios');
       const querySnapshot = await getDocs(usuariosRef);
-
+  
       let userFound = false;
       querySnapshot.forEach(doc => {
         const userData = doc.data()[username];
+        console.log('Dados recuperados do Firestore:', doc.data()); // Verifica todos os dados do documento
         if (userData) {
+          console.log('Dados específicos do usuário:', userData); // Verifica os dados do usuário específico
           if (userData.pass === password) {
             setIsAuthenticated(true);
             const user = {
@@ -41,29 +43,32 @@ export const AuthProvider = ({ children }) => {
               cargo: userData.cargo,
               assignment: userData.assignment,
               loja: userData.loja,
-              whatsapp: userData.whatsapp
+              whatsapp: userData.whatsapp,
+              imageUrl: userData.imageUrl || '' // Verifica e inclui imageUrl
             };
+            console.log('Usuário logado com sucesso:', user); // Log para confirmar o objeto do usuário
             setCurrentUser(user);
             setCurrentUserRole(userData.cargo);
             localStorage.setItem('isAuthenticated', 'true');
-            localStorage.setItem('currentUser', JSON.stringify(user)); // Armazena o objeto
+            localStorage.setItem('currentUser', JSON.stringify(user)); // Armazena o objeto do usuário completo
             localStorage.setItem('currentUserRole', userData.cargo);
             userFound = true;
           } else {
-            console.log('Invalid credentials');
+            console.log('Credenciais inválidas');
           }
         }
       });
-
+  
       if (!userFound) {
-        console.log('User not found or invalid credentials');
-        throw new Error('User not found or invalid credentials');
+        console.log('Usuário não encontrado ou credenciais inválidas');
+        throw new Error('Usuário não encontrado ou credenciais inválidas');
       }
     } catch (error) {
-      console.error('Error logging in:', error);
+      console.error('Erro ao fazer login:', error);
       throw error;
     }
   };
+  
 
   const logout = async () => {
     try {
@@ -75,7 +80,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.removeItem('currentUserRole');
       navigate('/login');  // Redireciona para a página de login após o logout
     } catch (error) {
-      console.error('Error logging out:', error);
+      console.error('Erro ao fazer logout:', error);
     }
   };
 
