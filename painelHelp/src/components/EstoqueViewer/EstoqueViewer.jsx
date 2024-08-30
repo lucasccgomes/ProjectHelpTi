@@ -230,6 +230,12 @@ const EstoqueViewer = () => {
                                                         </div>
                                                         <div>
                                                             <div className='flex'>
+                                                                <p className='font-semibold'>Limit:</p>
+                                                                {item.quantityLimit}
+                                                            </div>
+                                                        </div>
+                                                        <div>
+                                                            <div className='flex'>
                                                                 <p className='font-semibold'>R$</p>
                                                                 {item.price.toFixed(2)}
                                                             </div>
