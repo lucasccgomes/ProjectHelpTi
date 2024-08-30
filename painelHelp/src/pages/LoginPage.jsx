@@ -81,9 +81,9 @@ const LoginPage = () => {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100">
-      <div className='flex flex-row mb-10 justify-center items-center'>
+      <div className='flex flex-col mb-10 justify-center items-center'>
         <img className='w-24' src={logo} alt="" />
-        <h1 className='font-bold text-6xl text-[#002d56] '>HelpTi</h1>
+        <h1 className='font-bold text-6xl text-[#002d56] '>LiraSystem</h1>
       </div>
       <div className="bg-white p-8 rounded shadow-md w-full max-w-sm">
         <h1 className="text-2xl text-[#002d56] font-bold mb-6 text-center">Login</h1>
