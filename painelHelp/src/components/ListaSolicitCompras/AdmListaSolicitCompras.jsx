@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { collection, query, where, onSnapshot, doc, updateDoc, getDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, updateDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { useAuth } from '../../context/AuthContext';
-import { FaCity, FaUser, FaStoreAlt, FaShuttleVan, FaFilter, FaCheckCircle } from "react-icons/fa";
+import { FaCity, FaUser, FaStoreAlt, FaShuttleVan, FaCheckCircle } from "react-icons/fa";
 import { RiUserReceived2Fill } from "react-icons/ri";
 import { SiReasonstudios } from "react-icons/si";
 import 'react-responsive-carousel/lib/styles/carousel.min.css';
@@ -22,6 +22,7 @@ import AlertModal from '../AlertModal/AlertModal';
 
 
 const AdmListaSolicitCompras = () => {
+    const [isEditAlertModalOpen, setIsEditAlertModalOpen] = useState(false);
     const { currentUser } = useAuth();
     const [solicitacoes, setSolicitacoes] = useState([]);
     const [error, setError] = useState(null);
@@ -56,19 +57,26 @@ const AdmListaSolicitCompras = () => {
 
     const handleSaveEdit = async () => {
         if (!editReason.trim()) {
-            alert('Por favor, forneça um motivo para a alteração.');
+            setIsEditAlertModalOpen(true); // Abre o AlertModal
             return;
         }
 
         try {
+            const newTotalPrice = Object.entries(editedItems).reduce((total, [itemNome, quantidade]) => {
+                const itemPrice = selectedSolicitacao.itemPrice[itemNome];
+                return total + (itemPrice * quantidade);
+            }, 0);
+
             const solicitacaoRef = doc(db, 'solicitCompras', selectedSolicitacao.id);
             await updateDoc(solicitacaoRef, {
-                originalOrder: selectedSolicitacao.item, // Grava os itens originais
-                item: editedItems, // Atualiza com as novas quantidades
-                reasonChange: editReason, // Grava o motivo da alteração
+                originalOrder: selectedSolicitacao.item,
+                item: editedItems,
+                reasonChange: editReason,
+                totalPrice: newTotalPrice.toFixed(2)
             });
-            setIsEditModalOpen(false); // Fecha o modal após salvar
-            setEditReason(''); // Limpa o motivo após salvar
+
+            setIsEditModalOpen(false);
+            setEditReason('');
         } catch (error) {
             console.error('Erro ao salvar alteração:', error);
         }
@@ -128,13 +136,63 @@ const AdmListaSolicitCompras = () => {
     const handleStatusChange = async (id, newStatus) => {
         try {
             const solicitacaoRef = doc(db, 'solicitCompras', id);
+    
+            // Atualize o status da solicitação
             await updateDoc(solicitacaoRef, {
                 status: newStatus
             });
+    
+            // Busca o documento da solicitação para obter o usuário associado
+            const solicitacaoSnap = await getDoc(solicitacaoRef);
+            if (solicitacaoSnap.exists()) {
+                const solicitacaoData = solicitacaoSnap.data();
+        
+                // Procurar o usuário em todas as cidades
+                const usuariosCollectionRef = collection(db, 'usuarios');
+                const usuariosSnapshot = await getDocs(usuariosCollectionRef);
+    
+                let userData = null;
+                let cidadeEncontrada = null;
+    
+                usuariosSnapshot.forEach((cidadeDoc) => {
+                    const cidadeData = cidadeDoc.data();
+                 
+                    if (cidadeData[solicitacaoData.user]) {
+                        userData = cidadeData[solicitacaoData.user];
+                        cidadeEncontrada = cidadeDoc.id;
+                    }
+                });
+    
+                if (userData && userData.token) {
+                    const tokens = Array.isArray(userData.token) ? userData.token : [userData.token]; // Garante que 'tokens' seja sempre um array
+    
+                    const notificationMessage = {
+                        title: `Solicitação ${id}`,
+                        body: `Status ${newStatus}`,
+                        click_action: "https://drogalira.com.br/solicitacompras",
+                        icon: "https://iili.io/duTTt8Q.png"
+                    };
+    
+                    const response = await fetch('https://bde5-2804-1784-30b3-6700-7285-c2ff-fe34-e4b0.ngrok-free.app/send-notification', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ tokens, notification: notificationMessage })
+                    });
+    
+                    const result = await response.json();
+                    console.log('Notificação enviada com sucesso:', result);
+                } else {
+                    console.error(`Token do usuário ${solicitacaoData.user} não encontrado na cidade ${cidadeEncontrada}.`);
+                }
+            } else {
+                console.error('Solicitação não encontrada.');
+            }
         } catch (error) {
             console.error('Erro ao atualizar status da solicitação:', error);
         }
-    };
+    };    
 
     const handleResize = useCallback(() => {
         if (window.innerWidth >= 1024) {
@@ -147,7 +205,7 @@ const AdmListaSolicitCompras = () => {
     useEffect(() => {
         const uniqueStores = new Set(solicitacoes.map(solicitacao => solicitacao.loja));
         setStoreFilterOptions(['Todos', ...Array.from(uniqueStores)]);
-    }, [solicitacoes]);    
+    }, [solicitacoes]);
 
     useEffect(() => {
         const filtered = solicitacoes.filter(solicitacao =>
@@ -192,7 +250,7 @@ const AdmListaSolicitCompras = () => {
         <div className="flex flex-col w-full lg:h-screen bg-altBlue lg:pt-16 text-white">
             <div className='mb-4'>
                 <div className="flex flex-col justify-center bg-altBlue items-center gap-4 lg:-mt-3 lg:pb-3">
-                    <div className='bg-altBlue p-3 rounded-xl shadow-md w-full fixed lg:mt-36 mt-60'>
+                    <div className='bg-altBlue p-3 rounded-xl w-full fixed lg:mt-40 mt-60'>
                         <div className='bg-primaryBlueDark p-3 rounded-xl shadow-xl w-full '>
                             <h2 className="text-2xl text-center font-bold">
                                 Compras Solicitações
@@ -229,7 +287,7 @@ const AdmListaSolicitCompras = () => {
                         </div>
                     </div>
                 </div>
-                <div className=' w-full bg-altBlue p-4 pt-48 lg:pt-16'>
+                <div className=' w-full bg-altBlue p-4 pt-48 lg:pt-20'>
                     {filteredSolicitacoes.length === 0 ? (
                         <div className="text-center text-white">Nenhuma solicitação encontrada</div>
                     ) : (
@@ -242,7 +300,8 @@ const AdmListaSolicitCompras = () => {
                                         </h3>
                                         <button
                                             onClick={() => openEditModal(solicitacao)}
-                                            className='text-red-700 ml-2 text-3xl hover:scale-[0.9]'
+                                            disabled={solicitacao.status === 'Cancelado' || solicitacao.status === 'Enviado' || solicitacao.status === 'Concluído'}
+                                            className={`text-red-700 ml-2 text-3xl hover:scale-[0.9] ${solicitacao.status === 'Cancelado' || solicitacao.status === 'Enviado' || solicitacao.status === 'Concluído' ? '!text-gray-500 cursor-not-allowed hover:scale-100' : ''}`}
                                             title='Alterar'
                                         >
                                             <HiPencilSquare />
@@ -422,7 +481,7 @@ const AdmListaSolicitCompras = () => {
                     <div className="flex justify-center mt-4">
                         <button
                             onClick={async () => {
-                                if (!cancelReason || cancelReason.trim() === '<p><br></p>') { // Verifica se o campo está vazio ou apenas com a tag <p><br></p>
+                                if (!cancelReason || cancelReason.trim() === '<p><br></p>') {
                                     setIsAlertModalOpen(true); // Abre o modal de alerta
                                     return;
                                 }
@@ -433,6 +492,7 @@ const AdmListaSolicitCompras = () => {
                                         canceledReason: cancelReason // Grava o motivo do cancelamento
                                     });
                                     setIsCancelModalOpen(false); // Fecha o modal após salvar
+                                    handleStatusChange(selectedSolicitacao.id, 'Cancelado'); // Chama handleStatusChange
                                 } catch (error) {
                                     console.error('Erro ao cancelar solicitação:', error);
                                 }
@@ -441,6 +501,7 @@ const AdmListaSolicitCompras = () => {
                         >
                             Salvar
                         </button>
+
                         <button
                             onClick={() => setIsCancelModalOpen(false)}
                             className="bg-gray-500 text-white px-4 py-2 rounded"
@@ -484,6 +545,7 @@ const AdmListaSolicitCompras = () => {
                                     });
                                     setIsSendModalOpen(false); // Fecha o modal após salvar
                                     setHeTook(''); // Limpa o input após salvar
+                                    handleStatusChange(selectedSolicitacao.id, 'Enviado'); // Chama handleStatusChange
                                 } catch (error) {
                                     console.error('Erro ao atualizar solicitação:', error);
                                 }
@@ -537,6 +599,7 @@ const AdmListaSolicitCompras = () => {
                                     });
                                     setIsCompleteModalOpen(false); // Fecha o modal após salvar
                                     setSelectedDate(null); // Limpa a data após salvar
+                                    handleStatusChange(selectedSolicitacao.id, 'Concluído'); // Chama handleStatusChange
                                 } catch (error) {
                                     console.error('Erro ao atualizar solicitação:', error);
                                 }
@@ -545,6 +608,7 @@ const AdmListaSolicitCompras = () => {
                         >
                             Salvar
                         </button>
+
                         <button
                             onClick={() => {
                                 setIsCompleteModalOpen(false);
@@ -622,6 +686,13 @@ const AdmListaSolicitCompras = () => {
                 onRequestClose={() => setSendAlertModalOpen(false)}
                 title="Campo Obrigatório"
                 message="Por favor, preencha o nome de quem está levando antes de salvar."
+            />
+
+            <AlertModal
+                isOpen={isEditAlertModalOpen}
+                onRequestClose={() => setIsEditAlertModalOpen(false)}
+                title="Motivo Obrigatório"
+                message="Por favor, forneça um motivo para a alteração antes de salvar."
             />
 
 

@@ -47,6 +47,160 @@ const SoliciteCompras = () => {
     }
   };
 
+  // Função para buscar o preço de cada item no Firestore
+  const getItemPrice = async (categoria, item) => {
+    const estoqueRef = doc(db, 'estoqueCompras', 'estoque');
+    const estoqueDoc = await getDoc(estoqueRef);
+    if (estoqueDoc.exists()) {
+      const categoriaData = estoqueDoc.data()[categoria];
+      if (categoriaData && categoriaData[item]) {
+        return categoriaData[item].price || 0; // Retorna o preço ou 0 se não estiver definido
+      }
+    }
+    return 0;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!validateForm()) {
+      return;
+    }
+
+    setLoading(true);
+    setIsSendingModalOpen(true); // Abrir o modal de envio
+
+    try {
+      const numSolicite = await getNextSolicitacaoNumber();
+
+      const itensAgrupados = itensSolicitados.reduce((acc, { item, quantidade }) => {
+        acc[item] = quantidade;
+        return acc;
+      }, {});
+
+      // Nova estrutura para armazenar preços unitários
+      const itemPrices = {};
+      let totalPrice = 0;
+
+      // Busca o preço unitário de cada item e calcula o total
+      for (const [itemName, quantity] of Object.entries(itensAgrupados)) {
+        const estoqueRef = doc(db, 'estoqueCompras', 'estoque');
+        const estoqueDoc = await getDoc(estoqueRef);
+        const categoriaData = estoqueDoc.data();
+
+        // Encontra a categoria correta e busca o preço do item
+        for (const categoria of Object.keys(categoriaData)) {
+          if (categoriaData[categoria][itemName]) {
+            const itemData = categoriaData[categoria][itemName];
+            const itemPrice = itemData.price || 0;
+            itemPrices[itemName] = itemPrice; // Armazena o preço unitário
+            totalPrice += itemPrice * quantity; // Calcula o total
+            break;
+          }
+        }
+      }
+
+      const novaSolicitacao = {
+        tipo,
+        motivo,
+        whatsapp: currentUser.whatsapp,
+        user: currentUser.user,
+        cargo: currentUserRole,
+        cidade: selectedCidade,
+        loja: selectedLoja,
+        data: new Date(),
+        status: "Pendente",
+        numSolicite,
+        item: itensAgrupados,
+        itemPrice: itemPrices, // Adiciona os preços unitários
+        totalPrice: totalPrice.toFixed(2) // Adiciona o preço total
+      };
+
+      // Gravação da nova solicitação na coleção solicitCompras
+      await setDoc(doc(db, 'solicitCompras', numSolicite), novaSolicitacao);
+
+      // Enviar notificações para todos os usuários com cargo "Compras"
+      const usuariosSnapshot = await getDocs(collection(db, 'usuarios'));
+
+      let tokensParaNotificar = [];
+
+      usuariosSnapshot.forEach(cidadeDoc => {
+        const cidadeData = cidadeDoc.data();
+
+        Object.keys(cidadeData).forEach(usuarioKey => {
+          const usuarioData = cidadeData[usuarioKey];
+
+          // Coleta todos os tokens de notificação associados ao usuário
+          if (usuarioData.cargo === 'Compras' && Array.isArray(usuarioData.token)) {
+            tokensParaNotificar.push(...usuarioData.token);
+            console.log(`Notificação será enviada para ${usuarioKey} na cidade ${cidadeDoc.id}`);
+          }
+        });
+      });
+
+      if (tokensParaNotificar.length > 0) {
+        const notificationMessage = {
+          title: `Nova Solicitação ${numSolicite}`,
+          body: `Uma nova solicitação foi criada: ${tipo}`,
+          click_action: "https://drogalira.com.br/solicitacompras",
+          icon: "https://iili.io/duTTt8Q.png"
+        };
+
+        const response = await fetch('https://bde5-2804-1784-30b3-6700-7285-c2ff-fe34-e4b0.ngrok-free.app/send-notification', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ tokens: tokensParaNotificar, notification: notificationMessage })
+        });
+
+        const result = await response.json();
+        console.log('Notificações enviadas com sucesso:', result);
+      } else {
+        console.log('Nenhum token encontrado para o cargo "Compras".');
+      }
+
+      // Gravação no relatório
+      const fullReportRef = doc(db, 'relatorioCompras', 'fullReport');
+      const fullReportDoc = await getDoc(fullReportRef);
+      const fullReportData = fullReportDoc.exists() ? fullReportDoc.data() : {};
+      const timestamp = new Date().toISOString();
+
+      const reportEntry = {
+        usuario: currentUser.user,
+        loja: selectedLoja,
+        numSolicite: numSolicite,
+        data: new Date().toISOString(),
+        cargo: currentUserRole
+      };
+
+      await setDoc(fullReportRef, {
+        ...fullReportData,
+        [timestamp]: {
+          [tipo]: reportEntry
+        }
+      });
+
+      setSuccess(true);
+      setAlertModalContent({ title: 'Sucesso', message: 'Solicitação enviada com sucesso!', showOkButton: true });
+
+      // Limpar os campos após o envio
+      setTipo('Reposição');
+      setNomeItem('');
+      setMotivo('');
+      setSelectedCidade('');
+      setSelectedLoja('');
+      setItensSolicitados([{ categoria: '', item: '', quantidade: 1 }]);
+    } catch (error) {
+      setError('Erro ao adicionar solicitação');
+      setAlertModalContent({ title: 'Erro', message: 'Erro ao adicionar solicitação', showOkButton: true });
+      console.error('Erro ao adicionar solicitação:', error);
+    } finally {
+      setLoading(false);
+      setIsSendingModalOpen(false); // Fechar o modal de envio
+    }
+  };
+
   const handleRemoveItem = (index) => {
     if (itensSolicitados.length > 1) {
       const novosItens = itensSolicitados.filter((_, i) => i !== index);
@@ -213,129 +367,6 @@ const SoliciteCompras = () => {
     } catch (error) {
       console.error("Erro ao gerar o próximo número de solicitação: ", error);
       throw error;
-    }
-  };
-
-
-  const fetchTITokens = async () => {
-    const usuariosRef = collection(db, 'usuarios');
-    const querySnapshot = await getDocs(usuariosRef);
-    const tokens = [];
-
-    querySnapshot.forEach(doc => {
-      const userData = doc.data();
-      Object.keys(userData).forEach(userKey => {
-        const user = userData[userKey];
-        if (user.cargo === 'T.I' && user.token) {
-          tokens.push(user.token);
-        }
-      });
-    });
-
-    return tokens;
-  };
-
-  const sendNotification = async (tokens, notification) => {
-    try {
-      const response = await fetch('https://6f46-2804-1784-30b3-6700-6c8d-e16-5377-9e5c.ngrok-free.app/send-notification', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          tokens,
-          notification: {
-            title: notification.title,
-            body: notification.body,
-            click_action: notification.click_action,
-            icon: notification.icon
-          }
-        })
-      });
-
-      const responseData = await response.json();
-
-      if (!response.ok) {
-        throw new Error('Erro ao enviar notificações');
-      }
-    } catch (error) {
-      console.error('Erro ao enviar notificações:', error);
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
-
-    setLoading(true);
-    setIsSendingModalOpen(true); // Abrir o modal de envio
-
-    try {
-      const numSolicite = await getNextSolicitacaoNumber();
-
-      const itensAgrupados = itensSolicitados.reduce((acc, { item, quantidade }) => {
-        acc[item] = quantidade;
-        return acc;
-      }, {});
-
-      const novaSolicitacao = {
-        tipo,
-        motivo,
-        whatsapp: currentUser.whatsapp,
-        user: currentUser.user,
-        cargo: currentUserRole,
-        cidade: selectedCidade,
-        loja: selectedLoja,
-        data: new Date(),
-        status: "Pendente",
-        numSolicite,
-        item: itensAgrupados
-      };
-
-      // Gravação da nova solicitação na coleção solicitCompras
-      await setDoc(doc(db, 'solicitCompras', numSolicite), novaSolicitacao);
-
-      // Gravação no relatório
-      const fullReportRef = doc(db, 'relatorioCompras', 'fullReport');
-      const fullReportDoc = await getDoc(fullReportRef);
-      const fullReportData = fullReportDoc.exists() ? fullReportDoc.data() : {};
-      const timestamp = new Date().toISOString();
-
-      const reportEntry = {
-        usuario: currentUser.user,
-        loja: selectedLoja,
-        numSolicite: numSolicite,
-        data: new Date().toISOString(),
-        cargo: currentUserRole
-      };
-
-      await setDoc(fullReportRef, {
-        ...fullReportData,
-        [timestamp]: {
-          [tipo]: reportEntry
-        }
-      });
-
-      setSuccess(true);
-      setAlertModalContent({ title: 'Sucesso', message: 'Solicitação enviada com sucesso!', showOkButton: true });
-
-      // Limpar os campos após o envio
-      setTipo('Reposição');
-      setNomeItem('');
-      setMotivo('');
-      setSelectedCidade('');
-      setSelectedLoja('');
-      setItensSolicitados([{ categoria: '', item: '', quantidade: 1 }]);
-    } catch (error) {
-      setError('Erro ao adicionar solicitação');
-      setAlertModalContent({ title: 'Erro', message: 'Erro ao adicionar solicitação', showOkButton: true });
-      console.error('Erro ao adicionar solicitação:', error);
-    } finally {
-      setLoading(false);
-      setIsSendingModalOpen(false); // Fechar o modal de envio
     }
   };
 

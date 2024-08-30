@@ -187,7 +187,7 @@ const ListaSolicitCompras = () => {
                         </p>
                         <Dropdown
                             label=""
-                            options={['Todos', 'Pendente', 'Progresso', 'Concluído']}
+                            options={['Todos', 'Pendente', 'Separando', 'Concluído', 'Enviado', 'Cancelado']}
                             selected={statusFilter}
                             onSelectedChange={(option) => setStatusFilter(option)}
                         />
@@ -208,23 +208,23 @@ const ListaSolicitCompras = () => {
                                         {solicitacao.tipo === 'Novo' && <GrNewWindow className="ml-2" title='Item Novo' />}
                                     </p>
                                 </div>
-                                <div className="flex flex-col gap-4 mb-2">
+                                <div className="flex flex-col justify-between items-center gap-4 mb-2">
                                     <div className='flex gap-4 '>
                                         <div className="flex items-center">
                                             <FaCity className="mr-2 text-primaryBlueDark text-xl" />
-                                            <p className='font-semibold text-gray-700'>
+                                            <p className='font-semibold text-gray-700 text-xs'>
                                                 {abreviarCidade(solicitacao.cidade)}
                                             </p>
                                         </div>
                                         <div className="flex items-center">
                                             <FaStoreAlt className="mr-2 text-primaryBlueDark text-xl" />
-                                            <p className='font-semibold text-gray-700'>
+                                            <p className='font-semibold text-gray-700 text-xs'>
                                                 {solicitacao.loja}
                                             </p>
                                         </div>
                                         <div className="flex items-center">
                                             <FaUser className="mr-2 text-primaryBlueDark text-xl" />
-                                            <p className='font-semibold text-gray-700'>
+                                            <p className='font-semibold text-gray-700 text-xs'>
                                                 {solicitacao.user}
                                             </p>
                                         </div>
@@ -261,7 +261,7 @@ const ListaSolicitCompras = () => {
                                         </p>
                                     </div>
 
-                                    <div className="flex justify-between items-center text-gray-700">
+                                    <div className="flex justify-between items-center gap-2 text-gray-700">
                                         <div className="flex justify-center items-center text-gray-700">
                                             <IoCalendarNumber className="mr-2 text-primaryBlueDark text-xl" />
                                             <p className='font-semibold text-gray-700'>
@@ -335,13 +335,12 @@ const ListaSolicitCompras = () => {
                     </div>
                 )}
             </div>
-
             <Modal isOpen={isFilterModalOpen} onClose={closeFilterModal}>
                 <div className="flex flex-col gap-4">
                     <h2 className="text-xl font-semibold">Filtrar Solicitações</h2>
                     <Dropdown
                         label="Status"
-                        options={['Todos', 'Pendente', 'Progresso', 'Concluído']}
+                        options={['Todos', 'Pendente', 'Separando', 'Concluído', 'Enviado', 'Cancelado']}
                         selected={statusFilter}
                         onSelectedChange={(option) => setStatusFilter(option)}
                     />
