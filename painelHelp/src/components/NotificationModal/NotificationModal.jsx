@@ -77,7 +77,7 @@ const NotificationModals = () => {
             )
           }
         >
-          <div className="mb-4">
+          <div className="mb-4 !text-black">
             <h2 className="text-2xl font-bold mb-2">{notification.title}</h2>
             <div className="max-w-[330px] break-words whitespace-normal" dangerouslySetInnerHTML={{ __html: notification.message }} >
             </div>
