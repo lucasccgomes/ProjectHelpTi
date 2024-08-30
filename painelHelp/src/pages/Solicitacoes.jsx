@@ -156,7 +156,7 @@ const Solicitacao = () => {
 
   const sendNotification = async (tokens, notification) => {
     try {
-      const response = await fetch('https://6f46-2804-1784-30b3-6700-6c8d-e16-5377-9e5c.ngrok-free.app/send-notification', {
+      const response = await fetch('https://bde5-2804-1784-30b3-6700-7285-c2ff-fe34-e4b0.ngrok-free.app/send-notification', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
