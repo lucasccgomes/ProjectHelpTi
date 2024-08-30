@@ -19,10 +19,10 @@ const LastSolicitacao = () => {
             setLoading(false);
             return;
         }
-    
+
         const solicitacoesRef = collection(db, 'solicitacoes');
         let q;
-    
+
         if (currentUser.cargo === 'Supervisor') {
             // Se o usuário for Supervisor, busca a última solicitação de qualquer usuário
             q = query(
@@ -37,7 +37,7 @@ const LastSolicitacao = () => {
                 limit(1)  // Obtém apenas a última solicitação
             );
         }
-    
+
         const unsubscribe = onSnapshot(q, (querySnapshot) => {
             const solicitacoesData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             setLastSolicitacao(solicitacoesData[0]);
@@ -46,10 +46,10 @@ const LastSolicitacao = () => {
             console.error('Erro ao buscar a última solicitação:', error);
             setLoading(false);
         });
-    
+
         return () => unsubscribe();
     }, [currentUser]);
-    
+
 
     const getStatusClass = (status) => {
         switch (status) {
@@ -65,23 +65,35 @@ const LastSolicitacao = () => {
     };
 
     if (loading) {
-        return <div><LoadingSpinner/></div>;
+        return <div><LoadingSpinner /></div>;
     }
+
+    const abreviarCidade = (nomeCidade) => {
+        const partes = nomeCidade.split(' ');
+        if (partes.length === 1) return nomeCidade; // Se o nome tem apenas uma palavra, não abrevia
+
+        return partes.map((parte, index) => {
+            if (index === partes.length - 1) {
+                return parte; // A última palavra não é abreviada
+            }
+            return parte.charAt(0) + '.'; // Abrevia as palavras anteriores
+        }).join(' ');
+    };
 
     if (!lastSolicitacao) {
         return (
             <div className="w-full min-w-[266px] min-h-[204px] flex bg-white max-w-[320px] px-2 rounded-xl flex-col justify-center items-center text-gray-700">
-              <div className='w-full font-bold flex justify-start'>
-                <h1 className='px-2 pb-2 lg:-ml-2 lg:pt-0 lg:-mt-1 -mt-6 -ml-2 pl-4 pt-4 bg-altBlue rounded-br-xl text-white mb-3 shadow-md'>
-                  Ultima solicitação TI
-                </h1>
-              </div>
-              <div className='gap-4 text-sm h-[155px] flex flex-col justify-center items-center'>
-                <p><TbNotesOff className='text-2xl'/></p>
-                <p>Você não tem nenhuma solicitação.</p>
-              </div>
+                <div className='w-full font-bold flex justify-start'>
+                    <h1 className='px-2 pb-2 lg:-ml-2 lg:pt-0 lg:-mt-1 -mt-6 -ml-2 pl-4 pt-4 bg-altBlue rounded-br-xl text-white mb-3 shadow-md'>
+                        Ultima solicitação TI
+                    </h1>
+                </div>
+                <div className='gap-4 text-sm h-[155px] flex flex-col justify-center items-center'>
+                    <p><TbNotesOff className='text-2xl' /></p>
+                    <p>Você não tem nenhuma solicitação.</p>
+                </div>
             </div>
-          );
+        );
     }
 
     return (
@@ -101,10 +113,10 @@ const LastSolicitacao = () => {
                     </p>
 
                     <div className='flex gap-4 mb-1'>
-                        <p className='flex uppercase items-center'><FaCity />: {lastSolicitacao.cidade === 'Presidente Prudente' ? 'P. Prudente' : lastSolicitacao.cidade}</p>
+                        <p className='flex uppercase items-center'><FaCity />: {abreviarCidade(lastSolicitacao.cidade)}</p>
                         <p className='flex uppercase items-center'><FaUser />: {lastSolicitacao.user}</p>
                     </div>
-                   
+
                     <div className='flex gap-4 mb-1'>
                         <p className='justify-center hidden lg:flex items-center'>
 

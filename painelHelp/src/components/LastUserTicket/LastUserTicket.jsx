@@ -83,7 +83,6 @@ const LastUserTicket = () => {
     fetchLastUserTicket();
 }, [currentUser]);
 
-
   if (loading) {
     return <div><LoadingSpinner/></div>;
 }
@@ -105,6 +104,18 @@ const LastUserTicket = () => {
     );
   }
 
+  const abreviarCidade = (nomeCidade) => {
+    const partes = nomeCidade.split(' ');
+    if (partes.length === 1) return nomeCidade; // Se o nome tem apenas uma palavra, não abrevia
+  
+    return partes.map((parte, index) => {
+      if (index === partes.length - 1) {
+        return parte; // A última palavra não é abreviada
+      }
+      return parte.charAt(0) + '.'; // Abrevia as palavras anteriores
+    }).join(' ');
+  };  
+
   return (
     <div className="w-full min-w-[266px] min-h-[204px] flex bg-white max-w-[320px] px-2 rounded-xl flex-col justify-center items-center text-gray-700">
       <div className='w-full font-bold flex justify-start'>
@@ -122,7 +133,7 @@ const LastUserTicket = () => {
           </p>
 
           <div className='flex gap-4 mb-1'>
-          <p className='flex uppercase items-center'><FaCity />: {lastTicket.cidade === 'Presidente Prudente' ? 'P. Prudente' : lastTicket.cidade}</p>
+          <p className='flex uppercase items-center'><FaCity />: {abreviarCidade(lastTicket.cidade)}</p>
             <p className='flex uppercase items-center'><FaUser />: {lastTicket.user}</p>
           </div>
 
