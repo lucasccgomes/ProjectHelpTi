@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { doc, setDoc, onSnapshot, getDoc, deleteField } from 'firebase/firestore';
 import { db } from '../../firebase';
-import Modal from '../../components/Modal/Modal';
+import Modal from '../Modal/Modal';
 import { useAuth } from '../../context/AuthContext';
 import { MdDeleteForever } from "react-icons/md";
 import { SiGithubactions } from "react-icons/si";
@@ -23,7 +23,7 @@ const EstoqueViewer = () => {
 
     // useEffect para buscar as categorias e itens do estoque ao carregar o componente
     useEffect(() => {
-        const estoqueRef = doc(db, 'estoqueCompras', 'estoque'); // Referência ao documento de estoque no Firestore
+        const estoqueRef = doc(db, 'estoqueTi', 'estoque'); // Referência ao documento de estoque no Firestore
 
         // Configura um listener para o documento de estoque
         const unsubscribe = onSnapshot(estoqueRef, (docSnapshot) => {
@@ -56,8 +56,8 @@ const EstoqueViewer = () => {
 
         setIsSaving(true);
 
-        const estoqueRef = doc(db, 'estoqueCompras', 'estoque'); // Referência ao documento de estoque no Firestore
-        const fullReportRef = doc(db, 'relatorioCompras', 'fullReport'); // Referência ao documento de relatório completo no Firestore
+        const estoqueRef = doc(db, 'estoqueTi', 'estoque'); // Referência ao documento de estoque no Firestore
+        const fullReportRef = doc(db, 'relatorioTi', 'fullReport'); // Referência ao documento de relatório completo no Firestore
         const fullReportDoc = await getDoc(fullReportRef); // Obtém o documento de relatório completo
         const fullReportData = fullReportDoc.exists() ? fullReportDoc.data() : {}; // Verifica se os dados do relatório completo existem
         const timestamp = new Date().toISOString(); // Timestamp atual
@@ -147,8 +147,8 @@ const EstoqueViewer = () => {
     
         setIsSaving(true);
     
-        const estoqueRef = doc(db, 'estoqueCompras', 'estoque'); // Referência ao documento de estoque no Firestore
-        const fullReportRef = doc(db, 'relatorioCompras', 'fullReport'); // Referência ao documento de relatório completo no Firestore
+        const estoqueRef = doc(db, 'estoqueTi', 'estoque'); // Referência ao documento de estoque no Firestore
+        const fullReportRef = doc(db, 'relatorioTi', 'fullReport'); // Referência ao documento de relatório completo no Firestore
         const fullReportDoc = await getDoc(fullReportRef); // Obtém o documento de relatório completo
         const fullReportData = fullReportDoc.exists() ? fullReportDoc.data() : {}; // Verifica se os dados do relatório completo existem
         const timestamp = new Date().toISOString(); // Timestamp atual

@@ -7,123 +7,115 @@ import AlertModal from '../AlertModal/AlertModal';
 import Cropper from 'react-easy-crop';
 import getCroppedImg from '../../cropImage';
 import { FaWhatsapp, FaPencilAlt } from "react-icons/fa";
-import Modal from 'react-modal';
 import { FaUser, FaCity, FaStoreAlt } from "react-icons/fa";
-import { useSpring, animated } from '@react-spring/web';
 import MyModal from '../MyModal/MyModal';
 import InputMask from 'react-input-mask';
 
 
 const UserProfile = () => {
-    const { currentUser } = useAuth();
-    const [newPassword, setNewPassword] = useState('');
-    const [newWhatsapp, setNewWhatsapp] = useState(currentUser.whatsapp || '');
-    const [imageFile, setImageFile] = useState(null);
-    const [imageUrl, setImageUrl] = useState(currentUser?.imageUrl || '');
-    const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
-    const [alertMessage, setAlertMessage] = useState('');
-    const [isWhatsappModalOpen, setIsWhatsappModalOpen] = useState(false);
+    const { currentUser } = useAuth(); // Obtém o usuário autenticado atual
+    const [newPassword, setNewPassword] = useState(''); // Estado para armazenar a nova senha
+    const [newWhatsapp, setNewWhatsapp] = useState(currentUser.whatsapp || ''); // Estado para armazenar o novo número de WhatsApp
+    const [imageFile, setImageFile] = useState(null); // Estado para armazenar o arquivo de imagem selecionado
+    const [imageUrl, setImageUrl] = useState(currentUser?.imageUrl || ''); // Estado para armazenar a URL da imagem de perfil
+    const [isAlertModalOpen, setIsAlertModalOpen] = useState(false); // Estado para controlar a abertura do modal de alerta
+    const [alertMessage, setAlertMessage] = useState(''); // Estado para armazenar a mensagem de alerta
+    const [isWhatsappModalOpen, setIsWhatsappModalOpen] = useState(false); // Estado para controlar a abertura do modal de WhatsApp
 
-    // Cropper state
-    const [crop, setCrop] = useState({ x: 0, y: 0 });
-    const [zoom, setZoom] = useState(1);
-    const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
-    const [croppedImage, setCroppedImage] = useState(null);
-    const [isCropModalOpen, setIsCropModalOpen] = useState(false);
+    // Estado para o Cropper (ferramenta de recorte de imagem)
+    const [crop, setCrop] = useState({ x: 0, y: 0 }); // Estado para armazenar a posição de recorte
+    const [zoom, setZoom] = useState(1); // Estado para armazenar o nível de zoom do recorte
+    const [croppedAreaPixels, setCroppedAreaPixels] = useState(null); // Estado para armazenar a área de pixels recortados
+    const [croppedImage, setCroppedImage] = useState(null); // Estado para armazenar a imagem recortada
+    const [isCropModalOpen, setIsCropModalOpen] = useState(false); // Estado para controlar a abertura do modal de recorte
 
     const onCropComplete = useCallback((croppedArea, croppedAreaPixels) => {
-        setCroppedAreaPixels(croppedAreaPixels);
+        setCroppedAreaPixels(croppedAreaPixels); // Atualiza o estado com a área de pixels recortados
     }, []);
 
     const validatePassword = (password) => {
-        const numberPattern = /[0-9]{4,}/;
-        const letterPattern = /[a-zA-Z]{2,}/;
-        return numberPattern.test(password) && letterPattern.test(password);
+        const numberPattern = /[0-9]{4,}/; // Padrão para verificar se há pelo menos 4 números na senha
+        const letterPattern = /[a-zA-Z]{2,}/; // Padrão para verificar se há pelo menos 2 letras na senha
+        return numberPattern.test(password) && letterPattern.test(password); // Retorna true se a senha atender aos requisitos
     };
 
     const handlePasswordChange = async () => {
-        if (!validatePassword(newPassword)) {
+        if (!validatePassword(newPassword)) { // Verifica se a nova senha atende aos requisitos
             setAlertMessage('A senha deve ter no mínimo 4 números e 2 letras.');
-            setIsAlertModalOpen(true);
+            setIsAlertModalOpen(true); // Abre o modal de alerta se a senha for inválida
             return;
         }
 
         try {
-            const userDoc = doc(db, 'usuarios', currentUser.cidade);
+            const userDoc = doc(db, 'usuarios', currentUser.cidade); // Referência ao documento do usuário no Firestore
             await updateDoc(userDoc, {
-                [`${currentUser.user}.pass`]: newPassword,
+                [`${currentUser.user}.pass`]: newPassword, // Atualiza a senha no Firestore
             });
             setAlertMessage('Senha atualizada com sucesso!');
-            setIsAlertModalOpen(true);
+            setIsAlertModalOpen(true); // Abre o modal de alerta com mensagem de sucesso
         } catch (error) {
-            console.error('Erro ao atualizar a senha:', error);
+            console.error('Erro ao atualizar a senha:', error); // Loga o erro se a atualização falhar
             setAlertMessage('Erro ao atualizar a senha. Tente novamente.');
-            setIsAlertModalOpen(true);
+            setIsAlertModalOpen(true); // Abre o modal de alerta com mensagem de erro
         }
     };
 
     const handleImageUpload = async () => {
-        const storage = getStorage();
-        const storageRef = ref(storage, `users/${currentUser.user}/profile.jpg`);
+        const storage = getStorage(); // Obtém a instância do serviço de armazenamento
+        const storageRef = ref(storage, `users/${currentUser.user}/profile.jpg`); // Referência ao local de armazenamento da imagem
 
         try {
-            const croppedBlob = await getCroppedImg(croppedImage, croppedAreaPixels); // Obtenha o blob da imagem cortada
-            await uploadBytes(storageRef, croppedBlob);
-            const downloadURL = await getDownloadURL(storageRef);
-            setImageUrl(downloadURL);
+            const croppedBlob = await getCroppedImg(croppedImage, croppedAreaPixels); // Obtém o blob da imagem recortada
+            await uploadBytes(storageRef, croppedBlob); // Faz upload da imagem recortada
+            const downloadURL = await getDownloadURL(storageRef); // Obtém a URL de download da imagem
+            setImageUrl(downloadURL); // Atualiza a URL da imagem de perfil no estado
 
-            const userDoc = doc(db, 'usuarios', currentUser.cidade);
+            const userDoc = doc(db, 'usuarios', currentUser.cidade); // Referência ao documento do usuário no Firestore
             await updateDoc(userDoc, {
-                [`${currentUser.user}.imageUrl`]: downloadURL,
+                [`${currentUser.user}.imageUrl`]: downloadURL, // Atualiza a URL da imagem de perfil no Firestore
             });
 
             setAlertMessage('Imagem atualizada com sucesso!');
-            setIsAlertModalOpen(true);
-            setIsCropModalOpen(false);
+            setIsAlertModalOpen(true); // Abre o modal de alerta com mensagem de sucesso
+            setIsCropModalOpen(false); // Fecha o modal de recorte de imagem
         } catch (error) {
-            console.error('Erro ao fazer upload da imagem:', error);
+            console.error('Erro ao fazer upload da imagem:', error); // Loga o erro se o upload falhar
             setAlertMessage('Erro ao fazer upload da imagem. Tente novamente.');
-            setIsAlertModalOpen(true);
+            setIsAlertModalOpen(true); // Abre o modal de alerta com mensagem de erro
         }
     };
 
     const handleFileChange = (e) => {
-        const file = e.target.files[0];
+        const file = e.target.files[0]; // Obtém o arquivo de imagem selecionado
         if (file) {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
+            const reader = new FileReader(); // Cria um novo FileReader para ler o arquivo
+            reader.readAsDataURL(file); // Lê o arquivo como URL de dados
             reader.onload = () => {
-                setCroppedImage(reader.result);
-                setIsCropModalOpen(true);
+                setCroppedImage(reader.result); // Armazena a imagem recortada no estado
+                setIsCropModalOpen(true); // Abre o modal de recorte de imagem
             };
         }
     };
 
     const handleWhatsappChange = async () => {
         try {
-            const userDoc = doc(db, 'usuarios', currentUser.cidade);
+            const userDoc = doc(db, 'usuarios', currentUser.cidade); // Referência ao documento do usuário no Firestore
             await updateDoc(userDoc, {
-                [`${currentUser.user}.whatsapp`]: newWhatsapp,
+                [`${currentUser.user}.whatsapp`]: newWhatsapp, // Atualiza o número de WhatsApp no Firestore
             });
 
             // Atualizar o estado do usuário para refletir a mudança em tempo real
-            currentUser.whatsapp = newWhatsapp;
+            currentUser.whatsapp = newWhatsapp; // Atualiza o número de WhatsApp no estado do usuário
 
             setAlertMessage('Número de WhatsApp atualizado com sucesso!');
-            setIsAlertModalOpen(true);
-            setIsWhatsappModalOpen(false);
+            setIsAlertModalOpen(true); // Abre o modal de alerta com mensagem de sucesso
+            setIsWhatsappModalOpen(false); // Fecha o modal de edição de WhatsApp
         } catch (error) {
-            console.error('Erro ao atualizar o número de WhatsApp:', error);
+            console.error('Erro ao atualizar o número de WhatsApp:', error); // Loga o erro se a atualização falhar
             setAlertMessage('Erro ao atualizar o número de WhatsApp. Tente novamente.');
-            setIsAlertModalOpen(true);
+            setIsAlertModalOpen(true); // Abre o modal de alerta com mensagem de erro
         }
     };
-
-    // Animação do modal
-    const animationProps = useSpring({
-        opacity: isWhatsappModalOpen || isCropModalOpen ? 1 : 0,
-        transform: isWhatsappModalOpen || isCropModalOpen ? 'translateY(0)' : 'translateY(-20%)',
-    });
 
     return (
         <div className="max-w-md mx-auto p-4 bg-white shadow-md rounded-lg">

@@ -9,20 +9,23 @@ import { Link } from 'react-router-dom';
 import LoadingSpinner from '../LoadingSpinner/LoadingSpinner';
 import { TbNotesOff } from "react-icons/tb";
 
+// Componente para exibir a última solicitação de TI
 const LastSolicitacao = () => {
-    const { currentUser } = useAuth();
-    const [lastSolicitacao, setLastSolicitacao] = useState(null);
-    const [loading, setLoading] = useState(true);
+    const { currentUser } = useAuth(); // Obtenção do usuário autenticado
+    const [lastSolicitacao, setLastSolicitacao] = useState(null); // Estado para armazenar a última solicitação
+    const [loading, setLoading] = useState(true); // Estado para indicar se os dados estão carregando
 
+    // useEffect para buscar a última solicitação ao carregar o componente
     useEffect(() => {
         if (!currentUser) {
             setLoading(false);
             return;
         }
 
-        const solicitacoesRef = collection(db, 'solicitacoes');
+        const solicitacoesRef = collection(db, 'solicitacoes'); // Referência à coleção de solicitações no Firestore
         let q;
 
+        // Define a query com base no cargo do usuário
         if (currentUser.cargo === 'Supervisor') {
             // Se o usuário for Supervisor, busca a última solicitação de qualquer usuário
             q = query(
@@ -38,19 +41,20 @@ const LastSolicitacao = () => {
             );
         }
 
+        // Configura um listener para a query
         const unsubscribe = onSnapshot(q, (querySnapshot) => {
             const solicitacoesData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            setLastSolicitacao(solicitacoesData[0]);
-            setLoading(false);
+            setLastSolicitacao(solicitacoesData[0]); // Armazena a última solicitação
+            setLoading(false); // Indica que o carregamento foi concluído
         }, (error) => {
             console.error('Erro ao buscar a última solicitação:', error);
             setLoading(false);
         });
 
-        return () => unsubscribe();
+        return () => unsubscribe(); // Limpa o listener quando o componente é desmontado
     }, [currentUser]);
 
-
+    // Função para obter a classe CSS com base no status da solicitação
     const getStatusClass = (status) => {
         switch (status) {
             case 'Pendente':
@@ -65,9 +69,10 @@ const LastSolicitacao = () => {
     };
 
     if (loading) {
-        return <div><LoadingSpinner /></div>;
+        return <div><LoadingSpinner /></div>; // Exibe o spinner de carregamento enquanto os dados são buscados
     }
 
+    // Função para abreviar o nome da cidade
     const abreviarCidade = (nomeCidade) => {
         const partes = nomeCidade.split(' ');
         if (partes.length === 1) return nomeCidade; // Se o nome tem apenas uma palavra, não abrevia
@@ -80,6 +85,7 @@ const LastSolicitacao = () => {
         }).join(' ');
     };
 
+    // Se não houver nenhuma solicitação
     if (!lastSolicitacao) {
         return (
             <div className="w-full min-w-[266px] min-h-[204px] flex bg-white max-w-[320px] px-2 rounded-xl flex-col justify-center items-center text-gray-700">
@@ -96,6 +102,7 @@ const LastSolicitacao = () => {
         );
     }
 
+    // Exibe a última solicitação encontrada
     return (
         <div className="w-full min-w-[266px] min-h-[204px] flex bg-white max-w-[320px] px-2 rounded-xl flex-col justify-center items-center text-gray-700">
             <div className='w-full font-bold flex justify-start'>
@@ -119,7 +126,6 @@ const LastSolicitacao = () => {
 
                     <div className='flex gap-4 mb-1'>
                         <p className='justify-center hidden lg:flex items-center'>
-
                             <IoCalendarNumber />: {new Date(lastSolicitacao.data.toDate()).toLocaleDateString()}
                         </p>
                     </div>

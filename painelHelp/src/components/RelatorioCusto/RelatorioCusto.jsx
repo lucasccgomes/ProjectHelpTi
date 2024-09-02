@@ -6,99 +6,99 @@ import 'react-datepicker/dist/react-datepicker.css';
 import Dropdown from '../Dropdown/Dropdown';
 
 const RelatorioCusto = () => {
-    const [solicitacoes, setSolicitacoes] = useState([]);
-    const [error, setError] = useState(null);
-    const [filteredSolicitacoes, setFilteredSolicitacoes] = useState([]);
-    const [lojaFilter, setLojaFilter] = useState('Todos');
-    const [userFilter, setUserFilter] = useState('Todos');
-    const [dateRange, setDateRange] = useState([null, null]);
-    const [totalPrice, setTotalPrice] = useState(0);
+    const [solicitacoes, setSolicitacoes] = useState([]); // Estado para armazenar as solicitações de compras
+    const [error, setError] = useState(null); // Estado para armazenar mensagens de erro
+    const [filteredSolicitacoes, setFilteredSolicitacoes] = useState([]); // Estado para armazenar as solicitações filtradas
+    const [lojaFilter, setLojaFilter] = useState('Todos'); // Estado para armazenar o filtro de loja
+    const [userFilter, setUserFilter] = useState('Todos'); // Estado para armazenar o filtro de usuário
+    const [dateRange, setDateRange] = useState([null, null]); // Estado para armazenar o intervalo de datas para o filtro
+    const [totalPrice, setTotalPrice] = useState(0); // Estado para armazenar o preço total das solicitações filtradas
 
-    const [allUserOptions, setAllUserOptions] = useState(['Todos']);
-    const [allLojaOptions, setAllLojaOptions] = useState(['Todos']);
-    const [userOptions, setUserOptions] = useState(['Todos']);
-    const [lojaOptions, setLojaOptions] = useState(['Todos']);
+    const [allUserOptions, setAllUserOptions] = useState(['Todos']); // Estado para armazenar todas as opções de usuários
+    const [allLojaOptions, setAllLojaOptions] = useState(['Todos']); // Estado para armazenar todas as opções de lojas
+    const [userOptions, setUserOptions] = useState(['Todos']); // Estado para armazenar as opções de filtro de usuários
+    const [lojaOptions, setLojaOptions] = useState(['Todos']); // Estado para armazenar as opções de filtro de lojas
 
-    const reportRef = useRef();
+    const reportRef = useRef(); // Referência para o relatório, usado para impressão
 
     useEffect(() => {
         const fetchSolicitacoes = () => {
-            const solicitacoesRef = collection(db, 'solicitCompras');
+            const solicitacoesRef = collection(db, 'solicitCompras'); // Referência à coleção 'solicitCompras' no Firestore
 
             const unsubscribe = onSnapshot(solicitacoesRef, (querySnapshot) => {
                 const solicitacoesData = querySnapshot.docs.map((doc) => ({
-                    id: doc.id,
-                    ...doc.data(),
+                    id: doc.id, // Armazena o ID do documento
+                    ...doc.data(), // Armazena os dados do documento
                 }));
 
-                setSolicitacoes(solicitacoesData);
+                setSolicitacoes(solicitacoesData); // Atualiza o estado com os dados das solicitações
 
-                const uniqueLojas = Array.from(new Set(solicitacoesData.map(solicitacao => solicitacao.loja)));
-                const uniqueUsers = Array.from(new Set(solicitacoesData.map(solicitacao => solicitacao.user)));
+                const uniqueLojas = Array.from(new Set(solicitacoesData.map(solicitacao => solicitacao.loja))); // Obtém as lojas únicas das solicitações
+                const uniqueUsers = Array.from(new Set(solicitacoesData.map(solicitacao => solicitacao.user))); // Obtém os usuários únicos das solicitações
 
-                setAllLojaOptions(['Todos', ...uniqueLojas]);
-                setAllUserOptions(['Todos', ...uniqueUsers]);
+                setAllLojaOptions(['Todos', ...uniqueLojas]); // Atualiza as opções de lojas com as lojas únicas
+                setAllUserOptions(['Todos', ...uniqueUsers]); // Atualiza as opções de usuários com os usuários únicos
             }, (error) => {
-                setError('Erro ao buscar solicitações');
-                console.error('Erro ao buscar solicitações:', error);
+                setError('Erro ao buscar solicitações'); // Define o erro se ocorrer algum problema ao buscar as solicitações
+                console.error('Erro ao buscar solicitações:', error); // Loga o erro no console
             });
 
-            return () => unsubscribe();
+            return () => unsubscribe(); // Limpa a assinatura do snapshot ao desmontar o componente
         };
 
-        fetchSolicitacoes();
+        fetchSolicitacoes(); // Chama a função para buscar as solicitações de compras
     }, []);
 
     useEffect(() => {
-        setLojaOptions(allLojaOptions);
-        setUserOptions(allUserOptions);
-    }, [allLojaOptions, allUserOptions]);
+        setLojaOptions(allLojaOptions); // Atualiza as opções de lojas para o filtro com base nas lojas únicas
+        setUserOptions(allUserOptions); // Atualiza as opções de usuários para o filtro com base nos usuários únicos
+    }, [allLojaOptions, allUserOptions]); // Executa o efeito quando as opções de lojas ou usuários são atualizadas
 
     useEffect(() => {
         const filtered = solicitacoes.filter(solicitacao => {
-            const matchesLoja = lojaFilter === 'Todos' || solicitacao.loja === lojaFilter;
-            const matchesUser = userFilter === 'Todos' || solicitacao.user === userFilter;
+            const matchesLoja = lojaFilter === 'Todos' || solicitacao.loja === lojaFilter; // Verifica se a solicitação corresponde ao filtro de loja
+            const matchesUser = userFilter === 'Todos' || solicitacao.user === userFilter; // Verifica se a solicitação corresponde ao filtro de usuário
             const matchesDateRange = (!dateRange[0] || solicitacao.data.toDate() >= dateRange[0]) &&
-                (!dateRange[1] || solicitacao.data.toDate() <= dateRange[1]);
-    
-            const matchesStatus = solicitacao.status !== 'Pendente' && solicitacao.status !== 'Cancelado';
-    
-            return matchesLoja && matchesUser && matchesDateRange && matchesStatus;
+                (!dateRange[1] || solicitacao.data.toDate() <= dateRange[1]); // Verifica se a solicitação está dentro do intervalo de datas
+
+            const matchesStatus = solicitacao.status !== 'Pendente' && solicitacao.status !== 'Cancelado'; // Exclui solicitações com status 'Pendente' ou 'Cancelado'
+
+            return matchesLoja && matchesUser && matchesDateRange && matchesStatus; // Retorna true se a solicitação corresponder a todos os filtros
         });
-    
-        setFilteredSolicitacoes(filtered);
-    
+
+        setFilteredSolicitacoes(filtered); // Atualiza o estado com as solicitações filtradas
+
         const total = filtered.reduce((acc, solicitacao) => {
-            return acc + (Number(solicitacao.totalPrice) || 0);
+            return acc + (Number(solicitacao.totalPrice) || 0); // Calcula o preço total das solicitações filtradas
         }, 0);
-    
-        setTotalPrice(total);
-    }, [solicitacoes, lojaFilter, userFilter, dateRange]);
+
+        setTotalPrice(total); // Atualiza o estado com o preço total das solicitações filtradas
+    }, [solicitacoes, lojaFilter, userFilter, dateRange]); // Executa o efeito quando as solicitações ou filtros são atualizados
     
     const handlePrint = () => {
-        window.print();
+        window.print(); // Função para imprimir a página
     };
 
     const renderReportTitle = () => {
-        const [startDate, endDate] = dateRange;
+        const [startDate, endDate] = dateRange; // Desestrutura o intervalo de datas
 
         if (lojaFilter !== 'Todos' && startDate && endDate) {
-            return `Relatório da ${lojaFilter} no período de ${startDate.toLocaleDateString()} até ${endDate.toLocaleDateString()}`;
+            return `Relatório da ${lojaFilter} no período de ${startDate.toLocaleDateString()} até ${endDate.toLocaleDateString()}`; // Retorna título para filtro de loja e intervalo de datas
         } else if (userFilter !== 'Todos' && startDate && endDate) {
-            return `Relatório do ${userFilter} no período de ${startDate.toLocaleDateString()} até ${endDate.toLocaleDateString()}`;
+            return `Relatório do ${userFilter} no período de ${startDate.toLocaleDateString()} até ${endDate.toLocaleDateString()}`; // Retorna título para filtro de usuário e intervalo de datas
         } else if (startDate && endDate) {
-            return `Relatório do período de ${startDate.toLocaleDateString()} até ${endDate.toLocaleDateString()}`;
+            return `Relatório do período de ${startDate.toLocaleDateString()} até ${endDate.toLocaleDateString()}`; // Retorna título para intervalo de datas
         } else if (lojaFilter !== 'Todos') {
-            return `Relatório geral da ${lojaFilter}`;
+            return `Relatório geral da ${lojaFilter}`; // Retorna título para filtro de loja
         } else if (userFilter !== 'Todos') {
-            return `Relatório geral do ${userFilter}`;
+            return `Relatório geral do ${userFilter}`; // Retorna título para filtro de usuário
         }
 
-        return 'Relatório Geral';
+        return 'Relatório Geral'; // Retorna título geral se nenhum filtro específico for aplicado
     };
 
     if (error) {
-        return <div className="text-center mt-4 text-lg font-semibold text-red-500">{error}</div>;
+        return <div className="text-center mt-4 text-lg font-semibold text-red-500">{error}</div>; // Exibe mensagem de erro na interface se houver erro
     }
 
     return (

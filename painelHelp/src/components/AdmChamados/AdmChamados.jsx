@@ -16,40 +16,47 @@ import { FaCity, FaUser, FaStoreAlt, FaFileImage, FaWhatsapp, FaCalendarCheck, F
 import { MdReportProblem, MdDoNotDisturb, MdDescription, MdRecommend } from "react-icons/md";
 import { GrDocumentConfig } from "react-icons/gr";
 import { LuImageOff } from "react-icons/lu";
+import { SiInstatus } from "react-icons/si";
 
-
+// Componente principal para gerenciamento de chamados administrativos
 const AdmChamados = () => {
+    // Estados para controlar a abertura e fechamento de modais
+    const [notificationModalIsOpen, setNotificationModalIsOpen] = useState(false);
+    const [notificationMessage, setNotificationMessage] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedProblem, setSelectedProblem] = useState('');
-    const { currentUser } = useAuth();
-    const [tickets, setTickets] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [statusFilter, setStatusFilter] = useState('');
-    const [userFilter, setUserFilter] = useState('');
-    const [storeFilter, setStoreFilter] = useState('');
-    const [selectedTicket, setSelectedTicket] = useState(null);
-    const [finalizadoDescricao, setFinalizadoDescricao] = useState('');
-    const [imageModalIsOpen, setImageModalIsOpen] = useState(false);
-    const [selectedImages, setSelectedImages] = useState([]);
-    const [checkboxes, setCheckboxes] = useState([]);
-    const [newCheckbox, setNewCheckbox] = useState('');
-    const [checkproblema, setCheckproblema] = useState([]);
-    const [conclusaoModalIsOpen, setConclusaoModalIsOpen] = useState(false);
-    const [tratativaViewModalIsOpen, setTratativaViewModalIsOpen] = useState(false);
-    const [tratativaEditModalIsOpen, setTratativaEditModalIsOpen] = useState(false);
-    const [finalizarModalIsOpen, setFinalizarModalIsOpen] = useState(false);
-    const [descricaoModalIsOpen, setDescricaoModalIsOpen] = useState(false);
-    const [tentativaModalIsOpen, setTentativaModalIsOpen] = useState(false);
+    const { currentUser } = useAuth(); // Estado para o usuário atual autenticado
+    const [tickets, setTickets] = useState([]); // Estado para armazenar os chamados (tickets)
+    const [loading, setLoading] = useState(true); // Estado para indicar se os dados estão carregando
+    const [statusFilter, setStatusFilter] = useState(''); // Estado para armazenar o filtro de status
+    const [userFilter, setUserFilter] = useState(''); // Estado para armazenar o filtro de usuário
+    const [storeFilter, setStoreFilter] = useState(''); // Estado para armazenar o filtro de loja
+    const [selectedTicket, setSelectedTicket] = useState(null); // Estado para armazenar o chamado selecionado
+    const [finalizadoDescricao, setFinalizadoDescricao] = useState(''); // Estado para a descrição de finalização
+    const [imageModalIsOpen, setImageModalIsOpen] = useState(false); // Estado para controlar o modal de imagens
+    const [selectedImages, setSelectedImages] = useState([]); // Estado para armazenar as imagens selecionadas
+    const [checkboxes, setCheckboxes] = useState([]); // Estado para armazenar checkboxes de problemas
+    const [newCheckbox, setNewCheckbox] = useState(''); // Estado para adicionar novos checkboxes
+    const [checkproblema, setCheckproblema] = useState([]); // Estado para armazenar o problema selecionado
+    const [conclusaoModalIsOpen, setConclusaoModalIsOpen] = useState(false); // Estado para controlar o modal de conclusão
+    const [tratativaViewModalIsOpen, setTratativaViewModalIsOpen] = useState(false); // Estado para controlar o modal de visualização de tratativa
+    const [tratativaEditModalIsOpen, setTratativaEditModalIsOpen] = useState(false); // Estado para controlar o modal de edição de tratativa
+    const [finalizarModalIsOpen, setFinalizarModalIsOpen] = useState(false); // Estado para controlar o modal de finalização
+    const [descricaoModalIsOpen, setDescricaoModalIsOpen] = useState(false); // Estado para controlar o modal de descrição
+    const [tentativaModalIsOpen, setTentativaModalIsOpen] = useState(false); // Estado para controlar o modal de tentativa
 
+    // Função para abrir o modal de tentativa e definir o ticket selecionado
     const openTentativaModal = (ticket) => {
         setSelectedTicket(ticket);
         setTentativaModalIsOpen(true);
     };
 
+    // Função para fechar o modal de tentativa
     const closeTentativaModal = () => {
         setTentativaModalIsOpen(false);
     };
 
+    // Função para abreviar o nome de uma cidade
     const abreviarCidade = (cidade) => {
         const palavras = cidade.split(' ');
         if (palavras.length > 1) {
@@ -60,15 +67,18 @@ const AdmChamados = () => {
         return cidade; // Se for uma única palavra, retorna sem abreviação
     };
 
+    // Função para abrir o modal de descrição e definir o ticket selecionado
     const openDescricaoModal = (ticket) => {
         setSelectedTicket(ticket);
         setDescricaoModalIsOpen(true);
     };
 
+    // Função para fechar o modal de descrição
     const closeDescricaoModal = () => {
         setDescricaoModalIsOpen(false);
     };
 
+    // Configurações para o editor de texto ReactQuill
     const modules = {
         toolbar: [
             ['bold', 'italic', 'underline'],
@@ -77,58 +87,62 @@ const AdmChamados = () => {
         ],
     };
 
-    const [treatment, setTreatment] = useState('');
+    const [treatment, setTreatment] = useState(''); // Estado para armazenar a tratativa do ticket
 
+    // Função para adicionar um novo checkbox de problema
     const addNewCheckbox = async () => {
         if (newCheckbox) {
             try {
-                const checkboxDocRef = doc(db, 'ordersControl', 'checkbox');
-                const docSnapshot = await getDoc(checkboxDocRef);
+                const checkboxDocRef = doc(db, 'ordersControl', 'checkbox'); // Referência ao documento de checkbox no Firestore
+                const docSnapshot = await getDoc(checkboxDocRef); // Obtém o documento de checkbox
 
                 let updatedCheckboxes = [];
                 if (docSnapshot.exists()) {
                     const data = docSnapshot.data();
                     updatedCheckboxes = data.checkProblemas ? [...data.checkProblemas, newCheckbox] : [newCheckbox];
                 } else {
-                    updatedCheckboxes = [newCheckbox];
+                    updatedCheckboxes = [newCheckbox]; // Cria um novo array de checkboxes se não existir
                 }
 
-                await updateDoc(checkboxDocRef, { checkProblemas: updatedCheckboxes });
+                await updateDoc(checkboxDocRef, { checkProblemas: updatedCheckboxes }); // Atualiza o documento no Firestore
 
-                setCheckboxes(updatedCheckboxes);
-                setNewCheckbox('');
+                setCheckboxes(updatedCheckboxes); // Atualiza o estado local
+                setNewCheckbox(''); // Reseta o campo de novo checkbox
             } catch (error) {
-                console.error('Erro ao adicionar novo checkbox:', error);
+                console.error('Erro ao adicionar novo checkbox:', error); // Loga o erro, se ocorrer
             }
         }
     };
 
+    // useEffect para buscar os checkboxes de problemas ao carregar o componente
     useEffect(() => {
         const fetchCheckboxes = async () => {
             try {
-                const checkboxDocRef = doc(db, 'ordersControl', 'checkbox');
-                const docSnapshot = await getDoc(checkboxDocRef);
+                const checkboxDocRef = doc(db, 'ordersControl', 'checkbox'); // Referência ao documento de checkbox no Firestore
+                const docSnapshot = await getDoc(checkboxDocRef); // Obtém o documento de checkbox
                 if (docSnapshot.exists()) {
                     const data = docSnapshot.data();
                     const checkboxesData = data.checkProblemas || [];
-                    setCheckboxes(checkboxesData);
+                    setCheckboxes(checkboxesData); // Atualiza o estado com os checkboxes
                 } else {
                     console.log('Documento checkbox não encontrado.');
                 }
             } catch (error) {
-                console.error('Erro ao buscar documentos:', error);
+                console.error('Erro ao buscar documentos:', error); // Loga o erro, se ocorrer
             }
         };
 
-        fetchCheckboxes();
+        fetchCheckboxes(); // Chama a função de fetch
     }, []);
 
+    // Função para formatar o link do WhatsApp com o número correto
     const formatWhatsappLink = (phone) => {
-        const cleaned = ('' + phone).replace(/\D/g, '');
-        const countryCode = '55';
-        return `https://wa.me/${countryCode}${cleaned}`;
+        const cleaned = ('' + phone).replace(/\D/g, ''); // Remove caracteres não numéricos
+        const countryCode = '55'; // Código do país (Brasil)
+        return `https://wa.me/${countryCode}${cleaned}`; // Retorna o link formatado
     };
 
+    // Função para definir a classe CSS com base no status do chamado
     const getStatusClass = (status) => {
         switch (status) {
             case 'Aberto':
@@ -144,9 +158,10 @@ const AdmChamados = () => {
         }
     };
 
+    // useEffect para buscar os tickets (chamados) do Firestore e atualizar o estado em tempo real
     useEffect(() => {
         const fetchTickets = async () => {
-            const abertoRef = collection(db, 'chamados', 'aberto', 'tickets');
+            const abertoRef = collection(db, 'chamados', 'aberto', 'tickets'); // Referência à coleção de tickets no Firestore
 
             const unsubscribe = onSnapshot(abertoRef, (querySnapshot) => {
                 const ticketsData = querySnapshot.docs.map(doc => {
@@ -154,27 +169,29 @@ const AdmChamados = () => {
                     return {
                         id: doc.id,
                         ...data,
-                        data: data.data.toDate()
+                        data: data.data.toDate(), // Converte 'data' para Date
+                        finalizadoData: data.finalizadoData ? data.finalizadoData.toDate() : null // Converte 'finalizadoData' para Date
                     };
                 });
 
-                const uniqueTickets = Array.from(new Map(ticketsData.map(ticket => [ticket.id, ticket])).values());
-                setTickets(uniqueTickets);
-                setLoading(false);
+                const uniqueTickets = Array.from(new Map(ticketsData.map(ticket => [ticket.id, ticket])).values()); // Remove duplicatas
+                setTickets(uniqueTickets); // Atualiza o estado com os tickets únicos
+                setLoading(false); // Define o carregamento como falso
             }, (error) => {
-                console.error('Erro ao buscar chamados:', error);
-                setLoading(false);
+                console.error('Erro ao buscar chamados:', error); // Loga o erro, se ocorrer
+                setLoading(false); // Define o carregamento como falso em caso de erro
             });
 
-            return () => unsubscribe();
+            return () => unsubscribe(); // Desinscreve do snapshot ao desmontar o componente
         };
 
-        fetchTickets();
+        fetchTickets(); // Chama a função de fetch
     }, []);
 
+    // Função para enviar uma notificação aos usuários
     const sendNotification = async (tokens, notification) => {
         try {
-            const response = await fetch('https://bde5-2804-1784-30b3-6700-7285-c2ff-fe34-e4b0.ngrok-free.app/send-notification', {
+            const response = await fetch('https://8f38-2804-1784-30b3-6700-7285-c2ff-fe34-e4b0.ngrok-free.app/send-notification', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -189,25 +206,24 @@ const AdmChamados = () => {
                     }
                 })
             });
-    
-            const responseData = await response.json();
-    
+
+            const responseData = await response.json(); // Converte a resposta para JSON
+
             if (response.ok) {
                 console.log('Notificação enviada com sucesso.');
-                console.log('Resposta do servidor:', responseData);
             } else {
-                console.error('Falha ao enviar notificação. Status:', response.status);
-                console.error('Resposta do servidor:', responseData);
+                console.error('Falha ao enviar notificação. Status:', response.status); // Loga o erro, se ocorrer
             }
         } catch (error) {
-            console.error('Erro ao enviar notificação:', error);
+            console.error('Erro ao enviar notificação:', error); // Loga o erro, se ocorrer
         }
-    };    
+    };
 
+    // Função para atualizar o status do ticket
     const updateTicketStatus = async (id, status, descricaoFinalizacao = '', treatment = '', interacao = null) => {
         try {
-            const ticketDocRef = doc(db, 'chamados', 'aberto', 'tickets', id);
-            
+            const ticketDocRef = doc(db, 'chamados', 'aberto', 'tickets', id); // Referência ao documento do ticket no Firestore
+
             // Prepara o objeto de atualização
             const updatedData = {
                 status,
@@ -215,38 +231,38 @@ const AdmChamados = () => {
                 treatment,
                 checkproblema: [selectedProblem],
             };
-    
+
             // Adiciona a data de finalização se o status for "Finalizado"
             if (status === 'Finalizado') {
                 updatedData.finalizadoData = new Date();
             }
-    
+
             // Se interacao for falso e status for "Urgente", restaura o status anterior
             if (interacao === false && status === 'Urgente') {
                 updatedData.status = selectedTicket.anteriorStatus || 'Aberto';
                 updatedData.interacao = false;
             }
-    
+
             // Só atualiza `interacao` se for passado como parâmetro (não `null`)
             if (interacao !== null) {
                 updatedData.interacao = interacao;
             }
-    
+
             // Atualiza o documento no Firestore
             await updateDoc(ticketDocRef, updatedData);
-    
+
             // Atualiza o estado local
             setTickets(prevTickets =>
                 prevTickets.map(ticket =>
                     ticket.id === id ? { ...ticket, ...updatedData } : ticket
                 )
             );
-    
+
             // Enviar notificação ao usuário
             const updatedTicket = tickets.find(ticket => ticket.id === id);
-            const userDocRef = doc(db, 'usuarios', updatedTicket.cidade);
-            const userDocSnap = await getDoc(userDocRef);
-    
+            const userDocRef = doc(db, 'usuarios', updatedTicket.cidade); // Referência ao documento do usuário no Firestore
+            const userDocSnap = await getDoc(userDocRef); // Obtém o documento do usuário
+
             if (userDocSnap.exists()) {
                 const userData = userDocSnap.data()[updatedTicket.user];
                 if (userData && userData.token) {
@@ -256,25 +272,30 @@ const AdmChamados = () => {
                         click_action: "https://drogalira.com.br/usertickets",
                         icon: "https://iili.io/duTTt8Q.png"
                     };
-    
-                    await sendNotification(userData.token, notificationMessage);
+
+                    await sendNotification(userData.token, notificationMessage); // Envia a notificação
                 } else {
                     console.error('Token do usuário não encontrado.');
                 }
             } else {
                 console.error('Documento do usuário não encontrado.');
             }
-    
+
+            // Define a mensagem do modal de notificação
+            setNotificationMessage(`${updatedTicket.order} status alterado para ${status}`);
+            setNotificationModalIsOpen(true);
+
             // Limpa os estados
             setSelectedTicket(null);
             setFinalizadoDescricao('');
             setTreatment('');
             setCheckproblema([]);
         } catch (error) {
-            console.error('Erro ao atualizar status do chamado:', error);
+            console.error('Erro ao atualizar status do chamado:', error); // Loga o erro, se ocorrer
         }
     };
-    
+
+    // Filtro para os tickets com base nos filtros e consulta de busca
     const filteredTickets = tickets.filter(ticket => {
         const query = searchQuery.toLowerCase();
 
@@ -295,74 +316,86 @@ const AdmChamados = () => {
         );
     });
 
+    // Geração de listas únicas de usuários e lojas para os dropdowns de filtro
     const uniqueUsers = [...new Set(tickets.map(ticket => ticket.user))];
     const uniqueStores = [...new Set(tickets.map(ticket => ticket.loja))];
 
     if (loading) {
-        return <div>Loading...</div>;
+        return <div>Loading...</div>; // Exibe uma mensagem de carregamento se os dados ainda estiverem sendo carregados
     }
 
+    // Função para abrir o modal de imagens
     const openImageModal = (images) => {
         setSelectedImages(images);
         setImageModalIsOpen(true);
     };
 
+    // Função para fechar o modal de imagens
     const closeImageModal = () => {
         setSelectedImages([]);
         setImageModalIsOpen(false);
     };
 
+    // Função para abrir o modal de visualização de tratativa
     const openTratativaViewModal = (ticket) => {
         setSelectedTicket(ticket);
         setTratativaViewModalIsOpen(true);
     };
 
+    // Função para fechar o modal de visualização de tratativa
     const closeTratativaViewModal = () => {
         setTratativaViewModalIsOpen(false);
     };
 
+    // Função para abrir o modal de edição de tratativa
     const openTratativaEditModal = (ticket) => {
         setSelectedTicket(ticket);
         setTreatment(ticket.treatment || '');
         setTratativaEditModalIsOpen(true);
     };
 
+    // Função para fechar o modal de edição de tratativa
     const closeTratativaEditModal = () => {
         setTratativaEditModalIsOpen(false);
     };
 
+    // Função para abrir o modal de finalização
     const openFinalizarModal = (ticket) => {
         setSelectedTicket(ticket);
         setFinalizarModalIsOpen(true);
     };
 
+    // Função para fechar o modal de finalização
     const closeFinalizarModal = () => {
         setFinalizarModalIsOpen(false);
     };
 
+    // Função para abrir o modal de conclusão
     const openConclusaoModal = (ticket) => {
         setSelectedTicket(ticket);
         setConclusaoModalIsOpen(true);
     };
 
+    // Função para fechar o modal de conclusão
     const closeConclusaoModal = () => {
         setConclusaoModalIsOpen(false);
     };
-
+    
     return (
         <div className="justify-center items-center">
             <div className='w-full bg-altBlue p-4 fixed mt-[3.5rem] z-10'>
                 <div className='flex flex-col bg-primaryBlueDark p-4 rounded-lg shadow-lg '>
                     <h2 className="text-2xl text-white font-bold">Gerenciador Chamados</h2>
-                    <div className='flex justify-between gap-4'>
+                    <div className='flex justify-between gap-4 w-full'>
                         <input
                             type="text"
-                            className="border mt-2 p-2 rounded w-full"
+                            className="border mt-2 p-2 rounded hidden lg:flex w-full"
                             placeholder="Buscar..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
-                        <div className='w-[27rem]'>
+                        <div className='flex items-center gap-2 w-[27rem]'>
+                        <SiInstatus className='text-white text-2xl hidden lg:flex'/>
                             <Dropdown
                                 options={['Todos', 'Aberto', 'Andamento', 'Finalizado', 'VSM']}
                                 selected={statusFilter}
@@ -370,7 +403,8 @@ const AdmChamados = () => {
                                 className="hidden lg:flex items-center justify-center"
                             />
                         </div>
-                        <div className='w-[27rem] '>
+                        <div className='flex items-center gap-2 w-[27rem]'>
+                        <FaUser className='text-white text-2xl hidden lg:flex'/>
                             <Dropdown
                                 options={['Todos', ...uniqueUsers]}
                                 selected={userFilter}
@@ -383,8 +417,9 @@ const AdmChamados = () => {
                                 className="hidden lg:flex items-center justify-center"
                             />
                         </div>
-                        <div className='w-[27rem]'>
-                            <Dropdown
+                        <div className='flex items-center gap-2 w-[27rem]'>
+                        <FaStoreAlt className='text-white text-2xl hidden lg:flex'/>
+                                               <Dropdown
                                 options={['Todos', ...uniqueStores]}
                                 selected={storeFilter}
                                 onSelectedChange={(value) => {
@@ -397,6 +432,15 @@ const AdmChamados = () => {
                                 className="hidden lg:flex items-center justify-center"
                             />
                         </div>
+                    </div>
+                    <div className='flex justify-between lg:hidden gap-4 w-full'>
+                        <input
+                            type="text"
+                            className="border mt-2 p-2 rounded w-full"
+                            placeholder="Buscar..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
                     </div>
 
                 </div>
@@ -476,14 +520,14 @@ const AdmChamados = () => {
                                     <div className="flex">
                                         <FaCalendarTimes className="mr-2 text-primaryBlueDark text-xl" />
                                         <p className='font-semibold text-gray-700'>
-                                            {ticket.data.toLocaleString()}
+                                            {ticket.data.toLocaleString('pt-BR')}
                                         </p>
                                     </div>
                                     {ticket.finalizadoData && (
                                         <div className="flex">
                                             <FaCalendarCheck className="mr-2 text-primaryBlueDark text-xl" />
                                             <p className='font-semibold text-gray-700'>
-                                                {ticket.finalizadoData.toLocaleString()}
+                                                {ticket.finalizadoData.toLocaleString('pt-BR')}
                                             </p>
                                         </div>
                                     )}
@@ -805,6 +849,18 @@ const AdmChamados = () => {
                 )}
             </MyModal>
 
+            <MyModal isOpen={notificationModalIsOpen} onClose={() => setNotificationModalIsOpen(false)}>
+                <h2 className="text-xl font-bold mb-4">Notificação</h2>
+                <p>{notificationMessage}</p>
+                <div className="flex justify-end">
+                    <button
+                        onClick={() => setNotificationModalIsOpen(false)}
+                        className="bg-blue-500 text-white px-4 py-2 rounded"
+                    >
+                        Fechar
+                    </button>
+                </div>
+            </MyModal>
 
         </div>
     );

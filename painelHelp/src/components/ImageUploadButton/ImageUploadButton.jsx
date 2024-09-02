@@ -1,10 +1,12 @@
 import React, { useRef } from 'react';
 
+// Componente para upload de imagens
 const ImageUploadButton = ({ handleImageChange }) => {
-  const fileInputRef = useRef(null);
+  const fileInputRef = useRef(null); // Cria uma referência para o input de arquivo
 
+  // Função para abrir o seletor de arquivos quando o botão é clicado
   const handleClick = () => {
-    fileInputRef.current.click();
+    fileInputRef.current.click(); // Simula um clique no input de arquivo oculto
   };
 
   return (

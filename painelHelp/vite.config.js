@@ -13,8 +13,8 @@ export default defineConfig({
       },
       manifest: {
         id: "/",
-        name: 'HelpTi',
-        short_name: 'HelpTi',
+        name: 'LiraSystem',
+        short_name: 'LiraSystem',
         description: 'Acompanhe seus chamados',
         theme_color: '#ffffff',
         background_color: '#ffffff',

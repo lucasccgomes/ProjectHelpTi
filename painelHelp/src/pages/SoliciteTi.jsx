@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { collection, getDoc, getDocs, doc, setDoc, runTransaction } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
-import ListaSolicitCompras from '../components/ListaSolicitCompras/ListaSolicitCompras';
+import ListaSolicitTi from '../components/ListaSolicitTi/ListaSolicitTi';
 import { MdOutlineRequestQuote } from "react-icons/md";
 import Modal from 'react-modal';
 import { useTransition, animated } from '@react-spring/web';
@@ -12,12 +12,12 @@ import AlertModal from '../components/AlertModal/AlertModal';
 import Dropdown from '../components/Dropdown/Dropdown';
 import NotificationModal from '../components/NotificationModal/NotificationModal';
 import { IoIosSend } from "react-icons/io";
-import AdmListaSolicitCompras from '../components/ListaSolicitCompras/AdmListaSolicitCompras';
+import AdmListaSolicitTi from '../components/ListaSolicitTi/AdmListaSolicitTi';
 
 Modal.setAppElement('#root'); // Ajuste o seletor conforme necessário
 
 
-const SoliciteCompras = () => {
+const SoliciteTi = () => {
   const { currentUser, currentUserRole } = useAuth(); // Obtém o usuário atual e o cargo do contexto de autenticação
   const [tipo, setTipo] = useState('Reposição'); // Estado para armazenar o tipo de solicitação
   const [nomeItem, setNomeItem] = useState(''); // Estado para armazenar o nome do item
@@ -51,7 +51,7 @@ const SoliciteCompras = () => {
 
   // Função para buscar o preço de cada item no Firestore
   const getItemPrice = async (categoria, item) => {
-    const estoqueRef = doc(db, 'estoqueCompras', 'estoque'); // Referência ao documento de estoque no Firestore
+    const estoqueRef = doc(db, 'estoqueTi', 'estoque'); // Referência ao documento de estoque no Firestore
     const estoqueDoc = await getDoc(estoqueRef); // Obtém o documento do Firestore
     if (estoqueDoc.exists()) {
       const categoriaData = estoqueDoc.data()[categoria]; // Obtém os dados da categoria
@@ -85,7 +85,7 @@ const SoliciteCompras = () => {
 
       // Busca o preço unitário de cada item e calcula o total
       for (const [itemName, quantity] of Object.entries(itensAgrupados)) {
-        const estoqueRef = doc(db, 'estoqueCompras', 'estoque'); // Referência ao documento de estoque
+        const estoqueRef = doc(db, 'estoqueTi', 'estoque'); // Referência ao documento de estoque
         const estoqueDoc = await getDoc(estoqueRef); // Obtém o documento do Firestore
         const categoriaData = estoqueDoc.data();
 
@@ -124,9 +124,9 @@ const SoliciteCompras = () => {
         totalPrice: totalPrice.toFixed(2) // Adiciona o preço total
       };
 
-      await setDoc(doc(db, 'solicitCompras', numSolicite), novaSolicitacao); // Grava a nova solicitação no Firestore
+      await setDoc(doc(db, 'solicitTi', numSolicite), novaSolicitacao); // Grava a nova solicitação no Firestore
 
-      // Enviar notificações para todos os usuários com cargo "Compras"
+      // Enviar notificações para todos os usuários com cargo "T.I"
       const usuariosSnapshot = await getDocs(collection(db, 'usuarios'));
 
       let tokensParaNotificar = [];
@@ -137,7 +137,7 @@ const SoliciteCompras = () => {
         Object.keys(cidadeData).forEach(usuarioKey => {
           const usuarioData = cidadeData[usuarioKey];
 
-          if (usuarioData.cargo === 'Compras' && Array.isArray(usuarioData.token)) {
+          if (usuarioData.cargo === 'T.I' && Array.isArray(usuarioData.token)) {
             tokensParaNotificar.push(...usuarioData.token); // Coleta todos os tokens de notificação associados ao usuário
           }
         });
@@ -147,7 +147,7 @@ const SoliciteCompras = () => {
         const notificationMessage = {
           title: `Nova Solicitação ${numSolicite}`,
           body: `Uma nova solicitação foi criada: ${tipo}`,
-          click_action: "https://drogalira.com.br/solicitacompras",
+          click_action: "https://drogalira.com.br/solicitati",
           icon: "https://iili.io/duTTt8Q.png"
         };
 
@@ -160,13 +160,12 @@ const SoliciteCompras = () => {
         });
 
         const result = await response.json();
-        console.log('Notificações enviadas com sucesso:', result); // Loga o sucesso do envio das notificações
       } else {
-        console.log('Nenhum token encontrado para o cargo "Compras".'); // Loga se não houver tokens para notificar
+        console.log('Nenhum token encontrado para o cargo "T.I".'); // Loga se não houver tokens para notificar
       }
 
       // Gravação no relatório
-      const fullReportRef = doc(db, 'relatorioCompras', 'fullReport');
+      const fullReportRef = doc(db, 'relatorioTi', 'fullReport');
       const fullReportDoc = await getDoc(fullReportRef);
       const fullReportData = fullReportDoc.exists() ? fullReportDoc.data() : {};
       const timestamp = new Date().toISOString();
@@ -218,7 +217,7 @@ const SoliciteCompras = () => {
 
   useEffect(() => {
     const fetchCategorias = async () => {
-      const estoqueRef = doc(db, 'estoqueCompras', 'estoque'); // Referência ao documento de estoque no Firestore
+      const estoqueRef = doc(db, 'estoqueTi', 'estoque'); // Referência ao documento de estoque no Firestore
       const estoqueDoc = await getDoc(estoqueRef); // Obtém o documento de estoque
       if (estoqueDoc.exists()) {
         setCategorias(Object.keys(estoqueDoc.data())); // Atualiza o estado com as categorias de itens
@@ -230,7 +229,7 @@ const SoliciteCompras = () => {
   useEffect(() => {
     const fetchItens = async (categoria) => {
       if (categoria) {
-        const estoqueRef = doc(db, 'estoqueCompras', 'estoque'); // Referência ao documento de estoque no Firestore
+        const estoqueRef = doc(db, 'estoqueTi', 'estoque'); // Referência ao documento de estoque no Firestore
         const estoqueDoc = await getDoc(estoqueRef); // Obtém o documento de estoque
         if (estoqueDoc.exists()) {
           const categoriaData = estoqueDoc.data()[categoria]; // Obtém os dados da categoria selecionada
@@ -338,7 +337,7 @@ const SoliciteCompras = () => {
   }, [selectedCidade]);
 
   const getNextSolicitacaoNumber = async () => {
-    const soliciteControlRef = doc(db, 'ordersControl', 'soliciteCompras'); // Referência ao documento de controle de solicitações
+    const soliciteControlRef = doc(db, 'ordersControl', 'soliciteTi'); // Referência ao documento de controle de solicitações
     try {
       const result = await runTransaction(db, async (transaction) => {
         const soliciteDoc = await transaction.get(soliciteControlRef); // Obtém o documento de controle de solicitações
@@ -349,11 +348,11 @@ const SoliciteCompras = () => {
         const soliciteControl = soliciteDoc.data().soliciteControl;
         const lastSolicitacao = soliciteControl[soliciteControl.length - 1];
 
-        let prefix = lastSolicitacao.slice(0, 3); // Extrai o prefixo (CPA, CPB, etc.)
+        let prefix = lastSolicitacao.slice(0, 3); // Extrai o prefixo (STIA, STIB, etc.)
         let lastNumber = parseInt(lastSolicitacao.slice(3), 10); // Extrai o número (001, 002, etc.)
 
         if (lastNumber >= 999) {
-          prefix = String.fromCharCode(prefix.charCodeAt(2) + 1).padStart(3, 'C'); // Incrementa o prefixo
+          prefix = String.fromCharCode(prefix.charCodeAt(2) + 1).padStart(3, 'C');
           lastNumber = 1; // Reinicia o número para 001
         } else {
           lastNumber += 1; // Incrementa o número
@@ -397,7 +396,7 @@ const SoliciteCompras = () => {
 
   return (
     <div className="flex bg-altBlue lg:justify-between lg:flex-row flex-col">
-      {currentUserRole !== 'Compras' && (
+      {currentUserRole !== 'T.I' && (
         <div id='criadorDeSolicitacao'>
           <div className="pt-20 hidden lg:block">
             <div className='p-5 bg-white border min-w-[400px] lg:ml-[8rem] m-4 lg:m-0 border-gray-300 rounded-xl shadow-lg'>
@@ -446,7 +445,7 @@ const SoliciteCompras = () => {
                             novosItens[index].item = item;
 
                             // Buscar o limite de quantidade do item selecionado
-                            const estoqueRef = doc(db, 'estoqueCompras', 'estoque');
+                            const estoqueRef = doc(db, 'estoqueTi', 'estoque');
                             const estoqueDoc = await getDoc(estoqueRef);
                             if (estoqueDoc.exists()) {
                               const categoriaData = estoqueDoc.data()[novosItens[index].categoria];
@@ -509,14 +508,15 @@ const SoliciteCompras = () => {
                               novosItens[index].quantidade = value;
                               setItensSolicitados(novosItens);
                             } else {
-                              setAlertModalContent({ title: 'Atenção', message: `Você não pode pedir mais que ${limite || 0} deste item`, showOkButton: true });
-                              setAlertModalOpen(true);
+                              setQuantityErrorMessage(`Quantidade que precisa não temos para ${solicitado.item}`);
+                              setQuantityErrorModalOpen(true);
                             }
                           }}
                           className="w-12 border-t border-b border-gray-300 p-2 text-center focus:ring focus:ring-blue-200"
                           min="1"
                           required
                         />
+
                         <button
                           type="button"
                           onClick={() => {
@@ -775,7 +775,7 @@ const SoliciteCompras = () => {
                                     novosItens[index].item = item;
 
                                     // Buscar o limite de quantidade do item selecionado
-                                    const estoqueRef = doc(db, 'estoqueCompras', 'estoque');
+                                    const estoqueRef = doc(db, 'estoqueTi', 'estoque');
                                     const estoqueDoc = await getDoc(estoqueRef);
                                     if (estoqueDoc.exists()) {
                                       const categoriaData = estoqueDoc.data()[novosItens[index].categoria];
@@ -890,14 +890,14 @@ const SoliciteCompras = () => {
         message={quantityErrorMessage}
         showOkButton={true}
       />
-      {currentUserRole !== 'Compras' && (
+      {currentUserRole !== 'T.I' && (
         <div className="">
-          <ListaSolicitCompras statusFilter={statusFilter} />
+          <ListaSolicitTi statusFilter={statusFilter} />
         </div>
       )}
-      {currentUserRole == 'Compras' && (
+      {currentUserRole == 'T.I' && (
         <div className="w-full">
-          <AdmListaSolicitCompras statusFilter={statusFilter} />
+          <AdmListaSolicitTi statusFilter={statusFilter} />
         </div>
       )}
       <NotificationModal />
@@ -905,4 +905,4 @@ const SoliciteCompras = () => {
   );
 };
 
-export default SoliciteCompras;
+export default SoliciteTi;

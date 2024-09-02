@@ -20,56 +20,57 @@ import 'react-datepicker/dist/react-datepicker.css';
 import { HiPencilSquare } from "react-icons/hi2";
 import AlertModal from '../AlertModal/AlertModal';
 
-const AdmListaSolicitCompras = () => {
-    // Estados para gerenciar modais, solicitações, filtros e outros dados da interface
-    const [isEditAlertModalOpen, setIsEditAlertModalOpen] = useState(false);
-    const { currentUser } = useAuth();
-    const [solicitacoes, setSolicitacoes] = useState([]);
-    const [error, setError] = useState(null);
-    const [slidesToShow, setSlidesToShow] = useState(1);
-    const [statusFilter, setStatusFilter] = useState('Todos');
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [selectedSolicitacao, setSelectedSolicitacao] = useState(null);
-    const [buttonDisabled, setButtonDisabled] = useState(false);
-    const [cities, setCities] = useState([]);
-    const [storeFilter, setStoreFilter] = useState('Todos');
-    const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
-    const [cancelReason, setCancelReason] = useState('');
-    const [isSendModalOpen, setIsSendModalOpen] = useState(false);
-    const [heTook, setHeTook] = useState('');
-    const [isCompleteModalOpen, setIsCompleteModalOpen] = useState(false);
-    const [selectedDate, setSelectedDate] = useState(null);
-    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-    const [editedItems, setEditedItems] = useState({});
-    const [editReason, setEditReason] = useState('');
-    const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
-    const [sendAlertModalOpen, setSendAlertModalOpen] = useState(false);
-    const [userFilter, setUserFilter] = useState('Todos');
-    const [userFilterOptions, setUserFilterOptions] = useState(['Todos']);
-    const [filteredSolicitacoes, setFilteredSolicitacoes] = useState([]);
-    const [storeFilterOptions, setStoreFilterOptions] = useState(['Todos']);
+const AdmListaSolicitTi = () => {
+    const [isEditAlertModalOpen, setIsEditAlertModalOpen] = useState(false); // Estado para controlar a exibição do modal de alerta de edição
+    const { currentUser } = useAuth(); // Obtém o usuário atual autenticado
+        const [solicitacoes, setSolicitacoes] = useState([]);  // Estado para armazenar a lista de solicitações   
+    const [error, setError] = useState(null); // Estado para armazenar possíveis erros
+    const [slidesToShow, setSlidesToShow] = useState(1);// Estado para controlar quantos slides devem ser mostrados
+    const [statusFilter, setStatusFilter] = useState('Todos'); // Estado para controlar o filtro de status das solicitações
+    const [isModalOpen, setIsModalOpen] = useState(false);  // Estado para controlar a exibição do modal   
+    const [selectedSolicitacao, setSelectedSolicitacao] = useState(null); // Estado para armazenar a solicitação selecionada
+    const [buttonDisabled, setButtonDisabled] = useState(false);// Estado para desabilitar o botão de confirmação
+    const [cities, setCities] = useState([]);// Estado para armazenar as cidades disponíveis para filtro   
+    const [storeFilter, setStoreFilter] = useState('Todos'); // Estado para controlar o filtro de lojas   
+    const [isCancelModalOpen, setIsCancelModalOpen] = useState(false); // Estado para controlar a exibição do modal de cancelamento
+    const [cancelReason, setCancelReason] = useState(''); // Estado para armazenar o motivo do cancelamento
+    const [isSendModalOpen, setIsSendModalOpen] = useState(false); // Estado para controlar a exibição do modal de envio
+    const [heTook, setHeTook] = useState(''); // Estado para armazenar quem recebeu a solicitação
+    const [isCompleteModalOpen, setIsCompleteModalOpen] = useState(false); // Estado para controlar a exibição do modal de conclusão
+    const [selectedDate, setSelectedDate] = useState(null); // Estado para armazenar a data selecionada
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);// Estado para controlar a exibição do modal de edição
+    const [editedItems, setEditedItems] = useState({});// Estado para armazenar os itens editados
+    const [editReason, setEditReason] = useState('');// Estado para armazenar o motivo da edição
+    const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);// Estado para controlar a exibição do modal de alerta
+    const [sendAlertModalOpen, setSendAlertModalOpen] = useState(false);// Estado para controlar a exibição do modal de alerta de envio
+    const [userFilter, setUserFilter] = useState('Todos'); // Estado para controlar o filtro de usuários
+    const [userFilterOptions, setUserFilterOptions] = useState(['Todos']);// Estado para armazenar as opções de filtro de usuários
+    const [filteredSolicitacoes, setFilteredSolicitacoes] = useState([]);// Estado para armazenar as solicitações filtradas
+    const [storeFilterOptions, setStoreFilterOptions] = useState(['Todos']);// Estado para armazenar as opções de filtro de lojas
 
-    // Abre o modal de edição e inicializa os itens a serem editados
+    // Função para abrir o modal de edição e inicializar os itens selecionados
     const openEditModal = (solicitacao) => {
         setSelectedSolicitacao(solicitacao);
         setEditedItems(solicitacao.item); // Inicializa com os itens atuais
         setIsEditModalOpen(true);
     };
 
-    // Salva as edições feitas na solicitação e fecha o modal
+    // Função para salvar as alterações feitas na solicitação
     const handleSaveEdit = async () => {
         if (!editReason.trim()) {
-            setIsEditAlertModalOpen(true); // Abre o AlertModal se a razão para a edição não for fornecida
+            setIsEditAlertModalOpen(true); // Abre o AlertModal
             return;
         }
 
         try {
+            // Calcula o novo preço total baseado nos itens editados
             const newTotalPrice = Object.entries(editedItems).reduce((total, [itemNome, quantidade]) => {
                 const itemPrice = selectedSolicitacao.itemPrice[itemNome];
                 return total + (itemPrice * quantidade);
             }, 0);
 
-            const solicitacaoRef = doc(db, 'solicitCompras', selectedSolicitacao.id);
+            // Atualiza a solicitação no Firestore
+            const solicitacaoRef = doc(db, 'solicitTi', selectedSolicitacao.id);
             await updateDoc(solicitacaoRef, {
                 originalOrder: selectedSolicitacao.item,
                 item: editedItems,
@@ -84,25 +85,25 @@ const AdmListaSolicitCompras = () => {
         }
     };
 
-    // Abre o modal para completar uma solicitação
+    // Função para abrir o modal de conclusão de solicitação
     const openCompleteModal = (solicitacao) => {
         setSelectedSolicitacao(solicitacao);
         setIsCompleteModalOpen(true);
     };
 
-    // Abre o modal para enviar uma solicitação
+    // Função para abrir o modal de envio de solicitação
     const openSendModal = (solicitacao) => {
         setSelectedSolicitacao(solicitacao);
         setIsSendModalOpen(true);
     };
 
-    // Abre o modal para cancelar uma solicitação
+    // Função para abrir o modal de cancelamento de solicitação
     const openCancelModal = (solicitacao) => {
         setSelectedSolicitacao(solicitacao);
         setIsCancelModalOpen(true);
     };
 
-    // Abrevia o nome da cidade para exibição
+    // Função para abreviar o nome de uma cidade
     const abreviarCidade = (cidade) => {
         const palavras = cidade.split(' ');
         if (palavras.length > 1) {
@@ -113,24 +114,24 @@ const AdmListaSolicitCompras = () => {
         return cidade; // Se for uma única palavra, retorna sem abreviação
     };
 
-    // Abre um modal genérico para exibir detalhes da solicitação
+    // Função para abrir o modal de visualização de solicitação
     const openModal = (solicitacao) => {
         setSelectedSolicitacao(solicitacao);
         setIsModalOpen(true);
     };
 
-    // Fecha o modal genérico
+    // Função para fechar o modal de visualização de solicitação
     const closeModal = () => {
         setIsModalOpen(false);
         setSelectedSolicitacao(null);
     };
 
-    // Confirma o recebimento de uma solicitação e atualiza seu status para "Concluído"
+    // Função para confirmar o recebimento de uma solicitação
     const handleConfirmReceived = async () => {
         if (!selectedSolicitacao) return;
 
         try {
-            const solicitacaoRef = doc(db, 'solicitCompras', selectedSolicitacao.id);
+            const solicitacaoRef = doc(db, 'solicitTi', selectedSolicitacao.id);
             await updateDoc(solicitacaoRef, {
                 dateReceived: new Date(),
                 status: 'Concluído'  // Atualiza o status para 'concluído'
@@ -142,10 +143,10 @@ const AdmListaSolicitCompras = () => {
         }
     };
 
-    // Altera o status de uma solicitação e ajusta o estoque conforme necessário
+    // Função para alterar o status de uma solicitação
     const handleStatusChange = async (id, newStatus) => {
         try {
-            const solicitacaoRef = doc(db, 'solicitCompras', id);
+            const solicitacaoRef = doc(db, 'solicitTi', id);
 
             // Obtenha os dados da solicitação antes de atualizar o status
             const solicitacaoSnap = await getDoc(solicitacaoRef);
@@ -171,7 +172,7 @@ const AdmListaSolicitCompras = () => {
                 await updateStockQuantities(solicitacaoData.item, 'decrease');
             }
 
-            // Notificação ao usuário sobre a mudança de status
+            // Notificação ao usuário
             if (solicitacaoData.user) {
                 const usuariosCollectionRef = collection(db, 'usuarios');
                 const usuariosSnapshot = await getDocs(usuariosCollectionRef);
@@ -192,7 +193,7 @@ const AdmListaSolicitCompras = () => {
                     const notificationMessage = {
                         title: `Solicitação ${id}`,
                         body: `Status ${newStatus}`,
-                        click_action: "https://drogalira.com.br/solicitacompras",
+                        click_action: "https://drogalira.com.br/solicitati",
                         icon: "https://iili.io/duTTt8Q.png"
                     };
 
@@ -205,6 +206,11 @@ const AdmListaSolicitCompras = () => {
                     });
 
                     const result = await response.json();
+                    if (response.ok) {
+                        console.log('Notificação enviada com sucesso:', result);
+                    } else {
+                        console.error('Erro ao enviar notificação:', result);
+                    }
                 } else {
                     console.error(`Token do usuário ${solicitacaoData.user} não encontrado na cidade ${cidadeEncontrada}.`);
                 }
@@ -215,10 +221,10 @@ const AdmListaSolicitCompras = () => {
         }
     };
 
-    // Atualiza as quantidades no estoque conforme a operação especificada (aumentar ou diminuir)
+    // Função para atualizar as quantidades do estoque
     const updateStockQuantities = async (items, operation) => {
         try {
-            const estoqueRef = doc(db, 'estoqueCompras', 'estoque');
+            const estoqueRef = doc(db, 'estoqueTi', 'estoque');
             const estoqueSnap = await getDoc(estoqueRef);
 
             if (estoqueSnap.exists()) {
@@ -248,7 +254,7 @@ const AdmListaSolicitCompras = () => {
         }
     };
 
-    // Função para ajustar a quantidade de slides mostrados dependendo da largura da janela
+    // Função para ajustar a quantidade de slides mostrados conforme o tamanho da janela
     const handleResize = useCallback(() => {
         if (window.innerWidth >= 1024) {
             setSlidesToShow(3);
@@ -257,13 +263,13 @@ const AdmListaSolicitCompras = () => {
         }
     }, []);
 
-    // Atualiza as opções de filtro de loja conforme as solicitações disponíveis
+    // Efeito para configurar as opções de filtro de lojas com base nas solicitações
     useEffect(() => {
         const uniqueStores = new Set(solicitacoes.map(solicitacao => solicitacao.loja));
         setStoreFilterOptions(['Todos', ...Array.from(uniqueStores)]);
     }, [solicitacoes]);
 
-    // Filtra as solicitações conforme os filtros de usuário, status e loja
+    // Efeito para filtrar as solicitações com base nos filtros selecionados
     useEffect(() => {
         const filtered = solicitacoes.filter(solicitacao =>
             (userFilter === 'Todos' || solicitacao.user === userFilter) &&
@@ -273,7 +279,7 @@ const AdmListaSolicitCompras = () => {
         setFilteredSolicitacoes(filtered);
     }, [userFilter, statusFilter, storeFilter, solicitacoes]);
 
-    // Adiciona um event listener para ajustar a quantidade de slides quando a janela é redimensionada
+    // Efeito para ajustar o número de slides a serem mostrados ao redimensionar a janela
     useEffect(() => {
         handleResize();
         window.addEventListener('resize', handleResize);
@@ -281,9 +287,9 @@ const AdmListaSolicitCompras = () => {
         return () => window.removeEventListener('resize', handleResize);
     }, [handleResize]);
 
-    // Monitora em tempo real as solicitações de compras do Firestore
+    // Efeito para buscar e escutar as atualizações em tempo real das solicitações
     useEffect(() => {
-        const solicitacoesRef = collection(db, 'solicitCompras');
+        const solicitacoesRef = collection(db, 'solicitTi');
         const unsubscribe = onSnapshot(solicitacoesRef, (querySnapshot) => {
             const solicitacoesData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             setSolicitacoes(solicitacoesData);
@@ -292,19 +298,20 @@ const AdmListaSolicitCompras = () => {
             console.error('Erro ao buscar solicitações:', error);
         });
 
-        return () => unsubscribe(); // Limpa o snapshot quando o componente é desmontado
+        return () => unsubscribe();
     }, []);
 
-    // Atualiza as opções de filtro de usuário conforme as solicitações disponíveis
+    // Efeito para configurar as opções de filtro de usuários com base nas solicitações
     useEffect(() => {
         const uniqueUsers = new Set(solicitacoes.map(solicitacao => solicitacao.user));
         setUserFilterOptions(['Todos', ...Array.from(uniqueUsers)]);
     }, [solicitacoes]);
 
-    // Exibe um erro, se houver, ao buscar solicitações
+    // Se houver um erro, exibe uma mensagem de erro na interface
     if (error) {
         return <div className="text-center mt-4 text-lg font-semibold text-red-500">{error}</div>;
     }
+
 
     return (
         <div className="flex flex-col w-full lg:h-screen bg-altBlue lg:pt-16 text-white">
@@ -313,7 +320,7 @@ const AdmListaSolicitCompras = () => {
                     <div className='bg-altBlue p-3 rounded-xl w-full fixed lg:mt-40 mt-60'>
                         <div className='bg-primaryBlueDark p-3 rounded-xl shadow-xl w-full '>
                             <h2 className="text-2xl text-center font-bold">
-                                Compras Solicitações
+                                T.I Solicitações
                             </h2>
                             <div className={`flex flex-col w-full ${currentUser.cargo === 'Supervisor' ? 'hidden' : ''} gap-4`}>
                                 <div className='flex justify-between gap-2 text-xs lg:text-lg'>
@@ -547,7 +554,7 @@ const AdmListaSolicitCompras = () => {
                                     return;
                                 }
                                 try {
-                                    const solicitacaoRef = doc(db, 'solicitCompras', selectedSolicitacao.id);
+                                    const solicitacaoRef = doc(db, 'solicitTi', selectedSolicitacao.id);
                                     await updateDoc(solicitacaoRef, {
                                         status: 'Cancelado',
                                         canceledReason: cancelReason // Grava o motivo do cancelamento
@@ -598,7 +605,7 @@ const AdmListaSolicitCompras = () => {
                                     return;
                                 }
                                 try {
-                                    const solicitacaoRef = doc(db, 'solicitCompras', selectedSolicitacao.id);
+                                    const solicitacaoRef = doc(db, 'solicitTi', selectedSolicitacao.id);
                                     await updateDoc(solicitacaoRef, {
                                         status: 'Enviado',
                                         heTook: heTook, // Grava o nome de quem está levando
@@ -653,7 +660,7 @@ const AdmListaSolicitCompras = () => {
                                     return;
                                 }
                                 try {
-                                    const solicitacaoRef = doc(db, 'solicitCompras', selectedSolicitacao.id);
+                                    const solicitacaoRef = doc(db, 'solicitTi', selectedSolicitacao.id);
                                     await updateDoc(solicitacaoRef, {
                                         status: 'Concluído',
                                         dateReceived: selectedDate // Grava a data selecionada
@@ -761,4 +768,4 @@ const AdmListaSolicitCompras = () => {
     );
 };
 
-export default AdmListaSolicitCompras;
+export default AdmListaSolicitTi;

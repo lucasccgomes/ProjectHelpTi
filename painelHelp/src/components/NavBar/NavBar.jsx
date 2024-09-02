@@ -15,25 +15,25 @@ import MyModal from '../MyModal/MyModal'
 Modal.setAppElement('#root');
 
 const Navbar = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [openSubMenu, setOpenSubMenu] = useState(null);
-  const [installPrompt, setInstallPrompt] = useState(null);
-  const [isInstalled, setIsInstalled] = useState(false);
-  const { isAuthenticated, logout, currentUser } = useAuth();
-  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
-  const navRef = useRef(null);
+  const [isOpen, setIsOpen] = useState(false); // Estado para controlar se o menu está aberto
+  const [openSubMenu, setOpenSubMenu] = useState(null); // Estado para controlar qual submenu está aberto
+  const [installPrompt, setInstallPrompt] = useState(null); // Estado para armazenar o evento de instalação
+  const [isInstalled, setIsInstalled] = useState(false); // Estado para verificar se o app está instalado
+  const { isAuthenticated, logout, currentUser } = useAuth(); // Obtém o estado de autenticação e funções do contexto
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false); // Estado para controlar a abertura do modal de perfil
+  const navRef = useRef(null); // Referência para o elemento da barra de navegação
 
   // Animação do modal
   const animationProps = useSpring({
-    opacity: isProfileModalOpen ? 1 : 0,
-    transform: isProfileModalOpen ? 'translateY(0)' : 'translateY(-20%)',
+    opacity: isProfileModalOpen ? 1 : 0, // Controla a opacidade do modal
+    transform: isProfileModalOpen ? 'translateY(0)' : 'translateY(-20%)', // Controla a transformação de translação do modal
   });
 
   const navItems = [
-    {
-      name: 'Home',
-      icon: FaHome,
-      href: '/'
+    { 
+      name: 'Home', // Nome do item de navegação
+      icon: FaHome, // Ícone do item de navegação
+      href: '/' // Link para onde o item aponta
     },
     {
       name: 'Hora Certa',
@@ -43,10 +43,11 @@ const Navbar = () => {
     {
       name: 'Suporte Ti',
       icon: MdHelp,
-      subItems: [
-        { name: 'Chamados', href: '/usertickets' },
-        { name: 'Solicitações', href: '/solicitacao' },
+      subItems: [ // Subitens para criar um submenu
+        { name: 'Abrir Chamados', href: '/usertickets' },
+        { name: 'Solicitações', href: '/solicitati' },
         { name: 'Geren. Chamados', href: '/gerenchamados' },
+        { name: 'Geren. Estoque', href: '/estoqueti' },
       ]
     },
     {
@@ -54,7 +55,7 @@ const Navbar = () => {
       icon: FaCartShopping,
       subItems: [
         { name: 'Solicitações', href: '/solicitacompras' },
-        { name: 'Estoque', href: '/estoque' },
+        { name: 'Geren. Estoque', href: '/estoque' },
         { name: 'Relatório tipo log', href: '/reportcompras' },
         { name: 'Relatório de Custos', href: '/custocompras' },
       ]
@@ -68,65 +69,65 @@ const Navbar = () => {
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e) => {
-      e.preventDefault();
-      setInstallPrompt(e);
-      console.log("beforeinstallprompt event captured");
+      e.preventDefault(); // Impede o comportamento padrão do prompt de instalação
+      setInstallPrompt(e); // Armazena o evento do prompt de instalação
+      console.log("beforeinstallprompt event captured"); // Loga quando o evento é capturado
     };
 
     const checkInstalledStatus = async () => {
       if ('getInstalledRelatedApps' in navigator) {
-        const relatedApps = await navigator.getInstalledRelatedApps();
-        setIsInstalled(relatedApps.length > 0);
-        console.log("Installed apps:", relatedApps);
+        const relatedApps = await navigator.getInstalledRelatedApps(); // Verifica se há apps relacionados instalados
+        setIsInstalled(relatedApps.length > 0); // Atualiza o estado com base na verificação
+        console.log("Installed apps:", relatedApps); // Loga os apps instalados
       }
     };
 
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    checkInstalledStatus();
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt); // Adiciona o evento de captura do prompt de instalação
+    checkInstalledStatus(); // Verifica o status de instalação
 
     return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt); // Remove o evento ao desmontar o componente
     };
   }, []);
 
   const handleInstallClick = () => {
     if (installPrompt) {
-      installPrompt.prompt();
+      installPrompt.prompt(); // Mostra o prompt de instalação
       installPrompt.userChoice.then((choiceResult) => {
         if (choiceResult.outcome === 'accepted') {
-          console.log('User accepted the install prompt');
+          console.log('User accepted the install prompt'); // Loga se o usuário aceitou a instalação
         } else {
-          console.log('User dismissed the install prompt');
+          console.log('User dismissed the install prompt'); // Loga se o usuário rejeitou a instalação
         }
-        setInstallPrompt(null);
+        setInstallPrompt(null); // Reseta o evento do prompt de instalação
       });
     }
   };
 
   const handleClickOutside = (event) => {
     if (navRef.current && !navRef.current.contains(event.target)) {
-      setIsOpen(false);
-      setOpenSubMenu(null);
+      setIsOpen(false); // Fecha o menu se clicar fora dele
+      setOpenSubMenu(null); // Fecha o submenu se clicar fora dele
     }
   };
 
   useEffect(() => {
-    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside); // Adiciona o evento de clique fora do menu
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside); // Remove o evento ao desmontar o componente
     };
   }, []);
 
   const handleSubMenuClick = (index) => {
-    setOpenSubMenu(openSubMenu === index ? null : index);
+    setOpenSubMenu(openSubMenu === index ? null : index); // Abre ou fecha o submenu baseado no índice
   };
 
   const openProfileModal = () => {
-    setIsProfileModalOpen(true);
+    setIsProfileModalOpen(true); // Abre o modal de perfil
   };
 
   const closeProfileModal = () => {
-    setIsProfileModalOpen(false);
+    setIsProfileModalOpen(false); // Fecha o modal de perfil
   };
 
   return (

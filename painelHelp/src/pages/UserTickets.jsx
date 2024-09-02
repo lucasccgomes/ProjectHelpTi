@@ -15,6 +15,7 @@ import { FaCity, FaUser, FaStoreAlt, FaCalendarCheck, FaCalendarTimes, FaFilter 
 import { MdReportProblem, MdDoNotDisturb, MdDescription } from "react-icons/md";
 import { IoIosAddCircle } from "react-icons/io";
 import MyModal from '../components/MyModal/MyModal';
+import { SiInstatus } from "react-icons/si";
 
 // Componente principal que renderiza os tickets do usuário
 const UserTickets = () => {
@@ -58,7 +59,7 @@ const UserTickets = () => {
   };
 
 
-  
+
   // Função para definir a classe CSS com base no status do ticket
   const getStatusClass = (status) => {
     switch (status) {
@@ -152,13 +153,13 @@ const UserTickets = () => {
           return {
             id: doc.id,
             ...data,
-            data: data.data.toDate()
+            data: data.data.toDate(), // Converte 'data' para Date
+            finalizadoData: data.finalizadoData ? data.finalizadoData.toDate() : null // Converte 'finalizadoData' para Date, se existir
           };
         });
 
         setTickets(ticketsData);
         setLoading(false);
-        console.log("Fetched tickets:", ticketsData);
       }, (error) => {
         console.error('Erro ao buscar chamados:', error);
         setLoading(false);
@@ -225,7 +226,7 @@ const UserTickets = () => {
       <div className='w-full bg-altBlue p-4 fixed mt-[3.5rem] z-10'>
         {currentUser.cargo !== 'Supervisor' && (
           <div className='w-full flex'>
-            <div className='flex items-center px-1 text-white rounded-b-xl bg-primaryBlueDark lg:hidden'>
+            <div className='flex items-center px-1 text-white rounded-b-xl bg-primaryBlueDark -mt-4 lg:hidden'>
               <animated.button
                 style={toggleSpring}
                 className={`flex items-center ${showStoreTickets ? '' : ''} hover:bg-${showStoreTickets ? 'green-500' : 'gray-500'} text-white font-bold ml-4`}
@@ -392,14 +393,14 @@ const UserTickets = () => {
                 <div className="flex">
                   <FaCalendarTimes className="mr-2 text-primaryBlueDark text-xl" />
                   <p className='font-semibold text-gray-700'>
-                    {ticket.data.toLocaleString()}
+                    {ticket.data.toLocaleString('pt-BR')}
                   </p>
                 </div>
                 {ticket.finalizadoData && (
                   <div className="flex">
                     <FaCalendarCheck className="mr-2 text-primaryBlueDark text-xl" />
                     <p className='font-semibold text-gray-700'>
-                      {ticket.finalizadoData.toLocaleString()}
+                      {ticket.finalizadoData.toLocaleString('pt-BR')}
                     </p>
                   </div>
                 )}
@@ -438,32 +439,35 @@ const UserTickets = () => {
 
               </div>
 
-              <div className='flex justify-between'>
-                <div className='bg-white text-gray-700 pt-0 px-2 pb-1 rounded-md mb-2 shadow-lg'>
-                  <button
-                    className='bg-primaryBlueDark text-white px-4 py-2 rounded-md w-full flex justify-center items-center'
-                    onClick={() => {
-                      setSelectedDescription(ticket.descricao);
-                      setIsDescriptionModalOpen(true);
-                    }}
-                  >
-                    <MdDescription className='mr-2' />
-                    Descrição
-                  </button>
-                </div>
+              <div className='flex flex-col justify-between'>
+                <div className='flex justify-between'>
+                  <div className='bg-white text-gray-700 pt-0 px-2 pb-1 rounded-md mb-2 shadow-lg'>
+                    <button
+                      className='bg-primaryBlueDark text-white px-4 py-2 rounded-md w-full flex justify-center items-center'
+                      onClick={() => {
+                        setSelectedDescription(ticket.descricao);
+                        setIsDescriptionModalOpen(true);
+                      }}
+                    >
+                      <MdDescription className='mr-2' />
+                      Descrição
+                    </button>
+                  </div>
 
-                <div className='bg-white text-gray-700 pt-0 px-2 pb-1 rounded-md shadow-lg'>
-                  <button
-                    className='bg-primaryBlueDark text-white px-4 py-2 rounded-md w-full flex justify-center items-center'
-                    onClick={() => {
-                      setSelectedContent(ticket.status === 'Andamento' ? ticket.treatment : ticket.tentou);
-                      setContentTitle(ticket.status === 'Andamento' ? 'Tratativa' : 'Tentativa');
-                      setIsContentModalOpen(true);
-                    }}
-                  >
-                    <MdDescription className='mr-2' />
-                    {ticket.status === 'Andamento' ? 'Tratativa' : 'Tentativa'}
-                  </button>
+                  <div className='bg-white text-gray-700 pt-0 px-2 pb-1 rounded-md shadow-lg'>
+                    <button
+                      className={`bg-primaryBlueDark text-white px-4 py-2 rounded-md w-full flex justify-center items-center ${ticket.status === 'Andamento' ? 'blinking' : ''}`}
+                      onClick={() => {
+                        setSelectedContent(ticket.status === 'Andamento' ? ticket.treatment : ticket.tentou);
+                        setContentTitle(ticket.status === 'Andamento' ? 'Andamento' : 'Tentativa');
+                        setIsContentModalOpen(true);
+                      }}
+                    >
+                      <MdDescription className='mr-2' />
+                      {ticket.status === 'Andamento' ? 'Andamento' : 'Tentativa'}
+                    </button>
+                  </div>
+
                 </div>
 
                 {ticket.status !== 'Finalizado' && (

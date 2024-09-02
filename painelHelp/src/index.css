@@ -8,6 +8,23 @@
   100% { color: #FFFFFF; } /* Branco */
 }
 
+@keyframes blinking {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.blinking {
+  animation: blinking 3.5s infinite;
+}
+
+
 .react-datepicker__close-icon::after {
   font-size: 18px; /* Aumenta o tamanho do ícone "X" */
   background-color: rgb(187, 14, 14);

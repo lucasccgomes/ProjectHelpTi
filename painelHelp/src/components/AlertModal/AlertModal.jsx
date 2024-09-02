@@ -1,15 +1,30 @@
+/*
+ * AlertModal Component
+ *
+ * Parâmetros (props):
+ * - isOpen (boolean): Controla se o modal está aberto ou fechado.
+ * - onRequestClose (function): Função chamada quando o modal é fechado.
+ * - title (string): Título exibido no modal.
+ * - message (string): Mensagem de alerta exibida no modal.
+ * - showOkButton (boolean, opcional): Controla se o botão "OK" deve ser exibido. Padrão é true.
+ * - loading (boolean, opcional): Exibe uma mensagem de "Enviando solicitação..." se verdadeiro. Padrão é false.
+ */
+
 import React from 'react';
 import Modal from 'react-modal';
 import { useTransition, animated } from '@react-spring/web';
 import { IoClose } from "react-icons/io5";
 
+// Componente AlertModal que exibe um modal de alerta
 const AlertModal = ({ isOpen, onRequestClose, title, message, showOkButton = true, loading = false }) => {
+    // Configurações de transição para animações ao abrir e fechar o modal
     const transitions = useTransition(isOpen, {
-        from: { opacity: 0, transform: 'translateY(-50%)' },
-        enter: { opacity: 1, transform: 'translateY(0%)' },
-        leave: { opacity: 0, transform: 'translateY(-50%)' },
+        from: { opacity: 0, transform: 'translateY(-50%)' }, // Estado inicial da transição (invisível e deslocado para cima)
+        enter: { opacity: 1, transform: 'translateY(0%)' }, // Estado final da transição (visível e na posição correta)
+        leave: { opacity: 0, transform: 'translateY(-50%)' }, // Estado ao sair da transição (invisível e deslocado para cima)
     });
 
+    // Renderização do modal com as animações de transição
     return transitions(
         (styles, item) =>
             item && (

@@ -16,153 +16,152 @@ import { IoCalendarNumber } from "react-icons/io5";
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 
-const ListaSolicitCompras = () => {
-    const { currentUser } = useAuth();  // Obtém o usuário atual autenticado
-    const [solicitacoes, setSolicitacoes] = useState([]);  // Estado para armazenar as solicitações de compras
-    const [error, setError] = useState(null);  // Estado para armazenar mensagens de erro
-    const [slidesToShow, setSlidesToShow] = useState(1);  // Estado para definir o número de slides a serem mostrados
-    const [statusFilter, setStatusFilter] = useState('Todos');  // Estado para armazenar o filtro de status das solicitações
-    const [isModalOpen, setIsModalOpen] = useState(false);  // Estado para controlar a visibilidade do modal de detalhes
-    const [selectedSolicitacao, setSelectedSolicitacao] = useState(null);  // Estado para armazenar a solicitação selecionada
-    const [buttonDisabled, setButtonDisabled] = useState(false);  // Estado para desabilitar o botão após confirmação
-    const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);  // Estado para controlar a visibilidade do modal de filtro
-    const [cities, setCities] = useState([]);  // Estado para armazenar a lista de cidades
-    const [cityFilter, setCityFilter] = useState('Todos');  // Estado para armazenar o filtro de cidade
-    const [storeFilter, setStoreFilter] = useState('Todos');  // Estado para armazenar o filtro de loja
+const ListaSolicitTi = () => {
+    const { currentUser } = useAuth(); // Obtém o usuário autenticado atual
+    const [solicitacoes, setSolicitacoes] = useState([]); // Estado para armazenar as solicitações
+    const [error, setError] = useState(null); // Estado para armazenar mensagens de erro
+    const [slidesToShow, setSlidesToShow] = useState(1); // Estado para controlar o número de slides a serem exibidos
+    const [statusFilter, setStatusFilter] = useState('Todos'); // Estado para armazenar o filtro de status
+    const [isModalOpen, setIsModalOpen] = useState(false); // Estado para controlar a abertura do modal
+    const [selectedSolicitacao, setSelectedSolicitacao] = useState(null); // Estado para armazenar a solicitação selecionada
+    const [buttonDisabled, setButtonDisabled] = useState(false); // Estado para desabilitar o botão de confirmação
+    const [isFilterModalOpen, setIsFilterModalOpen] = useState(false); // Estado para controlar a abertura do modal de filtros
+    const [cities, setCities] = useState([]); // Estado para armazenar as cidades disponíveis
+    const [cityFilter, setCityFilter] = useState('Todos'); // Estado para armazenar o filtro de cidade
+    const [storeFilter, setStoreFilter] = useState('Todos'); // Estado para armazenar o filtro de loja
 
-    const openFilterModal = () => setIsFilterModalOpen(true);  // Função para abrir o modal de filtro
-    const closeFilterModal = () => setIsFilterModalOpen(false);  // Função para fechar o modal de filtro
+    const openFilterModal = () => setIsFilterModalOpen(true); // Função para abrir o modal de filtros
+    const closeFilterModal = () => setIsFilterModalOpen(false); // Função para fechar o modal de filtros
+    const [isReasonModalOpen, setIsReasonModalOpen] = useState(false); // Estado para controlar a abertura do modal de motivo de cancelamento
+    const [canceledReason, setCanceledReason] = useState(''); // Estado para armazenar o motivo de cancelamento
+    const [selectedDate, setSelectedDate] = useState(null); // Estado para armazenar a data selecionada
+    const [isOrderChangedModalOpen, setIsOrderChangedModalOpen] = useState(false); // Estado para controlar a abertura do modal de mudança de pedido
+    const [orderChangeDetails, setOrderChangeDetails] = useState(null); // Estado para armazenar os detalhes da mudança de pedido
 
-    const [isReasonModalOpen, setIsReasonModalOpen] = useState(false);  // Estado para controlar a visibilidade do modal de motivo de cancelamento
-    const [canceledReason, setCanceledReason] = useState('');  // Estado para armazenar o motivo de cancelamento
-    const [selectedDate, setSelectedDate] = useState(null);  // Estado para armazenar a data selecionada
-    const [isOrderChangedModalOpen, setIsOrderChangedModalOpen] = useState(false);  // Estado para controlar a visibilidade do modal de alteração de pedido
-    const [orderChangeDetails, setOrderChangeDetails] = useState(null);  // Estado para armazenar detalhes da alteração de pedido
-
-    const openOrderChangedModal = (solicitacao) => {  // Função para abrir o modal de alteração de pedido com os detalhes da solicitação selecionada
+    const openOrderChangedModal = (solicitacao) => {
         setOrderChangeDetails({
             reasonChange: solicitacao.reasonChange,
             originalOrder: solicitacao.originalOrder,
             item: solicitacao.item,
-        });
-        setIsOrderChangedModalOpen(true);
+        }); // Armazena os detalhes da mudança de pedido
+        setIsOrderChangedModalOpen(true); // Abre o modal de mudança de pedido
     };
 
-    const openReasonModal = (reason) => {  // Função para abrir o modal de motivo de cancelamento com o motivo selecionado
-        setCanceledReason(reason);
-        setIsReasonModalOpen(true);
+    const openReasonModal = (reason) => {
+        setCanceledReason(reason); // Armazena o motivo de cancelamento
+        setIsReasonModalOpen(true); // Abre o modal de motivo de cancelamento
     };
 
-    const abreviarCidade = (cidade) => {  // Função para abreviar o nome de uma cidade
-        const palavras = cidade.split(' ');
+    const abreviarCidade = (cidade) => {
+        const palavras = cidade.split(' '); // Divide o nome da cidade em palavras
         if (palavras.length > 1) {
             const primeiraPalavra = palavras[0].substring(0, 3); // Abrevia a primeira palavra
             const ultimaPalavra = palavras[palavras.length - 1]; // Mantém a última palavra completa
-            return `${primeiraPalavra}. ${ultimaPalavra}`;
+            return `${primeiraPalavra}. ${ultimaPalavra}`; // Retorna a cidade abreviada
         }
         return cidade; // Se for uma única palavra, retorna sem abreviação
     };
 
-    const openModal = (solicitacao) => {  // Função para abrir o modal de detalhes de uma solicitação
-        setSelectedSolicitacao(solicitacao);
-        setIsModalOpen(true);
+    const openModal = (solicitacao) => {
+        setSelectedSolicitacao(solicitacao); // Armazena a solicitação selecionada
+        setIsModalOpen(true); // Abre o modal
     };
 
-    const closeModal = () => {  // Função para fechar o modal de detalhes e limpar a solicitação selecionada
-        setIsModalOpen(false);
-        setSelectedSolicitacao(null);
+    const closeModal = () => {
+        setIsModalOpen(false); // Fecha o modal
+        setSelectedSolicitacao(null); // Reseta a solicitação selecionada
     };
 
-    const handleConfirmReceived = async () => {  // Função para confirmar o recebimento de uma solicitação
-        if (!selectedSolicitacao) return;
+    const handleConfirmReceived = async () => {
+        if (!selectedSolicitacao) return; // Verifica se há uma solicitação selecionada
 
         try {
-            const solicitacaoRef = doc(db, 'solicitCompras', selectedSolicitacao.id);
+            const solicitacaoRef = doc(db, 'solicitTi', selectedSolicitacao.id); // Referência ao documento da solicitação no Firestore
             await updateDoc(solicitacaoRef, {
-                dateReceived: new Date(),
+                dateReceived: new Date(), // Atualiza a data de recebimento
                 status: 'Concluído'  // Atualiza o status para 'Concluído'
             });
-            setButtonDisabled(true);  // Desabilita o botão após a atualização
-            closeModal();  // Fecha o modal
+            setButtonDisabled(true); // Desabilita o botão de confirmação
+            closeModal(); // Fecha o modal
         } catch (error) {
-            console.error('Erro ao atualizar solicitação:', error);
+            console.error('Erro ao atualizar solicitação:', error); // Loga qualquer erro
         }
     };
 
-    const handleResize = useCallback(() => {  // Função para ajustar o número de slides a serem mostrados com base no tamanho da janela
+    const handleResize = useCallback(() => {
         if (window.innerWidth >= 1024) {
-            setSlidesToShow(3);
+            setSlidesToShow(3); // Mostra 3 slides se a tela for grande
         } else {
-            setSlidesToShow(1);
+            setSlidesToShow(1); // Mostra 1 slide se a tela for pequena
         }
     }, []);
 
-    useEffect(() => {  // Efeito para adicionar e remover o listener de resize na janela
-        handleResize();
-        window.addEventListener('resize', handleResize);
+    useEffect(() => {
+        handleResize(); // Ajusta o número de slides ao carregar a página
+        window.addEventListener('resize', handleResize); // Adiciona o evento de redimensionamento
 
-        return () => window.removeEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize); // Remove o evento ao desmontar o componente
     }, [handleResize]);
 
-    useEffect(() => {  // Efeito para buscar as cidades e lojas do banco de dados
+    useEffect(() => {
         const fetchCitiesAndStores = async () => {
-            const citiesRef = doc(db, 'ordersControl', 'cidades');
-            const citiesSnapshot = await getDoc(citiesRef);
+            const citiesRef = doc(db, 'ordersControl', 'cidades'); // Referência ao documento de cidades no Firestore
+            const citiesSnapshot = await getDoc(citiesRef); // Obtém o documento de cidades
             if (citiesSnapshot.exists()) {
-                const citiesData = citiesSnapshot.data();
+                const citiesData = citiesSnapshot.data(); // Obtém os dados do documento
                 const citiesArray = Object.keys(citiesData).map(city => ({
                     name: city,
                     stores: citiesData[city]
-                }));
-                setCities(citiesArray);  // Define as cidades e lojas no estado
+                })); // Mapeia as cidades e suas lojas
+                setCities(citiesArray); // Armazena as cidades e lojas no estado
             } else {
-                console.error("Documento 'cidades' não encontrado!");
+                console.error("Documento 'cidades' não encontrado!"); // Loga um erro se o documento não for encontrado
             }
         };
 
-        fetchCitiesAndStores();
+        fetchCitiesAndStores(); // Chama a função para buscar cidades e lojas
     }, []);
 
-    useEffect(() => {  // Efeito para buscar as solicitações de compras com base nos filtros e no usuário autenticado
+    useEffect(() => {
         if (!currentUser) {
-            setError('Usuário não autenticado');
+            setError('Usuário não autenticado'); // Define um erro se o usuário não estiver autenticado
             return;
         }
 
-        const solicitacoesRef = collection(db, 'solicitCompras');
+        const solicitacoesRef = collection(db, 'solicitTi'); // Referência à coleção de solicitações no Firestore
         let q;
 
-        if (currentUser.cargo === 'Supervisor') {  // Se o usuário for Supervisor, busca todas as solicitações
-            q = query(solicitacoesRef);
-        } else {  // Caso contrário, busca apenas as solicitações do usuário autenticado
-            q = query(solicitacoesRef, where('user', '==', currentUser.user));
+        if (currentUser.cargo === 'Supervisor') {
+            q = query(solicitacoesRef); // Busca todas as solicitações se o usuário for Supervisor
+        } else {
+            q = query(solicitacoesRef, where('user', '==', currentUser.user)); // Busca solicitações do usuário autenticado
         }
 
-        if (statusFilter !== 'Todos') {  // Aplica o filtro de status, se não for 'Todos'
-            q = query(q, where('status', '==', statusFilter));
+        if (statusFilter !== 'Todos') {
+            q = query(q, where('status', '==', statusFilter)); // Aplica filtro de status, se necessário
         }
 
-        if (cityFilter !== 'Todos') {  // Aplica o filtro de cidade, se não for 'Todos'
-            q = query(q, where('cidade', '==', cityFilter));
+        if (cityFilter !== 'Todos') {
+            q = query(q, where('cidade', '==', cityFilter)); // Aplica filtro de cidade, se necessário
         }
 
-        if (storeFilter !== 'Todos') {  // Aplica o filtro de loja, se não for 'Todos'
-            q = query(q, where('loja', '==', storeFilter));
+        if (storeFilter !== 'Todos') {
+            q = query(q, where('loja', '==', storeFilter)); // Aplica filtro de loja, se necessário
         }
 
-        const unsubscribe = onSnapshot(q, (querySnapshot) => {  // Escuta as alterações em tempo real nas solicitações de compras
-            const solicitacoesData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            setSolicitacoes(solicitacoesData);  // Atualiza o estado com os dados das solicitações
+        const unsubscribe = onSnapshot(q, (querySnapshot) => {
+            const solicitacoesData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); // Mapeia os dados das solicitações
+            setSolicitacoes(solicitacoesData); // Armazena as solicitações no estado
         }, (error) => {
-            setError('Erro ao buscar solicitações');
-            console.error('Erro ao buscar solicitações:', error);
+            setError('Erro ao buscar solicitações'); // Define um erro se ocorrer algum problema na busca
+            console.error('Erro ao buscar solicitações:', error); // Loga o erro
         });
 
-        return () => unsubscribe();  // Cancela a escuta quando o componente é desmontado
-    }, [currentUser, statusFilter, cityFilter, storeFilter]);
+        return () => unsubscribe(); // Cancela a inscrição no snapshot ao desmontar o componente
+    }, [currentUser, statusFilter, cityFilter, storeFilter]); // Roda o efeito quando esses estados mudam
 
-    if (error) {  // Exibe a mensagem de erro, se houver
-        return <div className="text-center mt-4 text-lg font-semibold text-red-500">{error}</div>;
+    if (error) {
+        return <div className="text-center mt-4 text-lg font-semibold text-red-500">{error}</div>; // Exibe mensagem de erro na interface
     }
 
     return (
@@ -171,7 +170,7 @@ const ListaSolicitCompras = () => {
             <div className='mb-4'>
                 <div className="flex bg-primaryBlueDark lg:min-w-[378px] lg:fixed flex-col justify-center items-center gap-4 lg:-mt-3 lg:pb-3">
                     <h2 className="text-2xl font-bold">
-                        Compras Solicitações
+                        T.I Solicitações
                     </h2>
                     {currentUser.cargo === 'Supervisor' && (
                         <button
@@ -431,7 +430,7 @@ const ListaSolicitCompras = () => {
                                     return;
                                 }
                                 try {
-                                    const solicitacaoRef = doc(db, 'solicitCompras', selectedSolicitacao.id);
+                                    const solicitacaoRef = doc(db, 'solicitTi', selectedSolicitacao.id);
                                     await updateDoc(solicitacaoRef, {
                                         status: 'Concluído',
                                         dateReceived: selectedDate // Grava a data selecionada
@@ -478,4 +477,4 @@ const ListaSolicitCompras = () => {
     );
 };
 
-export default ListaSolicitCompras;
+export default ListaSolicitTi;

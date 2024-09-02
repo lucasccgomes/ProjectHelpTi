@@ -10,10 +10,14 @@ import { TbNotesOff } from "react-icons/tb";
 import LoadingSpinner from '../LoadingSpinner/LoadingSpinner';
 
 const LastUserTicket = () => {
+  // Obtém o usuário autenticado atual do contexto de autenticação
   const { currentUser } = useAuth();
+  
+  // Define o estado para armazenar o último ticket e o estado de carregamento
   const [lastTicket, setLastTicket] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Função que retorna a classe CSS correspondente ao status do ticket
   const getStatusClass = (status) => {
     switch (status) {
       case 'Aberto':
@@ -29,64 +33,67 @@ const LastUserTicket = () => {
     }
   };
 
+  // useEffect que busca o último ticket quando o componente é montado
   useEffect(() => {
     const fetchLastUserTicket = () => {
         if (!currentUser || !currentUser.user) {
-            console.log("No current user found.");
+            // Se não houver usuário autenticado, encerra o carregamento
             setLoading(false);
             return;
         }
 
-        console.log("Fetching last ticket for user:", currentUser.user);
-
+        // Referência para a coleção de tickets abertos no Firestore
         const ticketsRef = collection(db, 'chamados', 'aberto', 'tickets');
         let q;
 
+        // Se o usuário for Supervisor, busca o último ticket de qualquer usuário
         if (currentUser.cargo === 'Supervisor') {
-            // Se o usuário for Supervisor, busca o último ticket de qualquer usuário
             q = query(
                 ticketsRef,
-                limit(1)  // Obtém apenas o último ticket
+                limit(1)  // Limita para obter apenas o último ticket
             );
         } else {
             // Caso contrário, busca apenas o último ticket do usuário logado
             q = query(
                 ticketsRef,
                 where('user', '==', currentUser.user),
-                limit(1)  // Obtém apenas o último ticket
+                limit(1)  // Limita para obter apenas o último ticket
             );
         }
 
+        // Inscreve-se para receber atualizações em tempo real dos tickets
         const unsubscribe = onSnapshot(q, (querySnapshot) => {
             console.log("Query snapshot size:", querySnapshot.size);
             const lastTicketData = querySnapshot.docs.map(doc => {
                 const data = doc.data();
-                console.log("Fetched ticket data:", data);
                 return {
                     id: doc.id,
                     ...data,
-                    data: data.data.toDate()
+                    data: data.data.toDate()  // Converte o campo data para um objeto Date
                 };
             });
 
-            setLastTicket(lastTicketData[0]);
-            setLoading(false);
-            console.log("Set last ticket:", lastTicketData[0]);
+            setLastTicket(lastTicketData[0]);  // Armazena o último ticket no estado
+            setLoading(false); // Encerra o carregamento após os dados serem carregados
         }, (error) => {
+            // Trata erros que possam ocorrer durante a consulta
             console.error('Erro ao buscar o último chamado:', error);
             setLoading(false);
         });
 
+        // Retorna a função para cancelar a inscrição quando o componente for desmontado
         return () => unsubscribe();
     };
 
     fetchLastUserTicket();
 }, [currentUser]);
 
+  // Exibe um spinner de carregamento enquanto os dados estão sendo carregados
   if (loading) {
     return <div><LoadingSpinner/></div>;
-}
+  }
 
+  // Se não houver nenhum ticket, exibe uma mensagem informando o usuário
   if (!lastTicket) {
     console.log("No last ticket found.");
     return (
@@ -104,6 +111,7 @@ const LastUserTicket = () => {
     );
   }
 
+  // Função para abreviar o nome da cidade, exceto a última palavra
   const abreviarCidade = (nomeCidade) => {
     const partes = nomeCidade.split(' ');
     if (partes.length === 1) return nomeCidade; // Se o nome tem apenas uma palavra, não abrevia
@@ -114,7 +122,7 @@ const LastUserTicket = () => {
       }
       return parte.charAt(0) + '.'; // Abrevia as palavras anteriores
     }).join(' ');
-  };  
+  };
 
   return (
     <div className="w-full min-w-[266px] min-h-[204px] flex bg-white max-w-[320px] px-2 rounded-xl flex-col justify-center items-center text-gray-700">

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
-import Dropdown from '../../components/Dropdown/Dropdown';
+import Dropdown from '../Dropdown/Dropdown';
 import { IoIosSend } from "react-icons/io";
-import AlertModal from '../../components/AlertModal/AlertModal';
+import AlertModal from '../AlertModal/AlertModal';
 import { useAuth } from '../../context/AuthContext';
 
 // Componente principal para o cadastro de itens no estoque
@@ -25,7 +25,7 @@ const CadastroEstoque = () => {
     // useEffect para buscar as categorias existentes ao carregar o componente
     useEffect(() => {
         const fetchCategorias = async () => {
-            const estoqueRef = doc(db, 'estoqueCompras', 'estoque'); // Referência ao documento de estoque no Firestore
+            const estoqueRef = doc(db, 'estoqueTi', 'estoque'); // Referência ao documento de estoque no Firestore
             const estoqueDoc = await getDoc(estoqueRef); // Obtém o documento de estoque
             if (estoqueDoc.exists()) {
                 setCategorias(Object.keys(estoqueDoc.data())); // Define as categorias com base nos dados do documento
@@ -58,7 +58,7 @@ const CadastroEstoque = () => {
         setSaving(true); // Indica que o processo de salvar está em andamento
         try {
             const categoria = novaCategoria || categoriaSelecionada; // Determina a categoria a ser usada
-            const estoqueRef = doc(db, 'estoqueCompras', 'estoque'); // Referência ao documento de estoque no Firestore
+            const estoqueRef = doc(db, 'estoqueTi', 'estoque'); // Referência ao documento de estoque no Firestore
             const estoqueDoc = await getDoc(estoqueRef); // Obtém o documento de estoque
             const estoqueData = estoqueDoc.exists() ? estoqueDoc.data() : {}; // Verifica se os dados do estoque existem
 
@@ -102,8 +102,8 @@ const CadastroEstoque = () => {
                 [categoria]: updatedCategoria,
             });
 
-            // Gravar no relatório completo (relatorioCompras -> fullReport)
-            const fullReportRef = doc(db, 'relatorioCompras', 'fullReport'); // Referência ao relatório completo no Firestore
+            // Gravar no relatório completo (relatorioTi -> fullReport)
+            const fullReportRef = doc(db, 'relatorioTi', 'fullReport'); // Referência ao relatório completo no Firestore
             const fullReportDoc = await getDoc(fullReportRef); // Obtém o documento de relatório completo
             const fullReportData = fullReportDoc.exists() ? fullReportDoc.data() : {}; // Verifica se os dados do relatório completo existem
 

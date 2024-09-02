@@ -10,47 +10,57 @@ import LoadingSpinner from '../LoadingSpinner/LoadingSpinner';
 import { TbNotesOff } from "react-icons/tb";
 
 const LastSolicitCompras = () => {
+    // Obtém o usuário atual autenticado
     const { currentUser } = useAuth();
+
+    // Define o estado para armazenar a última solicitação e o estado de carregamento
     const [lastSolicitacao, setLastSolicitacao] = useState(null);
     const [loading, setLoading] = useState(true);
 
+    // useEffect para buscar a última solicitação quando o componente for montado
     useEffect(() => {
         if (!currentUser) {
+            // Se não houver usuário atual, encerra o carregamento
             setLoading(false);
             return;
         }
 
+        // Referência para a coleção 'solicitCompras' no Firestore
         const solicitacoesRef = collection(db, 'solicitCompras');
         let q;
 
+        // Se o usuário for um Supervisor, busca a última solicitação de qualquer usuário
         if (currentUser.cargo === 'Supervisor') {
-            // Se o usuário for Supervisor, busca a última solicitação de qualquer usuário
             q = query(
                 solicitacoesRef,
-                limit(1)  // Obtém apenas a última solicitação
+                limit(1)  // Limita para obter apenas a última solicitação
             );
         } else {
-            // Caso contrário, busca apenas a última solicitação do usuário logado
+            // Caso contrário, busca a última solicitação do próprio usuário logado
             q = query(
                 solicitacoesRef,
                 where('user', '==', currentUser.user),
-                limit(1)  // Obtém apenas a última solicitação
+                limit(1)  // Limita para obter apenas a última solicitação
             );
         }
 
+        // Inscreve-se para receber atualizações em tempo real das solicitações
         const unsubscribe = onSnapshot(q, (querySnapshot) => {
+            // Mapeia os dados das solicitações e armazena a primeira (mais recente)
             const solicitacoesData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             setLastSolicitacao(solicitacoesData[0]);
-            setLoading(false);
+            setLoading(false); // Encerra o carregamento após os dados serem carregados
         }, (error) => {
+            // Trata erros que possam ocorrer durante a consulta
             console.error('Erro ao buscar a última solicitação:', error);
             setLoading(false);
         });
 
+        // Retorna a função para cancelar a inscrição quando o componente for desmontado
         return () => unsubscribe();
     }, [currentUser]);
 
-
+    // Função para retornar a classe CSS com base no status da solicitação
     const getStatusClass = (status) => {
         switch (status) {
             case 'Pendente':
@@ -64,10 +74,12 @@ const LastSolicitCompras = () => {
         }
     };
 
+    // Mostra o spinner de carregamento enquanto os dados estão sendo carregados
     if (loading) {
         return <div><LoadingSpinner /></div>;
     }
 
+    // Função para abreviar o nome da cidade, exceto a última palavra
     const abreviarCidade = (nomeCidade) => {
         const partes = nomeCidade.split(' ');
         if (partes.length === 1) return nomeCidade; // Se o nome tem apenas uma palavra, não abrevia
@@ -80,6 +92,7 @@ const LastSolicitCompras = () => {
         }).join(' ');
     };
 
+    // Se não houver nenhuma solicitação, exibe uma mensagem informando o usuário
     if (!lastSolicitacao) {
         return (
             <div className="w-full min-w-[266px] min-h-[204px] flex bg-white max-w-[320px] px-2 rounded-xl flex-col justify-center items-center text-gray-700">

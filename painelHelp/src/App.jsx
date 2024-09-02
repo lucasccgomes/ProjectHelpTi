@@ -17,6 +17,8 @@ import Estoque from './pages/Estoque';
 import FullReportCompras from './pages/RelatorioCompras';
 import CustoCompras from './pages/CustoCompras';
 import GerenciadorChamados from './pages/GerenciadorChamados';
+import SoliciteTi from './pages/SoliciteTi';
+import EstoqueTi from './pages/EstoqueTi';
 
 const App = () => {
   return (
@@ -36,17 +38,46 @@ const App = () => {
                 </ProtectedRoute>}
                 />
 
-                <Route path="/solicitacao" element={<ProtectedRoute allowedRoles={['T.I', 'Gerente', 'Supervisor', 'Compras']}>
-                  <Solicitacao />
+                <Route path="/solicitati" element={<ProtectedRoute allowedRoles={
+                  [
+                    'T.I',
+                    'Gerente',
+                    'Supervisor',
+                    'Compras',
+                    'Claudemir'
+                  ]
+                }>
+                  <SoliciteTi />
                 </ProtectedRoute>}
                 />
 
-                <Route path="/atribute" element={<ProtectedRoute allowedRoles={['T.I']}>
+                <Route path="/estoqueti" element={<ProtectedRoute allowedRoles={
+                  [
+                    'T.I',
+                    'Claudemir'
+                  ]
+                }>
+                  <EstoqueTi />
+                </ProtectedRoute>}
+                />
+
+                <Route path="/atribute" element={<ProtectedRoute allowedRoles={
+                  [
+                    'T.I',
+                    'Claudemir'
+                  ]
+                }>
                   <AssignTasksPage />
                 </ProtectedRoute>}
                 />
 
-                <Route path="/solicitacompras" element={<ProtectedRoute allowedRoles={['T.I', 'Compras']}>
+                <Route path="/solicitacompras" element={<ProtectedRoute allowedRoles={
+                  [
+                    'T.I',
+                    'Compras',
+                    'Claudemir'
+                  ]
+                }>
                   <SoliciteCompras />
                 </ProtectedRoute>}
                 />
@@ -56,22 +87,45 @@ const App = () => {
                 </ProtectedRoute>}
                 />
 
-                <Route path="/estoque" element={<ProtectedRoute allowedRoles={['T.I', 'Compras']}>
+                <Route path="/estoque" element={<ProtectedRoute allowedRoles={
+                  [
+                    'T.I',
+                    'Compras',
+                    'Claudemir'
+                  ]
+                }>
                   <Estoque />
                 </ProtectedRoute>}
                 />
 
-                <Route path="/reportcompras" element={<ProtectedRoute allowedRoles={['T.I', 'Compras']}>
+                <Route path="/reportcompras" element={<ProtectedRoute allowedRoles={
+                  [
+                    'T.I',
+                    'Compras',
+                    'Claudemir'
+                  ]
+                }>
                   <FullReportCompras />
                 </ProtectedRoute>}
                 />
 
-                <Route path="/custocompras" element={<ProtectedRoute allowedRoles={['T.I', 'Compras']}>
+                <Route path="/custocompras" element={<ProtectedRoute allowedRoles={
+                  [
+                    'T.I',
+                    'Compras',
+                    'Claudemir'
+                  ]
+                }>
                   <CustoCompras />
                 </ProtectedRoute>}
                 />
 
-                <Route path="/gerenchamados" element={<ProtectedRoute allowedRoles={['T.I']}>
+                <Route path="/gerenchamados" element={<ProtectedRoute allowedRoles={
+                  [
+                    'T.I',
+                    'Claudemir'
+                  ]
+                 }>
                   <GerenciadorChamados />
                 </ProtectedRoute>}
                 />
