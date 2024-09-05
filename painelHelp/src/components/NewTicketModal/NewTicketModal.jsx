@@ -28,6 +28,8 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
 
   const storage = getStorage(); // Inicialização do serviço de storage do Firebase
 
+  const NOTIFICATION_API_URL = import.meta.env.VITE_NOTIFICATION_API_URL;
+
   // useEffect para buscar e atualizar as cidades e lojas disponíveis quando a cidade selecionada mudar
   useEffect(() => {
     const fetchCitiesAndStores = async () => {
@@ -84,7 +86,8 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
   // Função para enviar notificações aos usuários relevantes
   const sendNotification = async (tokens, notification) => {
     try {
-      const response = await fetch('https://8f38-2804-1784-30b3-6700-7285-c2ff-fe34-e4b0.ngrok-free.app/send-notification', {
+      // Use a variável de ambiente NOTIFICATION_API_URL em vez da URL fixa
+      const response = await fetch(NOTIFICATION_API_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -112,7 +115,7 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
       console.error('Erro ao enviar notificação:', error); // Loga o erro, se ocorrer
     }
   };
-
+  
   // Função que é chamada ao submeter o formulário
   const handleSubmit = async (e) => {
     e.preventDefault(); // Evita o comportamento padrão do formulário

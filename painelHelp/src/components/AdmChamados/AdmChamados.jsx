@@ -47,6 +47,8 @@ const AdmChamados = () => {
     const [ticketToNormalize, setTicketToNormalize] = useState(null);
     const [alertMessage, setAlertMessage] = useState('');
 
+    const NOTIFICATION_API_URL = import.meta.env.VITE_NOTIFICATION_API_URL;  
+
 
     const openNormalizarModal = (ticket) => {
         setTicketToNormalize(ticket);
@@ -229,7 +231,7 @@ const AdmChamados = () => {
     // Função para enviar uma notificação aos usuários
     const sendNotification = async (tokens, notification) => {
         try {
-            const response = await fetch('https://8f38-2804-1784-30b3-6700-7285-c2ff-fe34-e4b0.ngrok-free.app/send-notification', {
+            const response = await fetch(NOTIFICATION_API_URL, {  // Substitui a URL fixa pela variável de ambiente
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -244,9 +246,9 @@ const AdmChamados = () => {
                     }
                 })
             });
-
+    
             const responseData = await response.json(); // Converte a resposta para JSON
-
+    
             if (response.ok) {
                 console.log('Notificação enviada com sucesso.');
             } else {

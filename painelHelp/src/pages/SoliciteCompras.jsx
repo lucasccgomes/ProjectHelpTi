@@ -40,6 +40,8 @@ const SoliciteCompras = () => {
   const [quantityErrorModalOpen, setQuantityErrorModalOpen] = useState(false); // Estado para controlar a abertura do modal de erro de quantidade
   const [quantityErrorMessage, setQuantityErrorMessage] = useState(''); // Estado para armazenar a mensagem de erro de quantidade
 
+  const NOTIFICATION_API_URL = import.meta.env.VITE_NOTIFICATION_API_URL;  
+
   const handleAddItem = () => {
     if (itensSolicitados.length < 3) { // Permite adicionar até 3 itens
       setItensSolicitados([...itensSolicitados, { categoria: '', item: '', quantidade: 1 }]); // Adiciona um novo item
@@ -150,15 +152,15 @@ const SoliciteCompras = () => {
           click_action: "https://drogalira.com.br/solicitacompras",
           icon: "https://iili.io/duTTt8Q.png"
         };
-
-        const response = await fetch('https://8f38-2804-1784-30b3-6700-7285-c2ff-fe34-e4b0.ngrok-free.app/send-notification', {
+   
+        const response = await fetch(NOTIFICATION_API_URL, {  // Substituído pela variável de ambiente
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({ tokens: tokensParaNotificar, notification: notificationMessage })
         });
-
+   
         const result = await response.json();
         console.log('Notificações enviadas com sucesso:', result); // Loga o sucesso do envio das notificações
       } else {

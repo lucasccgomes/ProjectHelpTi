@@ -150,15 +150,15 @@ const SoliciteTi = () => {
           click_action: "https://drogalira.com.br/solicitati",
           icon: "https://iili.io/duTTt8Q.png"
         };
-
-        const response = await fetch('https://8f38-2804-1784-30b3-6700-7285-c2ff-fe34-e4b0.ngrok-free.app/send-notification', {
+   
+        const response = await fetch(NOTIFICATION_API_URL, { // Usando a variável de ambiente
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({ tokens: tokensParaNotificar, notification: notificationMessage })
         });
-
+   
         const result = await response.json();
       } else {
         console.log('Nenhum token encontrado para o cargo "T.I".'); // Loga se não houver tokens para notificar
