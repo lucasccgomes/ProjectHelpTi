@@ -19,6 +19,7 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { HiPencilSquare } from "react-icons/hi2";
 import AlertModal from '../AlertModal/AlertModal';
+import MyModal from '../MyModal/MyModal';
 
 const AdmListaSolicitCompras = () => {
     // Estados para gerenciar modais, solicitações, filtros e outros dados da interface
@@ -48,6 +49,14 @@ const AdmListaSolicitCompras = () => {
     const [userFilterOptions, setUserFilterOptions] = useState(['Todos']);
     const [filteredSolicitacoes, setFilteredSolicitacoes] = useState([]);
     const [storeFilterOptions, setStoreFilterOptions] = useState(['Todos']);
+    const [statusAlertModalOpen, setStatusAlertModalOpen] = useState(false);
+    const [statusChangeAlertModalOpen, setStatusChangeAlertModalOpen] = useState(false);
+    const [alertMessage, setAlertMessage] = useState('');
+    const [alertTitle, setAlertTitle] = useState('');
+    const [statusMessage, setStatusMessage] = useState(''); // Estado para controlar a mensagem no modal
+    const [modalMessage, setModalMessage] = useState('');
+    const [showOkButton, setShowOkButton] = useState(true); // Estado para controlar a visibilidade do botão OK
+
 
     // Abre o modal de edição e inicializa os itens a serem editados
     const openEditModal = (solicitacao) => {
@@ -64,11 +73,33 @@ const AdmListaSolicitCompras = () => {
         }
 
         try {
+            // Calcula a diferença entre a quantidade original e a nova quantidade
+            const quantidadeDiferenca = {};
+            for (const itemNome in editedItems) {
+                const quantidadeOriginal = selectedSolicitacao.item[itemNome] || 0;
+                const novaQuantidade = editedItems[itemNome];
+                quantidadeDiferenca[itemNome] = novaQuantidade - quantidadeOriginal;
+            }
+
+            // Atualiza o estoque com base na diferença de quantidade
+            for (const itemNome in quantidadeDiferenca) {
+                const diferenca = quantidadeDiferenca[itemNome];
+                if (diferenca > 0) {
+                    // Se a diferença é positiva, significa que o usuário aumentou a quantidade, então subtrai do estoque
+                    await updateStockQuantities({ [itemNome]: diferenca }, 'decrease');
+                } else if (diferenca < 0) {
+                    // Se a diferença é negativa, significa que o usuário diminuiu a quantidade, então adiciona ao estoque
+                    await updateStockQuantities({ [itemNome]: -diferenca }, 'increase');
+                }
+            }
+
+            // Calcula o novo preço total baseado nos itens editados
             const newTotalPrice = Object.entries(editedItems).reduce((total, [itemNome, quantidade]) => {
                 const itemPrice = selectedSolicitacao.itemPrice[itemNome];
                 return total + (itemPrice * quantidade);
             }, 0);
 
+            // Atualiza a solicitação no Firestore
             const solicitacaoRef = doc(db, 'solicitCompras', selectedSolicitacao.id);
             await updateDoc(solicitacaoRef, {
                 originalOrder: selectedSolicitacao.item,
@@ -142,6 +173,39 @@ const AdmListaSolicitCompras = () => {
         }
     };
 
+    const handlePrint = async (solicitacao) => {
+        try {
+            if (!solicitacao || !solicitacao.numSolicite) {
+                throw new Error('Solicitação inválida ou não encontrada.');
+            }
+
+            const response = await fetch('http://localhost:3010/api/print', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    numSolicite: solicitacao.numSolicite,
+                    loja: solicitacao.loja,
+                    cidade: solicitacao.cidade,
+                    user: solicitacao.user,
+                    itens: solicitacao.item
+                }),
+            });
+
+            if (response.ok) {
+                setModalMessage('Impressão enviada com sucesso!');
+            } else {
+                const errorData = await response.json();
+                console.error('Erro no backend:', errorData);
+                setModalMessage(`Erro ao enviar impressão: ${errorData.message || 'Erro desconhecido'}`);
+            }
+        } catch (error) {
+            console.error('Erro ao enviar impressão:', error);
+            setModalMessage('Erro ao enviar impressão.');
+        }
+    };
+
     // Altera o status de uma solicitação e ajusta o estoque conforme necessário
     const handleStatusChange = async (id, newStatus) => {
         try {
@@ -154,7 +218,35 @@ const AdmListaSolicitCompras = () => {
                 return;
             }
             const solicitacaoData = solicitacaoSnap.data();
+            setSelectedSolicitacao(solicitacaoData);  // Define selectedSolicitacao
             const previousStatus = solicitacaoData.status;
+
+            // Verifica se o status já é o mesmo que o novo status
+            if (previousStatus === newStatus) {
+                setAlertTitle('Status já aplicado');
+                setAlertMessage(`O status da solicitação já é "${newStatus}".`);
+                setStatusAlertModalOpen(true);
+                return;
+            }
+
+            // Variável para armazenar a mensagem de alerta
+            let message = `Solicitação "${solicitacaoData.numSolicite}" status alterado para "${newStatus}".`;
+
+            // Se a mudança for para "Separando", subtrair as quantidades do estoque e mostrar os itens debitados
+            if (newStatus === 'Separando') {
+                message += "\nNeste ponto, está sendo debitado do seu estoque:\n";
+                const itemList = Object.entries(solicitacaoData.item)
+                    .map(([itemNome, quantidade]) => `- ${itemNome}: ${quantidade}`)
+                    .join("\n");
+                message += itemList;
+
+                // Subtrair do estoque
+                await updateStockQuantities(solicitacaoData.item, 'decrease');
+
+                // Definir a mensagem inicial como "Separando"
+                setStatusMessage(message);
+                setStatusChangeAlertModalOpen(true);
+            }
 
             // Atualiza o status da solicitação
             await updateDoc(solicitacaoRef, {
@@ -164,11 +256,6 @@ const AdmListaSolicitCompras = () => {
             // Se a mudança for de "Separando" para "Pendente" ou "Cancelado", devolver as quantidades ao estoque
             if ((previousStatus === 'Separando') && (newStatus === 'Pendente' || newStatus === 'Cancelado')) {
                 await updateStockQuantities(solicitacaoData.item, 'increase');
-            }
-
-            // Se a mudança for para "Separando", subtrair as quantidades do estoque
-            if (newStatus === 'Separando') {
-                await updateStockQuantities(solicitacaoData.item, 'decrease');
             }
 
             // Notificação ao usuário sobre a mudança de status
@@ -205,6 +292,11 @@ const AdmListaSolicitCompras = () => {
                     });
 
                     const result = await response.json();
+                    if (response.ok) {
+                        console.log('Notificação enviada com sucesso:', result);
+                    } else {
+                        console.error('Erro ao enviar notificação:', result);
+                    }
                 } else {
                     console.error(`Token do usuário ${solicitacaoData.user} não encontrado na cidade ${cidadeEncontrada}.`);
                 }
@@ -756,6 +848,59 @@ const AdmListaSolicitCompras = () => {
                 message="Por favor, forneça um motivo para a alteração antes de salvar."
             />
 
+            <AlertModal
+                isOpen={statusAlertModalOpen}
+                onRequestClose={() => setStatusAlertModalOpen(false)}
+                title={alertTitle}
+                message={alertMessage}
+            />
+
+            <MyModal
+                isOpen={statusChangeAlertModalOpen}
+                onClose={() => setStatusChangeAlertModalOpen(false)}
+            >
+                <div>
+                    <h2 className="text-lg text-black font-semibold">
+                        {statusMessage.startsWith('Solicitação') ? 'Status: Separando' : 'Imprimindo etiqueta'}
+                    </h2>
+                    <p className='text-black'>{statusMessage}</p>
+
+                    {/* Condicional para mostrar o botão OK */}
+                    {showOkButton && (
+                        <button
+                            className="mt-4 bg-blue-500 text-white px-4 py-2 rounded"
+                            onClick={async () => {
+                                if (statusMessage.startsWith('Solicitação')) {
+                                    setShowOkButton(false);
+                                    setStatusMessage('Imprimindo etiqueta...');
+
+                                    // Verifica se selectedSolicitacao está definido antes de chamar handlePrint
+                                    if (selectedSolicitacao) {
+                                        setTimeout(async () => {
+                                            try {
+                                                await handlePrint(selectedSolicitacao); // Passa o selectedSolicitacao aqui
+
+                                                setStatusMessage('Impressão enviada com sucesso!');
+                                                setTimeout(() => {
+                                                    setStatusChangeAlertModalOpen(false);
+                                                    setShowOkButton(true);
+                                                }, 3000);
+                                            } catch (error) {
+                                                console.error('Erro ao imprimir etiqueta:', error);
+                                            }
+                                        }, 2000);
+                                    } else {
+                                        console.error('Solicitação não encontrada');
+                                        setStatusMessage('Erro: solicitação não encontrada.');
+                                    }
+                                }
+                            }}
+                        >
+                            OK
+                        </button>
+                    )}
+                </div>
+            </MyModal>
 
         </div>
     );

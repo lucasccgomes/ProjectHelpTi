@@ -197,7 +197,7 @@ const ListaSolicitTi = () => {
                 ) : (
                     <div className="space-y-4 lg:max-w-4xl lg:block !flex flex-col justify-center items-center lg:overflow-hidden lg:pt-32 pt-4">
                         {solicitacoes.map(solicitacao => (
-                            <div key={solicitacao.id} className="px-4 pb-4 lg:block max-w-[324px] bg-white text-black border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200">
+                            <div key={solicitacao.id} className="px-4 pb-4 lg:block max-w-[364px] bg-white text-black border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200">
                                 <div className='flex justify-between pb-3'>
                                     <h3 className="p-2 rounded-br-xl shadow-xl  -ml-5 -mt-1 text-2xl bg-primaryBlueDark text-white font-bold">
                                         {solicitacao.numSolicite}

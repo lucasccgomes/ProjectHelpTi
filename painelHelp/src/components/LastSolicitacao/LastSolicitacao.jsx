@@ -22,7 +22,7 @@ const LastSolicitacao = () => {
             return;
         }
 
-        const solicitacoesRef = collection(db, 'solicitacoes'); // Referência à coleção de solicitações no Firestore
+        const solicitacoesRef = collection(db, 'solicitTi'); // Referência à coleção de solicitações no Firestore
         let q;
 
         // Define a query com base no cargo do usuário

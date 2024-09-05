@@ -3,13 +3,10 @@ import { collection, doc, getDoc, updateDoc, onSnapshot } from 'firebase/firesto
 import { db } from '../../firebase';
 import { useAuth } from '../../context/AuthContext';
 import "react-responsive-carousel/lib/styles/carousel.min.css";
-import { Carousel } from 'react-responsive-carousel';
 import Dropdown from '../Dropdown/Dropdown';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import MyModal from '../MyModal/MyModal';
-import Zoom from 'react-medium-image-zoom';
-import 'react-medium-image-zoom/dist/styles.css';
 import { PiClockCountdownFill } from "react-icons/pi";
 import { FaLocationCrosshairs } from "react-icons/fa6";
 import { FaCity, FaUser, FaStoreAlt, FaFileImage, FaWhatsapp, FaCalendarCheck, FaCalendarTimes, FaHandSparkles } from "react-icons/fa";
@@ -17,6 +14,7 @@ import { MdReportProblem, MdDoNotDisturb, MdDescription, MdRecommend } from "rea
 import { GrDocumentConfig } from "react-icons/gr";
 import { LuImageOff } from "react-icons/lu";
 import { SiInstatus } from "react-icons/si";
+import AlertModal from '../AlertModal/AlertModal';
 
 // Componente principal para gerenciamento de chamados administrativos
 const AdmChamados = () => {
@@ -28,7 +26,7 @@ const AdmChamados = () => {
     const { currentUser } = useAuth(); // Estado para o usuário atual autenticado
     const [tickets, setTickets] = useState([]); // Estado para armazenar os chamados (tickets)
     const [loading, setLoading] = useState(true); // Estado para indicar se os dados estão carregando
-    const [statusFilter, setStatusFilter] = useState(''); // Estado para armazenar o filtro de status
+    const [statusFilter, setStatusFilter] = useState('Aberto'); // Estado para armazenar o filtro inicial
     const [userFilter, setUserFilter] = useState(''); // Estado para armazenar o filtro de usuário
     const [storeFilter, setStoreFilter] = useState(''); // Estado para armazenar o filtro de loja
     const [selectedTicket, setSelectedTicket] = useState(null); // Estado para armazenar o chamado selecionado
@@ -44,6 +42,37 @@ const AdmChamados = () => {
     const [finalizarModalIsOpen, setFinalizarModalIsOpen] = useState(false); // Estado para controlar o modal de finalização
     const [descricaoModalIsOpen, setDescricaoModalIsOpen] = useState(false); // Estado para controlar o modal de descrição
     const [tentativaModalIsOpen, setTentativaModalIsOpen] = useState(false); // Estado para controlar o modal de tentativa
+    const [alertModalIsOpen, setAlertModalIsOpen] = useState(false); // Estado para controlar o modal de aviso de preenchimento do andamento
+    const [normalizarModalIsOpen, setNormalizarModalIsOpen] = useState(false);
+    const [ticketToNormalize, setTicketToNormalize] = useState(null);
+    const [alertMessage, setAlertMessage] = useState('');
+
+
+    const openNormalizarModal = (ticket) => {
+        setTicketToNormalize(ticket);
+        setNormalizarModalIsOpen(true);
+    };
+
+    const closeNormalizarModal = () => {
+        setNormalizarModalIsOpen(false);
+        setTicketToNormalize(null);
+    };
+
+    const openAlertModal = () => {
+        setAlertModalIsOpen(true);
+    };
+
+    const confirmNormalizar = () => {
+        if (ticketToNormalize) {
+            updateTicketStatus(ticketToNormalize.id, ticketToNormalize.anteriorStatus, '', '', false);
+            closeNormalizarModal();
+        }
+    };
+
+    const closeAlertModal = () => {
+        setAlertModalIsOpen(false);
+    };
+
 
     // Função para abrir o modal de tentativa e definir o ticket selecionado
     const openTentativaModal = (ticket) => {
@@ -161,9 +190,9 @@ const AdmChamados = () => {
     // useEffect para buscar os tickets (chamados) do Firestore e atualizar o estado em tempo real
     useEffect(() => {
         const fetchTickets = async () => {
-            const abertoRef = collection(db, 'chamados', 'aberto', 'tickets'); // Referência à coleção de tickets no Firestore
+            const ticketRef = collection(db, 'chamados', 'aberto', 'tickets'); // Referência à coleção de tickets
 
-            const unsubscribe = onSnapshot(abertoRef, (querySnapshot) => {
+            const unsubscribe = onSnapshot(ticketRef, (querySnapshot) => {
                 const ticketsData = querySnapshot.docs.map(doc => {
                     const data = doc.data();
                     return {
@@ -174,8 +203,17 @@ const AdmChamados = () => {
                     };
                 });
 
-                const uniqueTickets = Array.from(new Map(ticketsData.map(ticket => [ticket.id, ticket])).values()); // Remove duplicatas
-                setTickets(uniqueTickets); // Atualiza o estado com os tickets únicos
+                // Se o filtro for 'Aberto,Andamento', exibe apenas esses dois tipos de chamados
+                let filteredTickets;
+                if (statusFilter === 'Aberto,Andamento') {
+                    filteredTickets = ticketsData.filter(ticket => ticket.status === 'Aberto' || ticket.status === 'Andamento');
+                } else if (statusFilter === '') {
+                    filteredTickets = ticketsData; // Exibe todos os chamados se o filtro for vazio
+                } else {
+                    filteredTickets = ticketsData.filter(ticket => ticket.status === statusFilter);
+                }
+
+                setTickets(filteredTickets); // Atualiza o estado com os chamados filtrados
                 setLoading(false); // Define o carregamento como falso
             }, (error) => {
                 console.error('Erro ao buscar chamados:', error); // Loga o erro, se ocorrer
@@ -186,7 +224,7 @@ const AdmChamados = () => {
         };
 
         fetchTickets(); // Chama a função de fetch
-    }, []);
+    }, [statusFilter]);
 
     // Função para enviar uma notificação aos usuários
     const sendNotification = async (tokens, notification) => {
@@ -224,76 +262,89 @@ const AdmChamados = () => {
         try {
             const ticketDocRef = doc(db, 'chamados', 'aberto', 'tickets', id); // Referência ao documento do ticket no Firestore
 
-            // Prepara o objeto de atualização
-            const updatedData = {
-                status,
-                descricaoFinalizacao,
-                treatment,
-                checkproblema: [selectedProblem],
-            };
+            const ticketSnapshot = await getDoc(ticketDocRef);
+            if (ticketSnapshot.exists()) {
+                const currentTicketData = ticketSnapshot.data();
 
-            // Adiciona a data de finalização se o status for "Finalizado"
-            if (status === 'Finalizado') {
-                updatedData.finalizadoData = new Date();
-            }
-
-            // Se interacao for falso e status for "Urgente", restaura o status anterior
-            if (interacao === false && status === 'Urgente') {
-                updatedData.status = selectedTicket.anteriorStatus || 'Aberto';
-                updatedData.interacao = false;
-            }
-
-            // Só atualiza `interacao` se for passado como parâmetro (não `null`)
-            if (interacao !== null) {
-                updatedData.interacao = interacao;
-            }
-
-            // Atualiza o documento no Firestore
-            await updateDoc(ticketDocRef, updatedData);
-
-            // Atualiza o estado local
-            setTickets(prevTickets =>
-                prevTickets.map(ticket =>
-                    ticket.id === id ? { ...ticket, ...updatedData } : ticket
-                )
-            );
-
-            // Enviar notificação ao usuário
-            const updatedTicket = tickets.find(ticket => ticket.id === id);
-            const userDocRef = doc(db, 'usuarios', updatedTicket.cidade); // Referência ao documento do usuário no Firestore
-            const userDocSnap = await getDoc(userDocRef); // Obtém o documento do usuário
-
-            if (userDocSnap.exists()) {
-                const userData = userDocSnap.data()[updatedTicket.user];
-                if (userData && userData.token) {
-                    const notificationMessage = {
-                        title: `Status do Chamado ${updatedTicket.order} Alterado`,
-                        body: `O status do chamado foi alterado para: ${status}`,
-                        click_action: "https://drogalira.com.br/usertickets",
-                        icon: "https://iili.io/duTTt8Q.png"
-                    };
-
-                    await sendNotification(userData.token, notificationMessage); // Envia a notificação
-                } else {
-                    console.error('Token do usuário não encontrado.');
+                // Verifica se o status atual já é 'Aberto' e exibe o alert modal
+                if (status === 'Aberto' && currentTicketData.status === 'Aberto') {
+                    setAlertMessage("O status já é Aberto.");
+                    openAlertModal();
+                    return;
                 }
-            } else {
-                console.error('Documento do usuário não encontrado.');
+
+                // Prepara o objeto de atualização
+                const updatedData = {
+                    status,
+                    descricaoFinalizacao,
+                    treatment,
+                    checkproblema: [selectedProblem],
+                };
+
+                // Adiciona a data de finalização se o status for "Finalizado"
+                if (status === 'Finalizado') {
+                    updatedData.finalizadoData = new Date();
+                }
+
+                // Se interacao for falso e status for "Urgente", restaura o status anterior
+                if (interacao === false && status === 'Urgente') {
+                    updatedData.status = selectedTicket.anteriorStatus || 'Aberto';
+                    updatedData.interacao = false;
+                }
+
+                // Só atualiza `interacao` se for passado como parâmetro (não `null`)
+                if (interacao !== null) {
+                    updatedData.interacao = interacao;
+                }
+
+                // Atualiza o documento no Firestore
+                await updateDoc(ticketDocRef, updatedData);
+
+                // Atualiza o estado local
+                setTickets(prevTickets =>
+                    prevTickets.map(ticket =>
+                        ticket.id === id ? { ...ticket, ...updatedData } : ticket
+                    )
+                );
+
+                // Enviar notificação ao usuário
+                const updatedTicket = tickets.find(ticket => ticket.id === id);
+                const userDocRef = doc(db, 'usuarios', updatedTicket.cidade); // Referência ao documento do usuário no Firestore
+                const userDocSnap = await getDoc(userDocRef); // Obtém o documento do usuário
+
+                if (userDocSnap.exists()) {
+                    const userData = userDocSnap.data()[updatedTicket.user];
+                    if (userData && userData.token) {
+                        const notificationMessage = {
+                            title: `Status do Chamado ${updatedTicket.order} Alterado`,
+                            body: `O status do chamado foi alterado para: ${status}`,
+                            click_action: "https://drogalira.com.br/usertickets",
+                            icon: "https://iili.io/duTTt8Q.png"
+                        };
+
+                        await sendNotification(userData.token, notificationMessage); // Envia a notificação
+                    } else {
+                        console.error('Token do usuário não encontrado.');
+                    }
+                } else {
+                    console.error('Documento do usuário não encontrado.');
+                }
+
+                // Define a mensagem do modal de notificação
+                setNotificationMessage(`${updatedTicket.order} status alterado para ${status}`);
+                setNotificationModalIsOpen(true);
+
+                // Limpa os estados
+                setSelectedTicket(null);
+                setFinalizadoDescricao('');
+                setTreatment('');
+                setCheckproblema([]);
             }
-
-            // Define a mensagem do modal de notificação
-            setNotificationMessage(`${updatedTicket.order} status alterado para ${status}`);
-            setNotificationModalIsOpen(true);
-
-            // Limpa os estados
-            setSelectedTicket(null);
-            setFinalizadoDescricao('');
-            setTreatment('');
-            setCheckproblema([]);
         } catch (error) {
             console.error('Erro ao atualizar status do chamado:', error); // Loga o erro, se ocorrer
         }
     };
+
 
     // Filtro para os tickets com base nos filtros e consulta de busca
     const filteredTickets = tickets.filter(ticket => {
@@ -326,8 +377,8 @@ const AdmChamados = () => {
 
     // Função para abrir o modal de imagens
     const openImageModal = (images) => {
-        setSelectedImages(images);
-        setImageModalIsOpen(true);
+        setSelectedImages(images); // Apenas define as imagens a serem exibidas no modal
+        setImageModalIsOpen(true); // Abre o modal
     };
 
     // Função para fechar o modal de imagens
@@ -380,7 +431,7 @@ const AdmChamados = () => {
     const closeConclusaoModal = () => {
         setConclusaoModalIsOpen(false);
     };
-    
+
     return (
         <div className="justify-center items-center">
             <div className='w-full bg-altBlue p-4 fixed mt-[3.5rem] z-10'>
@@ -395,16 +446,24 @@ const AdmChamados = () => {
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                         <div className='flex items-center gap-2 w-[27rem]'>
-                        <SiInstatus className='text-white text-2xl hidden lg:flex'/>
+                            <SiInstatus className='text-white text-2xl hidden lg:flex' />
                             <Dropdown
                                 options={['Todos', 'Aberto', 'Andamento', 'Finalizado', 'VSM']}
-                                selected={statusFilter}
-                                onSelectedChange={(value) => setStatusFilter(value === 'Todos' ? '' : value)}
+                                selected={statusFilter === 'Aberto,Andamento' ? 'Aberto e Andamento' : statusFilter} // Mostra o status atual no dropdown
+                                onSelectedChange={(value) => {
+                                    if (value === 'Todos') {
+                                        setStatusFilter(''); // Mostra todos os chamados
+                                    } else if (value === 'Aberto e Andamento') {
+                                        setStatusFilter('Aberto,Andamento'); // Filtro para 'Aberto' e 'Andamento'
+                                    } else {
+                                        setStatusFilter(value); // Filtro para um status específico
+                                    }
+                                }}
                                 className="hidden lg:flex items-center justify-center"
                             />
                         </div>
                         <div className='flex items-center gap-2 w-[27rem]'>
-                        <FaUser className='text-white text-2xl hidden lg:flex'/>
+                            <FaUser className='text-white text-2xl hidden lg:flex' />
                             <Dropdown
                                 options={['Todos', ...uniqueUsers]}
                                 selected={userFilter}
@@ -418,8 +477,8 @@ const AdmChamados = () => {
                             />
                         </div>
                         <div className='flex items-center gap-2 w-[27rem]'>
-                        <FaStoreAlt className='text-white text-2xl hidden lg:flex'/>
-                                               <Dropdown
+                            <FaStoreAlt className='text-white text-2xl hidden lg:flex' />
+                            <Dropdown
                                 options={['Todos', ...uniqueStores]}
                                 selected={storeFilter}
                                 onSelectedChange={(value) => {
@@ -453,9 +512,6 @@ const AdmChamados = () => {
                 <div className="pt-52 p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full bg-altBlue">
                     {filteredTickets
                         .sort((a, b) => {
-                            if (a.interacao && !b.interacao) return -1;
-                            if (!a.interacao && b.interacao) return 1;
-
                             const statusPriority = (status) => {
                                 switch (status) {
                                     case 'Urgente':
@@ -464,12 +520,20 @@ const AdmChamados = () => {
                                         return 2;
                                     case 'Andamento':
                                         return 3;
-                                    default:
+                                    case 'Finalizado':
                                         return 4;
+                                    default:
+                                        return 5;
                                 }
                             };
 
-                            return statusPriority(a.status) - statusPriority(b.status);
+                            const priorityComparison = statusPriority(a.status) - statusPriority(b.status);
+
+                            if (priorityComparison !== 0) {
+                                return priorityComparison; // Se o status é diferente, ordena por prioridade do status
+                            } else {
+                                return new Date(b.data) - new Date(a.data); // Se o status é igual, ordena por data (mais recente primeiro)
+                            }
                         })
                         .map(ticket => (
                             <div
@@ -589,7 +653,7 @@ const AdmChamados = () => {
                                         <div className='flex items-center justify-center w-full'>
                                             <button
                                                 className='bg-primaryBlueDark gap-2 flex justify-center items-center w-full text-white px-4 py-2 rounded-md'
-                                                onClick={() => openImageModal(ticket.imgUrl)}
+                                                onClick={() => openImageModal(ticket.imgUrl)} // Abre o modal com as miniaturas
                                             >
                                                 <FaFileImage />
                                                 <p>Imagens</p>
@@ -684,7 +748,7 @@ const AdmChamados = () => {
                                                     Urgente
                                                 </button>
                                                 <button
-                                                    onClick={() => updateTicketStatus(ticket.id, ticket.anteriorStatus, '', '', false)}
+                                                    onClick={() => openNormalizarModal(ticket)}
                                                     className="bg-gray-500 text-white px-4 py-2 rounded w-full"
                                                 >
                                                     Normalizar
@@ -698,6 +762,27 @@ const AdmChamados = () => {
                         ))}
                 </div>
 
+            )}
+
+            {normalizarModalIsOpen && (
+                <MyModal isOpen={normalizarModalIsOpen} onClose={closeNormalizarModal}>
+                    <h2 className="text-xl mb-2 font-bold text-center">Confirmar Normalização</h2>
+                    <p className="text-center mb-4">Tem certeza que deseja normalizar este chamado?</p>
+                    <div className="flex justify-end gap-2">
+                        <button
+                            onClick={confirmNormalizar}
+                            className="bg-green-500 text-white px-4 py-2 rounded"
+                        >
+                            Sim
+                        </button>
+                        <button
+                            onClick={closeNormalizarModal}
+                            className="bg-gray-500 text-white px-4 py-2 rounded"
+                        >
+                            Cancelar
+                        </button>
+                    </div>
+                </MyModal>
             )}
 
             {finalizarModalIsOpen && (
@@ -734,8 +819,16 @@ const AdmChamados = () => {
                     <div className="flex justify-end gap-2">
                         <button
                             onClick={() => {
-                                updateTicketStatus(selectedTicket.id, 'Finalizado', finalizadoDescricao);
-                                closeFinalizarModal();
+                                if (!finalizadoDescricao.trim()) {
+                                    setAlertMessage("Por favor, adicione uma descrição de finalização.");
+                                    openAlertModal();
+                                } else if (!selectedProblem) {
+                                    setAlertMessage("Por favor, selecione o local do problema.");
+                                    openAlertModal();
+                                } else {
+                                    updateTicketStatus(selectedTicket.id, 'Finalizado', finalizadoDescricao);
+                                    closeFinalizarModal();
+                                }
                             }}
                             className="bg-green-500 text-white px-4 py-2 rounded"
                         >
@@ -751,7 +844,6 @@ const AdmChamados = () => {
                 </MyModal>
             )}
 
-
             {tratativaEditModalIsOpen && (
                 <MyModal isOpen={tratativaEditModalIsOpen} onClose={closeTratativaEditModal}>
                     <h2 className="text-xl mb-2 font-bold text-center">Tratativa</h2>
@@ -765,13 +857,19 @@ const AdmChamados = () => {
                     <div className="flex justify-end gap-2">
                         <button
                             onClick={() => {
-                                updateTicketStatus(selectedTicket.id, 'Andamento', '', treatment);
-                                closeTratativaEditModal();
+                                if (!treatment.trim()) {
+                                    setAlertMessage("Por favor, descreva a tratativa antes de salvar.");
+                                    openAlertModal();
+                                } else {
+                                    updateTicketStatus(selectedTicket.id, 'Andamento', '', treatment);
+                                    closeTratativaEditModal();
+                                }
                             }}
                             className="bg-green-500 text-white px-4 py-2 rounded"
                         >
                             Salvar
                         </button>
+
                         <button
                             onClick={closeTratativaEditModal}
                             className="bg-gray-500 text-white px-4 py-2 rounded"
@@ -782,30 +880,25 @@ const AdmChamados = () => {
                 </MyModal>
             )}
 
-
             <MyModal isOpen={imageModalIsOpen} onClose={closeImageModal}>
                 <div className="bg-white p-4 rounded">
-                    <Carousel
-                        showArrows={true}
-                        showStatus={false}
-                        showIndicators={false}
-                        showThumbs={false}
-                        infiniteLoop={true}
-                        useKeyboardArrows
-                        centerMode
-                        swipeable
-                    >
+                    <div className="grid grid-cols-3 gap-4">
                         {selectedImages.map((image, index) => (
-                            <div key={index} className="flex justify-center">
-                                <Zoom>
-                                    <img src={image} alt={`Imagem ${index}`} className="max-w-full max-h-[450px]" />
-                                </Zoom>
+                            <div key={index} className="flex justify-center items-center">
+                                <a
+                                    href={image}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    <img
+                                        src={image}
+                                        alt={`Thumbnail ${index}`}
+                                        className="w-24 h-24 object-cover cursor-pointer"
+                                    />
+                                </a>
                             </div>
                         ))}
-                    </Carousel>
-                    <button onClick={closeImageModal} className="mt-4 bg-red-500 text-white px-4 py-2 rounded">
-                        Fechar
-                    </button>
+                    </div>
                 </div>
             </MyModal>
 
@@ -861,6 +954,15 @@ const AdmChamados = () => {
                     </button>
                 </div>
             </MyModal>
+
+            <AlertModal
+                isOpen={alertModalIsOpen}
+                onRequestClose={closeAlertModal}
+                title="Aviso"
+                message={alertMessage}
+                showOkButton={true}
+            />
+
 
         </div>
     );

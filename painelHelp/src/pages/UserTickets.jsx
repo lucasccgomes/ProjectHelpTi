@@ -15,7 +15,6 @@ import { FaCity, FaUser, FaStoreAlt, FaCalendarCheck, FaCalendarTimes, FaFilter 
 import { MdReportProblem, MdDoNotDisturb, MdDescription } from "react-icons/md";
 import { IoIosAddCircle } from "react-icons/io";
 import MyModal from '../components/MyModal/MyModal';
-import { SiInstatus } from "react-icons/si";
 
 // Componente principal que renderiza os tickets do usuário
 const UserTickets = () => {
@@ -25,7 +24,7 @@ const UserTickets = () => {
   const [isModalOpen, setIsModalOpen] = useState(false); // Estado para controle do modal de novo ticket
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false); // Estado para controle do modal de filtros
   const [slidesToShow, setSlidesToShow] = useState(3); // Número de slides para mostrar no carrossel
-  const [statusFilter, setStatusFilter] = useState('Todos'); // Filtro de status
+  const [statusFilter, setStatusFilter] = useState('Aberto'); // Filtro de status
   const [cityFilter, setCityFilter] = useState('Todas'); // Filtro de cidade
   const [storeFilter, setStoreFilter] = useState('Todas'); // Filtro de loja
   const [userFilter, setUserFilter] = useState('Todos'); // Filtro de usuário
@@ -38,6 +37,20 @@ const UserTickets = () => {
   const [isContentModalOpen, setIsContentModalOpen] = useState(false);
   const [selectedContent, setSelectedContent] = useState('');
   const [contentTitle, setContentTitle] = useState('');
+  const [isUrgentConfirmModalOpen, setIsUrgentConfirmModalOpen] = useState(false);
+  const [ticketToMakeUrgent, setTicketToMakeUrgent] = useState(null);
+
+  const openUrgentConfirmModal = (ticket) => {
+    setTicketToMakeUrgent(ticket);
+    setIsUrgentConfirmModalOpen(true);
+  };
+
+  const confirmMakeUrgent = () => {
+    if (ticketToMakeUrgent) {
+      updateTicketToUrgent(ticketToMakeUrgent.id, ticketToMakeUrgent.status);
+      setIsUrgentConfirmModalOpen(false);
+    }
+  };
 
   const updateTicketToUrgent = async (ticketId, currentStatus) => {
     try {
@@ -57,8 +70,6 @@ const UserTickets = () => {
       console.error('Erro ao atualizar o ticket:', error);
     }
   };
-
-
 
   // Função para definir a classe CSS com base no status do ticket
   const getStatusClass = (status) => {
@@ -474,7 +485,7 @@ const UserTickets = () => {
                   <div className='bg-white text-gray-700 pt-0 px-2 pb-1 rounded-md shadow-lg'>
                     <button
                       className='bg-red-700 text-white px-4 py-2 rounded-md w-full flex justify-center items-center'
-                      onClick={() => updateTicketToUrgent(ticket.id, ticket.status)}
+                      onClick={() => openUrgentConfirmModal(ticket)}
                     >
                       <IoIosAddCircle className='mr-2' />
                       <p>Atenção</p>
@@ -571,6 +582,27 @@ const UserTickets = () => {
           className="overflow-y-auto break-words"
           dangerouslySetInnerHTML={{ __html: selectedDescription }}
         ></div>
+      </MyModal>
+      <MyModal isOpen={isUrgentConfirmModalOpen} onClose={() => setIsUrgentConfirmModalOpen(false)}>
+        <h2 className="text-xl mb-2 font-bold text-center">Confirmação de Prioridade</h2>
+        <p className="text-center mb-4">
+          Você está prestes a marcar este chamado como "Urgente". Tenha certeza de que essa prioridade é realmente necessária.
+          Caso contrário, se for verificado que não é uma urgência genuína, o chamado será reclassificado para o status anterior.
+        </p>
+        <div className="flex justify-end gap-2">
+          <button
+            onClick={confirmMakeUrgent}
+            className="bg-green-500 text-white px-4 py-2 rounded"
+          >
+            Confirmar
+          </button>
+          <button
+            onClick={() => setIsUrgentConfirmModalOpen(false)}
+            className="bg-gray-500 text-white px-4 py-2 rounded"
+          >
+            Cancelar
+          </button>
+        </div>
       </MyModal>
 
     </div>

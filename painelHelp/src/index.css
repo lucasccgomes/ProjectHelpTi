@@ -172,3 +172,47 @@
 .ReactModal__Content {
   z-index: 1000 !important;
 }
+
+.magnifier-container {
+  position: relative;
+  cursor: zoom-in;
+}
+
+.magnifier-lens {
+  position: absolute;
+  border: 3px solid #000;
+  border-radius: 50%;
+  cursor: none;
+  width: 100px;
+  height: 100px;
+  visibility: hidden;
+  background-repeat: no-repeat;
+  background-position: 0 0;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.magnifier-container:hover .magnifier-lens {
+  visibility: visible;
+}
+
+
+img {
+  cursor: grab;
+}
+
+img:active {
+  cursor: grabbing;
+}
+
+.relative:hover img {
+  cursor: move;
+}
+
+.relative img {
+  object-fit: contain;
+  max-width: 100%;
+  max-height: 450px;
+  margin: auto; /* Certifica-se de que a imagem está centralizada */
+}
+

@@ -4,7 +4,7 @@ import { MdHelp } from "react-icons/md";
 import { FaBars, FaTimes, FaTasks, FaUserCircle, FaHome, FaSignOutAlt, FaSignInAlt, FaChevronDown, FaChevronRight, FaClock } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext';
 import OfflineNotice from '../OffLineNotice/OfflineNotice';
-import { IoLogoAndroid, IoDesktopSharp } from 'react-icons/io5';
+import { IoLogoAndroid, IoDesktopSharp, IoDocumentTextSharp } from 'react-icons/io5';
 import { FaCartShopping } from "react-icons/fa6";
 import { isDesktop } from 'react-device-detect';
 import UserProfile from '../UserProfile/UserProfile';
@@ -30,7 +30,7 @@ const Navbar = () => {
   });
 
   const navItems = [
-    { 
+    {
       name: 'Home', // Nome do item de navegação
       icon: FaHome, // Ícone do item de navegação
       href: '/' // Link para onde o item aponta
@@ -134,6 +134,13 @@ const Navbar = () => {
     <div className="flex" id='navBar'>
       {/* Botão para abrir o menu lateral */}
       <div className="bg-primaryBlueDark z-10 w-full h-14 fixed flex items-center justify-end">
+      <div className="mx-4">
+          <a className="p-2 flex bg-slate-300 rounded-lg shadow-md hover:scale-[0.9]" target="_blank" href="https://admhelpti.netlify.app/">
+            <button className="text-black flex flex-row justify-center items-center gap-1">
+              <IoDocumentTextSharp /> Manual
+            </button>
+          </a>
+        </div>
         {!isInstalled && installPrompt && (
           <button
             onClick={handleInstallClick}
@@ -160,6 +167,7 @@ const Navbar = () => {
             <FaTimes className="block h-6 w-6" aria-hidden="true" />
           )}
         </button>
+
         <div
           onClick={openProfileModal} // Abre o modal ao clicar no nome ou ícone do usuário
           className={`flex items-center gap-1 mr-16 text-white uppercase cursor-pointer transition-transform duration-300 ease-in-out ${isOpen ? "opacity-0 transform -translate-x-10" : "opacity-100 transform translate-x-0"
@@ -176,7 +184,6 @@ const Navbar = () => {
           )}
           {currentUser ? currentUser.user : ''}
         </div>
-
       </div>
       {/* Menu lateral */}
       <nav ref={navRef} className={`fixed inset-y-0 left-0 bg-primaryBlueDark z-50 text-white w-64 transform ${isOpen ? "translate-x-0" : "-translate-x-full"} transition-transform duration-300 ease-in-out`}>
@@ -261,12 +268,12 @@ const Navbar = () => {
       {/* Modal para exibir UserProfile */}
       <MyModal
         isOpen={isProfileModalOpen}
-        onClose={closeProfileModal} 
+        onClose={closeProfileModal}
       >
-          <div className="flex justify-between">
-            <h2 className="text-2xl font-bold mb-4 text-gray-800">Perfil</h2>
-          </div>
-          <UserProfile />
+        <div className="flex justify-between">
+          <h2 className="text-2xl font-bold mb-4 text-gray-800">Perfil</h2>
+        </div>
+        <UserProfile />
       </MyModal>
     </div>
   );

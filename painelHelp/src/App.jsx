@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Navbar from './components/NavBar/NavBar';
 import LoginPage from './pages/LoginPage';
@@ -6,11 +6,10 @@ import HomePage from './pages/HomePage';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import UserTickets from './pages/UserTickets';
-import Solicitacao from './pages/Solicitacoes';
 import NoPermission from './pages/NoPermission';
 import AssignTasksPage from './pages/AssignTaskPage';
 import { messaging, getToken, db, isSupported } from './firebase';
-import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { doc, updateDoc, arrayUnion, onSnapshot } from 'firebase/firestore';
 import TimeClock from './pages/TimeClock';
 import SoliciteCompras from './pages/SoliciteCompras';
 import Estoque from './pages/Estoque';
@@ -19,8 +18,51 @@ import CustoCompras from './pages/CustoCompras';
 import GerenciadorChamados from './pages/GerenciadorChamados';
 import SoliciteTi from './pages/SoliciteTi';
 import EstoqueTi from './pages/EstoqueTi';
+import UpdateSystemModal from './components/UpdateSystemModal/UpdateSystemModal';
+
+const useUpdateChecker = (onUpdateAvailable) => {
+  useEffect(() => {
+    const docRef = doc(db, 'systemUpdate', 'gerenciadorSystem');
+    const unsubscribe = onSnapshot(docRef, (docSnapshot) => {
+      if (docSnapshot.exists()) {
+        const data = docSnapshot.data();
+        const previousUpdateState = localStorage.getItem('lastUpdateState') === 'true';
+        const currentUpdateState = data.Update;
+
+        if (currentUpdateState && !previousUpdateState) {
+          console.log('Atualização detectada no Firestore.');
+          onUpdateAvailable();
+        }
+
+        // Salva o estado atual do campo Update no localStorage
+        localStorage.setItem('lastUpdateState', currentUpdateState);
+      }
+    }, (error) => {
+      console.error("Erro ao monitorar o Firestore: ", error);
+    });
+
+    return () => unsubscribe();
+  }, [onUpdateAvailable]);
+};
 
 const App = () => {
+  const [updateAvailable, setUpdateAvailable] = useState(false);
+  const [countdown, setCountdown] = useState(10);
+
+  useUpdateChecker(() => {
+    setUpdateAvailable(true);
+    let count = 10;
+    const intervalId = setInterval(() => {
+      if (count > 0) {
+        setCountdown(count--);
+      } else {
+        clearInterval(intervalId);
+        console.log('Contagem regressiva concluída. Atualizando...');
+        window.location.reload(); // Atualiza automaticamente quando a contagem chegar a 0
+      }
+    }, 1000);
+  });
+
   return (
     <Router>
       <AuthProvider>
@@ -29,111 +71,113 @@ const App = () => {
             <>
               {isAuthenticated && <Navbar currentUser={currentUser} />}
               <Routes>
-                <Route path="/" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
-
+                <Route path="/" element={
+                  <ProtectedRoute>
+                    <HomePage />
+                  </ProtectedRoute>
+                }
+                />
                 <Route path="/login" element={<LoginPage />} />
-
-                <Route path="/usertickets" element={<ProtectedRoute>
-                  <UserTickets />
-                </ProtectedRoute>}
+                <Route path="/usertickets" element={
+                  <ProtectedRoute>
+                    <UserTickets />
+                  </ProtectedRoute>
+                }
                 />
-
-                <Route path="/solicitati" element={<ProtectedRoute allowedRoles={
-                  [
-                    'T.I',
-                    'Gerente',
-                    'Supervisor',
-                    'Compras',
-                    'Claudemir'
-                  ]
-                }>
+                <Route path="/solicitati" element={<ProtectedRoute allowedRoles={[
+                  'T.I',
+                  'Gerente',
+                  'Supervisor',
+                  'Compras',
+                  'Claudemir'
+                ]}
+                >
                   <SoliciteTi />
-                </ProtectedRoute>}
+                </ProtectedRoute>
+                }
                 />
-
-                <Route path="/estoqueti" element={<ProtectedRoute allowedRoles={
-                  [
+                <Route path="/estoqueti" element={
+                  <ProtectedRoute allowedRoles={[
                     'T.I',
                     'Claudemir'
-                  ]
-                }>
-                  <EstoqueTi />
-                </ProtectedRoute>}
+                  ]}
+                  >
+                    <EstoqueTi />
+                  </ProtectedRoute>
+                }
                 />
-
-                <Route path="/atribute" element={<ProtectedRoute allowedRoles={
-                  [
+                <Route path="/atribute" element={
+                  <ProtectedRoute allowedRoles={[
                     'T.I',
                     'Claudemir'
-                  ]
-                }>
-                  <AssignTasksPage />
-                </ProtectedRoute>}
+                  ]}
+                  >
+                    <AssignTasksPage />
+                  </ProtectedRoute>
+                }
                 />
-
-                <Route path="/solicitacompras" element={<ProtectedRoute allowedRoles={
-                  [
-                    'T.I',
-                    'Compras',
-                    'Claudemir'
-                  ]
-                }>
-                  <SoliciteCompras />
-                </ProtectedRoute>}
-                />
-
-                <Route path="/horacerta" element={<ProtectedRoute>
-                  <TimeClock />
-                </ProtectedRoute>}
-                />
-
-                <Route path="/estoque" element={<ProtectedRoute allowedRoles={
-                  [
+                <Route path="/solicitacompras" element={
+                  <ProtectedRoute allowedRoles={[
                     'T.I',
                     'Compras',
                     'Claudemir'
-                  ]
-                }>
-                  <Estoque />
-                </ProtectedRoute>}
+                  ]}
+                  >
+                    <SoliciteCompras />
+                  </ProtectedRoute>
+                }
                 />
-
-                <Route path="/reportcompras" element={<ProtectedRoute allowedRoles={
-                  [
+                <Route path="/horacerta" element={
+                  <ProtectedRoute>
+                    <TimeClock />
+                  </ProtectedRoute>
+                }
+                />
+                <Route path="/estoque" element={
+                  <ProtectedRoute allowedRoles={[
                     'T.I',
                     'Compras',
                     'Claudemir'
-                  ]
-                }>
-                  <FullReportCompras />
-                </ProtectedRoute>}
+                  ]}
+                  >
+                    <Estoque />
+                  </ProtectedRoute>
+                }
                 />
-
-                <Route path="/custocompras" element={<ProtectedRoute allowedRoles={
-                  [
+                <Route path="/reportcompras" element={
+                  <ProtectedRoute allowedRoles={[
                     'T.I',
                     'Compras',
                     'Claudemir'
-                  ]
-                }>
+                  ]}
+                  >
+                    <FullReportCompras />
+                  </ProtectedRoute>
+                }
+                />
+                <Route path="/custocompras" element={<ProtectedRoute allowedRoles={[
+                  'T.I',
+                  'Compras',
+                  'Claudemir'
+                ]}
+                >
                   <CustoCompras />
-                </ProtectedRoute>}
+                </ProtectedRoute>
+                }
                 />
-
-                <Route path="/gerenchamados" element={<ProtectedRoute allowedRoles={
-                  [
-                    'T.I',
-                    'Claudemir'
-                  ]
-                 }>
+                <Route path="/gerenchamados" element={<ProtectedRoute allowedRoles={[
+                  'T.I',
+                  'Claudemir'
+                ]}
+                >
                   <GerenciadorChamados />
-                </ProtectedRoute>}
+                </ProtectedRoute>
+                }
                 />
-
                 <Route path="/nopermission" element={<NoPermission />} />
-
               </Routes>
               {isAuthenticated && <FCMHandler currentUser={currentUser} />}
+              {updateAvailable && <UpdateSystemModal countdown={countdown} />}
             </>
           )}
         </AuthConsumer>
@@ -208,7 +252,6 @@ const FCMHandler = ({ currentUser }) => {
                   if (typeof userId === 'string' && userId.trim() !== '' && typeof userCity === 'string' && userCity.trim() !== '') {
                     const userDocRef = doc(db, 'usuarios', userCity);
 
-                    // Recuperar tokens existentes e adicionar o novo token ao array, se não existir
                     await updateDoc(userDocRef, {
                       [`${userId}.token`]: arrayUnion(currentToken)
                     });
@@ -244,6 +287,5 @@ const FCMHandler = ({ currentUser }) => {
 
   return null;
 };
-
 
 export default App;
