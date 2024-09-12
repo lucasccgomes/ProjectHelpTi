@@ -11,10 +11,14 @@ import UserProfile from '../UserProfile/UserProfile';
 import Modal from 'react-modal';
 import { useSpring, animated } from '@react-spring/web';
 import MyModal from '../MyModal/MyModal'
+import { doc, getDoc } from "firebase/firestore"; // Importe os métodos do Firestore
+import { db } from "../../firebase"; // Importe a instância do Firestore configurada
+import { RiLockPasswordFill } from "react-icons/ri";
 
 Modal.setAppElement('#root');
 
 const Navbar = () => {
+  const [senhaVSM, setSenhaVSM] = useState(null);
   const [isOpen, setIsOpen] = useState(false); // Estado para controlar se o menu está aberto
   const [openSubMenu, setOpenSubMenu] = useState(null); // Estado para controlar qual submenu está aberto
   const [installPrompt, setInstallPrompt] = useState(null); // Estado para armazenar o evento de instalação
@@ -22,6 +26,33 @@ const Navbar = () => {
   const { isAuthenticated, logout, currentUser } = useAuth(); // Obtém o estado de autenticação e funções do contexto
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false); // Estado para controlar a abertura do modal de perfil
   const navRef = useRef(null); // Referência para o elemento da barra de navegação
+
+  const fetchSenhaDoDia = async () => {
+    const today = new Date();
+    const dia = today.getDate().toString().padStart(2, '0');
+    const mes = (today.getMonth() + 1).toString().padStart(2, '0');
+    const ano = today.getFullYear();
+    const dataString = `${dia}/${mes}/${ano}`;
+    const docRef = doc(db, "senhasVsm", "senhasDiaria");
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      const senhas = docSnap.data();
+      setSenhaVSM(senhas[dataString]); // Armazena a senha do dia no estado
+    } else {
+      console.log("Documento não encontrado");
+    }
+  };
+
+
+  // Chame fetchSenhaDoDia no useEffect para carregar a senha ao montar o componente
+  useEffect(() => {
+    fetchSenhaDoDia();
+  }, []);
+
+  // Verifique se o usuário é "T.I." ou "Claudemir" antes de exibir a senha
+  const isUserAllowed = currentUser?.cargo === "T.I";
+
 
   // Animação do modal
   const animationProps = useSpring({
@@ -134,7 +165,7 @@ const Navbar = () => {
     <div className="flex" id='navBar'>
       {/* Botão para abrir o menu lateral */}
       <div className="bg-primaryBlueDark z-10 w-full h-14 fixed flex items-center justify-end">
-      <div className="mx-4">
+        <div className="mx-4">
           <a className="p-2 flex bg-slate-300 rounded-lg shadow-md hover:scale-[0.9]" target="_blank" href="https://admhelpti.netlify.app/">
             <button className="text-black flex flex-row justify-center items-center gap-1">
               <IoDocumentTextSharp /> Manual
@@ -154,6 +185,20 @@ const Navbar = () => {
             &nbsp;Instalar App
           </button>
         )}
+        <div className="mx-4">
+          {isUserAllowed && senhaVSM ? (
+            <div className="text-white flex justify-center items-center gap-2 bg-slate-400 p-2 rounded-xl">
+              <p>
+                <RiLockPasswordFill />
+              </p>
+              <p>
+                {senhaVSM}
+              </p>
+            </div>
+          ) : (
+            <div className="text-white"></div>
+          )}
+        </div>
         <button
           onClick={() => setIsOpen(!isOpen)}
           className="p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white fixed z-50"
