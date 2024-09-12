@@ -40,6 +40,8 @@ const SoliciteTi = () => {
   const [quantityErrorModalOpen, setQuantityErrorModalOpen] = useState(false); // Estado para controlar a abertura do modal de erro de quantidade
   const [quantityErrorMessage, setQuantityErrorMessage] = useState(''); // Estado para armazenar a mensagem de erro de quantidade
 
+  const NOTIFICATION_API_URL = import.meta.env.VITE_NOTIFICATION_API_URL;
+
   const handleAddItem = () => {
     if (itensSolicitados.length < 3) { // Permite adicionar até 3 itens
       setItensSolicitados([...itensSolicitados, { categoria: '', item: '', quantidade: 1 }]); // Adiciona um novo item
@@ -150,7 +152,7 @@ const SoliciteTi = () => {
           click_action: "https://drogalira.com.br/solicitati",
           icon: "https://iili.io/duTTt8Q.png"
         };
-   
+
         const response = await fetch(NOTIFICATION_API_URL, { // Usando a variável de ambiente
           method: 'POST',
           headers: {
@@ -158,7 +160,7 @@ const SoliciteTi = () => {
           },
           body: JSON.stringify({ tokens: tokensParaNotificar, notification: notificationMessage })
         });
-   
+
         const result = await response.json();
       } else {
         console.log('Nenhum token encontrado para o cargo "T.I".'); // Loga se não houver tokens para notificar
@@ -188,13 +190,10 @@ const SoliciteTi = () => {
       setSuccess(true); // Define o estado de sucesso
       setAlertModalContent({ title: 'Sucesso', message: 'Solicitação enviada com sucesso!', showOkButton: true });
 
-      // Limpar os campos após o envio
-      setTipo('Reposição');
-      setNomeItem('');
-      setMotivo('');
-      setSelectedCidade('');
-      setSelectedLoja('');
-      setItensSolicitados([{ categoria: '', item: '', quantidade: 1 }]);
+
+
+
+
     } catch (error) {
       setError('Erro ao adicionar solicitação'); // Define o estado de erro
       setAlertModalContent({ title: 'Erro', message: 'Erro ao adicionar solicitação', showOkButton: true });
@@ -202,6 +201,15 @@ const SoliciteTi = () => {
     } finally {
       setLoading(false); // Encerra o estado de carregamento
       setIsSendingModalOpen(false); // Fecha o modal de envio
+      setModalIsOpen(false); // Fechar o modal após o envio
+      // Limpar os campos após o envio
+      setTipo('Reposição');
+      setNomeItem('');
+      setMotivo('');
+      setSelectedCidade('');
+      setSelectedLoja('');
+      setItensSolicitados([{ categoria: '', item: '', quantidade: 1 }]);
+
     }
   };
 

@@ -205,6 +205,15 @@ const SoliciteCompras = () => {
     } finally {
       setLoading(false); // Encerra o estado de carregamento
       setIsSendingModalOpen(false); // Fecha o modal de envio
+      setModalIsOpen(false); // Fechar o modal após o envio
+
+       // Limpar os campos após o envio
+       setTipo('Reposição');
+       setNomeItem('');
+       setMotivo('');
+       setSelectedCidade('');
+       setSelectedLoja('');
+       setItensSolicitados([{ categoria: '', item: '', quantidade: 1 }]);
     }
   };
 
