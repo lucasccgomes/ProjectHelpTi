@@ -11,6 +11,8 @@ import { PiClockCountdownFill } from "react-icons/pi";
 import { FaLocationCrosshairs } from "react-icons/fa6";
 import { FaCity, FaUser, FaStoreAlt, FaFileImage, FaWhatsapp, FaCalendarCheck, FaCalendarTimes, FaHandSparkles } from "react-icons/fa";
 import { MdReportProblem, MdDoNotDisturb, MdDescription, MdRecommend } from "react-icons/md";
+import { PiHandDepositFill } from "react-icons/pi";
+import { FaCheckCircle } from "react-icons/fa";
 import { GrDocumentConfig } from "react-icons/gr";
 import { LuImageOff } from "react-icons/lu";
 import { SiInstatus } from "react-icons/si";
@@ -18,6 +20,8 @@ import AlertModal from '../AlertModal/AlertModal';
 
 // Componente principal para gerenciamento de chamados administrativos
 const AdmChamados = () => {
+
+    const NOTIFICATION_API_URL = import.meta.env.VITE_NOTIFICATION_API_URL;
     // Estados para controlar a abertura e fechamento de modais
     const [notificationModalIsOpen, setNotificationModalIsOpen] = useState(false);
     const [notificationMessage, setNotificationMessage] = useState('');
@@ -26,7 +30,7 @@ const AdmChamados = () => {
     const { currentUser } = useAuth(); // Estado para o usuário atual autenticado
     const [tickets, setTickets] = useState([]); // Estado para armazenar os chamados (tickets)
     const [loading, setLoading] = useState(true); // Estado para indicar se os dados estão carregando
-    const [statusFilter, setStatusFilter] = useState('Aberto'); // Estado para armazenar o filtro inicial
+    const [statusFilter, setStatusFilter] = useState('Principais');
     const [userFilter, setUserFilter] = useState(''); // Estado para armazenar o filtro de usuário
     const [storeFilter, setStoreFilter] = useState(''); // Estado para armazenar o filtro de loja
     const [selectedTicket, setSelectedTicket] = useState(null); // Estado para armazenar o chamado selecionado
@@ -46,9 +50,109 @@ const AdmChamados = () => {
     const [normalizarModalIsOpen, setNormalizarModalIsOpen] = useState(false);
     const [ticketToNormalize, setTicketToNormalize] = useState(null);
     const [alertMessage, setAlertMessage] = useState('');
+    const [authorizationModalIsOpen, setAuthorizationModalIsOpen] = useState(false); // Controla a abertura do modal
+    const [supervisors, setSupervisors] = useState([]); // Armazena os supervisores
+    const [selectedSupervisor, setSelectedSupervisor] = useState(''); // Armazena o supervisor selecionado
+    const [description, setDescription] = useState(''); // Estado para armazenar a descrição da autorização
 
-    const NOTIFICATION_API_URL = import.meta.env.VITE_NOTIFICATION_API_URL;  
+    // Função para abrir o modal de autorização
+    const openAuthorizationModal = (ticket) => {
+        setSelectedTicket(ticket); // Definindo o ticket selecionado
+        setDescription(ticket.descricao || ''); // Preenche o campo descrição com o valor do ticket
+        fetchSupervisors(); // Carregar supervisores ao abrir o modal
+        setAuthorizationModalIsOpen(true);
+    };
 
+
+    // Função para enviar notificação e atualizar status para BLOCK
+    const authorizeAndBlockTicket = async (ticketId, supervisorName, description) => {
+        try {
+            const ticketDocRef = doc(db, 'chamados', 'aberto', 'tickets', ticketId); // Referência ao documento do chamado
+            const ticketSnapshot = await getDoc(ticketDocRef);
+            const ticketData = ticketSnapshot.data();
+
+            if (ticketData) {
+                // Atualiza o campo 'autorizacao', 'descriptautorizacao' e o status para 'BLOCK'
+                await updateDoc(ticketDocRef, {
+                    autorizacao: supervisorName,
+                    descriptautorizacao: description,
+                    status: 'BLOCK'
+                });
+
+                // Pega o token do usuário responsável pela autorização
+                const userDocRef = doc(db, 'usuarios', 'Osvaldo Cruz');
+                const userSnapshot = await getDoc(userDocRef);
+                const userData = userSnapshot.data();
+
+                if (userData && userData[supervisorName] && userData[supervisorName].token) {
+                    const token = userData[supervisorName].token;
+                    // Envia a notificação
+                    await sendNotification([token], {
+                        title: `Chamado ${ticketData.order} precisa de sua autorização`,
+                        body: `Chamado ${ticketData.order} está aguardando sua autorização.`,
+                        click_action: "https://drogalira.com.br/usertickets",
+                        icon: "https://iili.io/duTTt8Q.png"
+                    });
+                    console.log('Notificação enviada com sucesso!');
+                } else {
+                    console.error('Token do supervisor não encontrado.');
+                }
+            }
+
+            // Fecha o modal
+            closeAuthorizationModal();
+        } catch (error) {
+            console.error('Erro ao autorizar e bloquear o chamado:', error);
+        }
+    };
+
+    // Função para atualizar o campo 'autorizacao' e 'descriptautorizacao' no chamado
+    const authorizeTicket = async (ticketId, supervisorName, description) => {
+        try {
+            const ticketDocRef = doc(db, 'chamados', 'aberto', 'tickets', ticketId); // Referência ao documento do chamado
+
+            // Atualiza os campos 'autorizacao' e 'descriptautorizacao' no chamado
+            await updateDoc(ticketDocRef, {
+                autorizacao: supervisorName,
+                descriptautorizacao: description // Adiciona a descrição da autorização
+            });
+
+            // Lógica adicional, como fechar o modal e mostrar uma notificação, se necessário
+            closeAuthorizationModal();
+            console.log('Supervisor autorizado com sucesso!');
+        } catch (error) {
+            console.error('Erro ao autorizar supervisor:', error);
+        }
+    };
+
+
+    // Função para fechar o modal de autorização
+    const closeAuthorizationModal = () => {
+        setAuthorizationModalIsOpen(false);
+    };
+
+    // Função para buscar supervisores na subcoleção 'usuarios -> Osvaldo Cruz'
+    const fetchSupervisors = async () => {
+        try {
+            const osvaldoCruzRef = doc(db, 'usuarios', 'Osvaldo Cruz'); // Referência à subcoleção 'Osvaldo Cruz'
+            const docSnapshot = await getDoc(osvaldoCruzRef);
+
+            if (docSnapshot.exists()) {
+                const usersData = docSnapshot.data(); // Pega os dados da subcoleção
+
+                // Filtra apenas os usuários com cargo 'Supervisor'
+                const supervisorsList = Object.entries(usersData)
+                    .filter(([id, user]) => user.cargo === 'Supervisor')
+                    .map(([id, user]) => ({ id, ...user }));
+
+                setSupervisors(supervisorsList); // Armazena os supervisores no estado
+            } else {
+                console.error('Subcoleção Osvaldo Cruz não encontrada.');
+            }
+        } catch (error) {
+            console.error("Erro ao buscar supervisores:", error);
+        }
+    };
 
     const openNormalizarModal = (ticket) => {
         setTicketToNormalize(ticket);
@@ -74,7 +178,6 @@ const AdmChamados = () => {
     const closeAlertModal = () => {
         setAlertModalIsOpen(false);
     };
-
 
     // Função para abrir o modal de tentativa e definir o ticket selecionado
     const openTentativaModal = (ticket) => {
@@ -192,7 +295,7 @@ const AdmChamados = () => {
     // useEffect para buscar os tickets (chamados) do Firestore e atualizar o estado em tempo real
     useEffect(() => {
         const fetchTickets = async () => {
-            const ticketRef = collection(db, 'chamados', 'aberto', 'tickets'); // Referência à coleção de tickets
+            const ticketRef = collection(db, 'chamados', 'aberto', 'tickets');
 
             const unsubscribe = onSnapshot(ticketRef, (querySnapshot) => {
                 const ticketsData = querySnapshot.docs.map(doc => {
@@ -200,33 +303,45 @@ const AdmChamados = () => {
                     return {
                         id: doc.id,
                         ...data,
-                        data: data.data.toDate(), // Converte 'data' para Date
-                        finalizadoData: data.finalizadoData ? data.finalizadoData.toDate() : null // Converte 'finalizadoData' para Date
+                        data: data.data.toDate(),
+                        finalizadoData: data.finalizadoData ? data.finalizadoData.toDate() : null
                     };
                 });
 
-                // Se o filtro for 'Aberto,Andamento', exibe apenas esses dois tipos de chamados
+                // Verifica o valor do filtro
                 let filteredTickets;
-                if (statusFilter === 'Aberto,Andamento') {
-                    filteredTickets = ticketsData.filter(ticket => ticket.status === 'Aberto' || ticket.status === 'Andamento');
-                } else if (statusFilter === '') {
-                    filteredTickets = ticketsData; // Exibe todos os chamados se o filtro for vazio
-                } else {
+                const defaultStatuses = ['Urgente', 'Aberto', 'Andamento', 'BLOCK'];
+
+                // Filtro para "Principais": mostra apenas chamados com status Urgente, Aberto, Andamento, BLOCK
+                if (statusFilter === 'Principais') {
+                    filteredTickets = ticketsData.filter(ticket =>
+                        defaultStatuses.includes(ticket.status)
+                    );
+                }
+                // Filtro para "Todos": mostra todos os chamados
+                else if (statusFilter === 'Todos') {
+                    filteredTickets = ticketsData; // Exibe todos os chamados
+                }
+                // Filtro específico para um status selecionado
+                else if (statusFilter) {
                     filteredTickets = ticketsData.filter(ticket => ticket.status === statusFilter);
+                } else {
+                    filteredTickets = ticketsData; // Mostra todos os chamados, fallback
                 }
 
-                setTickets(filteredTickets); // Atualiza o estado com os chamados filtrados
-                setLoading(false); // Define o carregamento como falso
+                setTickets(filteredTickets);
+                setLoading(false);
             }, (error) => {
-                console.error('Erro ao buscar chamados:', error); // Loga o erro, se ocorrer
-                setLoading(false); // Define o carregamento como falso em caso de erro
+                console.error('Erro ao buscar chamados:', error);
+                setLoading(false);
             });
 
-            return () => unsubscribe(); // Desinscreve do snapshot ao desmontar o componente
+            return () => unsubscribe();
         };
 
-        fetchTickets(); // Chama a função de fetch
+        fetchTickets();
     }, [statusFilter]);
+
 
     // Função para enviar uma notificação aos usuários
     const sendNotification = async (tokens, notification) => {
@@ -246,9 +361,9 @@ const AdmChamados = () => {
                     }
                 })
             });
-    
+
             const responseData = await response.json(); // Converte a resposta para JSON
-    
+
             if (response.ok) {
                 console.log('Notificação enviada com sucesso.');
             } else {
@@ -353,7 +468,6 @@ const AdmChamados = () => {
         const query = searchQuery.toLowerCase();
 
         return (
-            (statusFilter ? ticket.status === statusFilter : true) &&
             (userFilter ? ticket.user === userFilter : true) &&
             (storeFilter ? ticket.loja === storeFilter : true) &&
             (
@@ -368,6 +482,7 @@ const AdmChamados = () => {
             )
         );
     });
+
 
     // Geração de listas únicas de usuários e lojas para os dropdowns de filtro
     const uniqueUsers = [...new Set(tickets.map(ticket => ticket.user))];
@@ -450,18 +565,9 @@ const AdmChamados = () => {
                         <div className='flex items-center gap-2 w-[27rem]'>
                             <SiInstatus className='text-white text-2xl hidden lg:flex' />
                             <Dropdown
-                                options={['Todos', 'Aberto', 'Andamento', 'Finalizado', 'VSM']}
-                                selected={statusFilter === 'Aberto,Andamento' ? 'Aberto e Andamento' : statusFilter} // Mostra o status atual no dropdown
-                                onSelectedChange={(value) => {
-                                    if (value === 'Todos') {
-                                        setStatusFilter(''); // Mostra todos os chamados
-                                    } else if (value === 'Aberto e Andamento') {
-                                        setStatusFilter('Aberto,Andamento'); // Filtro para 'Aberto' e 'Andamento'
-                                    } else {
-                                        setStatusFilter(value); // Filtro para um status específico
-                                    }
-                                }}
-                                className="hidden lg:flex items-center justify-center"
+                                options={['Principais', 'Todos', 'Aberto', 'Andamento', 'Finalizado', 'VSM', 'Urgente', 'BLOCK']}
+                                selected={statusFilter}
+                                onSelectedChange={(value) => setStatusFilter(value)}
                             />
                         </div>
                         <div className='flex items-center gap-2 w-[27rem]'>
@@ -514,18 +620,19 @@ const AdmChamados = () => {
                 <div className="pt-52 p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full bg-altBlue">
                     {filteredTickets
                         .sort((a, b) => {
+                            // Função para definir a prioridade do status
                             const statusPriority = (status) => {
                                 switch (status) {
                                     case 'Urgente':
                                         return 1;
-                                    case 'Aberto':
+                                    case 'BLOCK':
                                         return 2;
-                                    case 'Andamento':
+                                    case 'Aberto':
                                         return 3;
-                                    case 'Finalizado':
+                                    case 'Andamento':
                                         return 4;
                                     default:
-                                        return 5;
+                                        return 5; // Outros status ficam no final
                                 }
                             };
 
@@ -604,6 +711,16 @@ const AdmChamados = () => {
                                         <p className='font-semibold text-gray-700'>
                                             {ticket.localProblema}
                                         </p>
+                                    </div>
+                                    <div className=''>
+                                        {ticket.autorizastatus && ticket.autorizacao && (
+                                            <div className="flex justify-center items-center bg-orange-100 rounded-xl px-3">
+                                                <FaCheckCircle className="mr-2 text-green-700 text-xl" />
+                                                <p className='font-semibold text-gray-700'>
+                                                    {ticket.autorizacao}
+                                                </p>
+                                            </div>
+                                        )}
                                     </div>
                                     <div className='bg-orange-100 rounded-xl px-3'>
                                         {ticket.checkproblema && ticket.checkproblema.length > 0 && ticket.checkproblema.some(item => item.trim() !== "") ? (
@@ -714,41 +831,44 @@ const AdmChamados = () => {
                                         <button
                                             onClick={() => updateTicketStatus(ticket.id, 'Aberto')}
                                             className={`bg-red-400 w-full text-white px-4 py-2 rounded mr-2 ${ticket.status === 'Finalizado' ? 'opacity-50 cursor-not-allowed' : ''} ${ticket.status === 'Aberto' ? 'bg-red-600 ring-2 ring-white' : ''}`}
-                                            disabled={ticket.status === 'Finalizado'}
+                                            disabled={ticket.status === 'Finalizado' || (ticket.autorizacao && !ticket.autorizastatus)}
                                         >
                                             Aberto
                                         </button>
                                         <button
                                             onClick={() => openTratativaEditModal(ticket)}
                                             className={`bg-orange-400 w-full text-white px-4 py-2 rounded ${ticket.status === 'Finalizado' ? 'opacity-50 cursor-not-allowed' : ''} ${ticket.status === 'Andamento' ? 'bg-orange-600 ring-2 ring-white' : ''}`}
-                                            disabled={ticket.status === 'Finalizado'}
+                                            disabled={ticket.status === 'Finalizado' || (ticket.autorizacao && !ticket.autorizastatus)}
                                         >
                                             Andamento
                                         </button>
                                         <button
                                             onClick={() => openFinalizarModal(ticket)}
                                             className={`bg-green-400 w-full text-white px-4 py-2 rounded ml-2 ${ticket.status === 'Finalizado' ? 'opacity-50 cursor-not-allowed' : ''} ${ticket.status === 'Finalizado' ? 'bg-green-600 ring-2 ring-white' : ''}`}
-                                            disabled={ticket.status === 'Finalizado'}
+                                            disabled={ticket.status === 'Finalizado' || (ticket.autorizacao && !ticket.autorizastatus)}
                                         >
                                             Finalizado
                                         </button>
                                     </div>
                                     <div className='flex justify-between gap-2'>
+                                        {!ticket.autorizastatus && !ticket.autorizacao && (
+                                            <button
+                                                className="bg-primaryBlueDark text-white p-2 hover:scale-[0.9] rounded-full w-10 h-10"
+                                                onClick={() => openAuthorizationModal(ticket)} // Passa o ticket selecionado ao abrir o modal
+                                            >
+                                                <PiHandDepositFill className='text-2xl' />
+                                            </button>
+                                        )}
                                         <button
                                             onClick={() => updateTicketStatus(ticket.id, 'VSM')}
                                             className={`bg-blue-400 text-white px-4 w-full py-2 rounded ${ticket.status === 'Finalizado' ? 'opacity-50 cursor-not-allowed' : ''} ${ticket.status === 'VSM' ? 'bg-blue-700 ring-2 ring-white' : ''}`}
-                                            disabled={ticket.status === 'Finalizado'}
+                                            disabled={ticket.status === 'Finalizado' || (ticket.autorizacao && !ticket.autorizastatus)}
                                         >
                                             (VSM)-Externo
                                         </button>
                                         {ticket.interacao && (
                                             <div className="flex gap-2">
-                                                <button
-                                                    onClick={() => updateTicketStatus(ticket.id, 'Urgente')}
-                                                    className="bg-red-500 text-white px-4 py-2 rounded w-full"
-                                                >
-                                                    Urgente
-                                                </button>
+
                                                 <button
                                                     onClick={() => openNormalizarModal(ticket)}
                                                     className="bg-gray-500 text-white px-4 py-2 rounded w-full"
@@ -757,9 +877,9 @@ const AdmChamados = () => {
                                                 </button>
                                             </div>
                                         )}
-
                                     </div>
                                 </div>
+
                             </div>
                         ))}
                 </div>
@@ -923,7 +1043,6 @@ const AdmChamados = () => {
                     ></div>
                 )}
             </MyModal>
-
             <MyModal isOpen={descricaoModalIsOpen} onClose={closeDescricaoModal}>
                 <h2 className="text-xl font-bold mb-4">Descrição</h2>
                 {selectedTicket && (
@@ -933,7 +1052,6 @@ const AdmChamados = () => {
                     ></div>
                 )}
             </MyModal>
-
             <MyModal isOpen={tentativaModalIsOpen} onClose={closeTentativaModal}>
                 <h2 className="text-xl font-bold mb-4">Tentativa</h2>
                 {selectedTicket && (
@@ -943,7 +1061,6 @@ const AdmChamados = () => {
                     ></div>
                 )}
             </MyModal>
-
             <MyModal isOpen={notificationModalIsOpen} onClose={() => setNotificationModalIsOpen(false)}>
                 <h2 className="text-xl font-bold mb-4">Notificação</h2>
                 <p>{notificationMessage}</p>
@@ -956,7 +1073,6 @@ const AdmChamados = () => {
                     </button>
                 </div>
             </MyModal>
-
             <AlertModal
                 isOpen={alertModalIsOpen}
                 onRequestClose={closeAlertModal}
@@ -964,7 +1080,56 @@ const AdmChamados = () => {
                 message={alertMessage}
                 showOkButton={true}
             />
+            <MyModal isOpen={authorizationModalIsOpen} onClose={closeAuthorizationModal}>
+                <h2 className="text-xl mb-2 font-bold text-center">Solicitar Autorização</h2>
+                <div className="mb-4">
+                    <label htmlFor="supervisorSelect" className="block mb-2">Selecione um Supervisor:</label>
+                    <select
+                        id="supervisorSelect"
+                        className="border p-2 w-full"
+                        value={selectedSupervisor}
+                        onChange={(e) => setSelectedSupervisor(e.target.value)}
+                    >
+                        <option value="">Selecione...</option>
+                        {supervisors.map((supervisor) => (
+                            <option key={supervisor.id} value={supervisor.user}>
+                                {supervisor.user}
+                            </option>
+                        ))}
+                    </select>
+                </div>
 
+                {/* Adicionando o ReactQuill para a descrição */}
+                <div className="mb-4">
+                    <label htmlFor="authorizationDescription" className="block mb-2">Descrição da Autorização:</label>
+                    <ReactQuill
+                        id="authorizationDescription"
+                        value={description} // O estado "description" agora é preenchido com o valor da descrição do ticket
+                        onChange={setDescription} // Atualiza o estado ao mudar o conteúdo
+                        placeholder="Descreva a autorização..."
+                    />
+                </div>
+
+                <div className="flex justify-end gap-2">
+                    <button
+                        onClick={() => {
+                            if (!selectedSupervisor || !description.trim()) {
+                                // Exibe um alerta se algum campo não estiver preenchido
+                                setAlertMessage("Por favor, preencha todos os campos obrigatórios.");
+                                openAlertModal();
+                            } else {
+                                // Se ambos os campos estiverem preenchidos, chama a função de autorização
+                                authorizeAndBlockTicket(selectedTicket.id, selectedSupervisor, description);
+                                setSelectedSupervisor(''); // Limpa o campo select
+                                setDescription(''); // Limpa o ReactQuill
+                            }
+                        }}
+                        className="bg-green-500 text-white px-4 py-2 rounded"
+                    >
+                        Solicitar
+                    </button>
+                </div>
+            </MyModal>
 
         </div>
     );
