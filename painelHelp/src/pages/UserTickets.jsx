@@ -11,20 +11,22 @@ import Modal from '../components/Modal/Modal';
 import { useSpring, animated } from '@react-spring/web';
 import LoadingSpinner from '../components/LoadingSpinner/LoadingSpinner';
 import { FaLocationCrosshairs } from "react-icons/fa6";
-import { FaCity, FaUser, FaStoreAlt, FaCalendarCheck, FaCalendarTimes, FaFilter } from "react-icons/fa";
+import { FaCity, FaUser, FaStoreAlt, FaCalendarCheck, FaCalendarTimes, FaFilter, FaCheckCircle } from "react-icons/fa";
 import { MdReportProblem, MdDoNotDisturb, MdDescription } from "react-icons/md";
 import { IoIosAddCircle } from "react-icons/io";
 import MyModal from '../components/MyModal/MyModal';
 
 // Componente principal que renderiza os tickets do usuário
 const UserTickets = () => {
+  const NOTIFICATION_API_URL = import.meta.env.VITE_NOTIFICATION_API_URL;
+
   const { currentUser } = useAuth(); // Obtém o usuário atual do contexto de autenticação
   const [tickets, setTickets] = useState([]); // Estado para armazenar os tickets
   const [loading, setLoading] = useState(true); // Estado de carregamento
   const [isModalOpen, setIsModalOpen] = useState(false); // Estado para controle do modal de novo ticket
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false); // Estado para controle do modal de filtros
   const [slidesToShow, setSlidesToShow] = useState(3); // Número de slides para mostrar no carrossel
-  const [statusFilter, setStatusFilter] = useState('Aberto'); // Filtro de status
+  const [statusFilter, setStatusFilter] = useState('Principais'); // Filtro de status
   const [cityFilter, setCityFilter] = useState('Todas'); // Filtro de cidade
   const [storeFilter, setStoreFilter] = useState('Todas'); // Filtro de loja
   const [userFilter, setUserFilter] = useState('Todos'); // Filtro de usuário
@@ -39,6 +41,9 @@ const UserTickets = () => {
   const [contentTitle, setContentTitle] = useState('');
   const [isUrgentConfirmModalOpen, setIsUrgentConfirmModalOpen] = useState(false);
   const [ticketToMakeUrgent, setTicketToMakeUrgent] = useState(null);
+  const [isReasonModalOpen, setIsReasonModalOpen] = useState(false); // Estado para controlar a abertura do modal
+  const [selectedAuthorizationDescription, setSelectedAuthorizationDescription] = useState(''); // Estado para armazenar o conteúdo de descriptautorizacao
+  const [isAuthorizationStatus, setIsAuthorizationStatus] = useState(false);
 
   const openUrgentConfirmModal = (ticket) => {
     setTicketToMakeUrgent(ticket);
@@ -51,6 +56,58 @@ const UserTickets = () => {
       setIsUrgentConfirmModalOpen(false);
     }
   };
+
+  const handleAuthorize = async (ticketId, ticketOrder) => {
+    try {
+      const ticketDocRef = doc(db, 'chamados', 'aberto', 'tickets', ticketId);
+
+      // Atualiza o status do ticket para "Aberto" e autorizastatus para true
+      await updateDoc(ticketDocRef, { autorizastatus: true, status: 'Aberto' });
+
+      // Atualiza o estado local após a alteração
+      setTickets((prevTickets) =>
+        prevTickets.map((ticket) =>
+          ticket.id === ticketId ? { ...ticket, autorizastatus: true, status: 'Aberto' } : ticket
+        )
+      );
+
+      // Busca os tokens dos usuários com o cargo "T.I."
+      const usersSnapshot = await getDocs(
+        query(collection(db, 'usuarios'), where('cargo', '==', 'T.I.'))
+      );
+
+      const tiTokens = [];
+      usersSnapshot.forEach((doc) => {
+        const userData = doc.data();
+        if (userData.token) {
+          tiTokens.push(userData.token); // Armazena os tokens dos usuários "T.I."
+        }
+      });
+
+      // Dispara a notificação para os usuários "T.I."
+      if (tiTokens.length > 0) {
+        await fetch(NOTIFICATION_API_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            tokens: tiTokens,
+            notification: {
+              title: `Chamado ${ticketOrder} Autorizado`,
+              body: `O chamado ${ticketOrder} foi autorizado.`,
+              click_action: 'https://sua-url.com/detalhes-chamado',
+            },
+          }),
+        });
+      }
+
+      setIsAuthorizationStatus(true);
+    } catch (error) {
+      console.error('Erro ao autorizar o ticket:', error);
+    }
+  };
+
 
   const updateTicketToUrgent = async (ticketId, currentStatus) => {
     try {
@@ -134,26 +191,37 @@ const UserTickets = () => {
       let abertoRef = collection(db, 'chamados', 'aberto', 'tickets');
       let q;
 
+      const defaultStatuses = ['Urgente', 'Aberto', 'Andamento', 'BLOCK'];
+
       if (currentUser.cargo === 'Supervisor') {
         q = query(abertoRef);
         if (cityFilter !== 'Todas') q = query(q, where('cidade', '==', cityFilter));
         if (storeFilter !== 'Todas') q = query(q, where('loja', '==', storeFilter));
         if (userFilter !== 'Todos') q = query(q, where('user', '==', userFilter));
-        if (statusFilter !== 'Todos') q = query(q, where('status', '==', statusFilter));
-        console.log("Supervisor query:", q);
+
+        if (statusFilter === 'Principais') {
+          // Mostra somente os chamados com status Urgente, Aberto, Andamento, BLOCK
+          q = query(q, where('status', 'in', defaultStatuses));
+        } else if (statusFilter !== 'Todos') {
+          // Filtro específico
+          q = query(q, where('status', '==', statusFilter));
+        }
+        // Caso statusFilter seja "Todos", não aplica filtro de status para mostrar todos
       } else {
         if (showStoreTickets) {
           q = query(abertoRef, where('loja', '==', currentUser.loja));
-          if (statusFilter !== 'Todos') {
+          if (statusFilter === 'Principais') {
+            q = query(q, where('status', 'in', defaultStatuses));
+          } else if (statusFilter !== 'Todos') {
             q = query(q, where('status', '==', statusFilter));
           }
-          console.log("User with store tickets query:", q);
         } else {
           q = query(abertoRef, where('user', '==', currentUser.user));
-          if (statusFilter !== 'Todos') {
+          if (statusFilter === 'Principais') {
+            q = query(q, where('status', 'in', defaultStatuses));
+          } else if (statusFilter !== 'Todos') {
             q = query(q, where('status', '==', statusFilter));
           }
-          console.log("User tickets query:", q);
         }
       }
 
@@ -176,13 +244,14 @@ const UserTickets = () => {
         setLoading(false);
       });
 
-      return () => unsubscribe(); // Cancela a subscrição quando o componente é desmontado
+      return () => unsubscribe();
     };
 
     if (currentUser.user) {
       fetchTickets();
     }
   }, [currentUser, statusFilter, cityFilter, storeFilter, userFilter, showStoreTickets]);
+
 
   // Hook useEffect para ajustar o número de slides no carrossel com base na largura da janela
   useEffect(() => {
@@ -285,10 +354,11 @@ const UserTickets = () => {
               <div className='w-32'>
                 <Dropdown
                   label=""
-                  options={['Todos', 'Aberto', 'Andamento', 'Finalizado', 'VSM', 'Urgente']} // Adicione 'Urgente' aqui
+                  options={['Principais', 'Todos', 'Aberto', 'Andamento', 'Finalizado', 'VSM', 'Urgente']} // Adicione 'Principais' aqui
                   selected={statusFilter}
                   onSelectedChange={(option) => setStatusFilter(option)}
                 />
+
               </div>
             </div>
           </div>
@@ -367,135 +437,196 @@ const UserTickets = () => {
         <p>Nenhum chamado em seu nome.</p>
       ) : (
         <div className="grid pt-64 grid-cols-1 p-4 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
-          {tickets.map(ticket => (
-            <div key={ticket.id} className="bg-white text-white shadow-xl mb-4 px-4 rounded-xl">
-              <div className='flex flex-row justify-between  rounded-lg '>
-                <div className="text-xl px-2 text-white shadow-xl rounded-b-xl pb-2 bg-altBlue font-semibold uppercase  text-center">
-                  {ticket.order}
-                </div>
-                <p className={`px-2 pb-2 text-xl font-semibold rounded-b-xl text-white uppercase shadow-xl ${getStatusClass(ticket.status)}`}>
-                  {ticket.status}
-                </p>
-              </div>
+          {tickets
+            .sort((a, b) => {
+              // Função para definir a prioridade do status
+              const statusPriority = (status) => {
+                switch (status) {
+                  case 'Urgente':
+                    return 1;
+                  case 'BLOCK':
+                    return 2;
+                  case 'Aberto':
+                    return 3;
+                  case 'Andamento':
+                    return 4;
+                  default:
+                    return 5; // Outros status ficam no final
+                }
+              };
+              return statusPriority(a.status) - statusPriority(b.status);
+            })
+            .map(ticket => (
+              <div key={ticket.id} className="relative bg-white text-white shadow-xl mb-4 px-4 rounded-xl">
 
-              <div className='flex justify-between gap-4 mb-1 mt-2'>
-                <div className="flex">
-                  <FaCity className="mr-2 text-primaryBlueDark text-xl" />
-                  <p className='font-semibold text-gray-700'>
-                    {abreviarCidade(ticket.cidade)}
-                  </p>
-                </div>
-                <div className="flex">
-                  <FaUser className="mr-2 text-primaryBlueDark text-xl" />
-                  <p className='font-semibold text-gray-700'>
-                    {ticket.user}
-                  </p>
-                </div>
-                <div className="flex">
-                  <FaStoreAlt className="mr-2 text-primaryBlueDark text-xl" />
-                  <p className='font-semibold text-gray-700'>
-                    {ticket.loja}
-                  </p>
-                </div>
-              </div>
-
-
-              <div className='flex justify-between my-2'>
-                <div className="flex">
-                  <FaCalendarTimes className="mr-2 text-primaryBlueDark text-xl" />
-                  <p className='font-semibold text-gray-700'>
-                    {ticket.data.toLocaleString('pt-BR')}
-                  </p>
-                </div>
-                {ticket.finalizadoData && (
-                  <div className="flex">
-                    <FaCalendarCheck className="mr-2 text-primaryBlueDark text-xl" />
-                    <p className='font-semibold text-gray-700'>
-                      {ticket.finalizadoData.toLocaleString('pt-BR')}
+                {/* Se o campo 'autorizacao' existir, mostre o overlay */}
+                {ticket.autorizacao && !ticket.autorizastatus && (
+                  <div className="absolute inset-0 rounded-xl bg-black bg-opacity-80 flex flex-col items-center justify-center">
+                    <p className="text-white text-2xl ">
+                      Aguardando autorização ({ticket.autorizacao})
                     </p>
+
+                    <div className='flex justify-between gap-2 mt-4'>
+                      {ticket.descriptautorizacao && (
+                        <button
+                          className="bg-yellow-600 text-white px-4 py-2 rounded-md flex justify-center items-center"
+                          onClick={() => {
+                            setSelectedAuthorizationDescription(ticket.descriptautorizacao); // Salva o conteúdo de descriptautorizacao
+                            setIsReasonModalOpen(true); // Abre o modal
+                          }}
+                        >
+                          <IoIosAddCircle className='mr-2' />
+                          <p>Motivo</p>
+                        </button>
+                      )}
+
+                      {/* Botão "Autorizar" - Exibe se o usuário atual for o mesmo no campo `autorizacao` */}
+                      {currentUser?.user === ticket.autorizacao && !ticket.autorizastatus && (
+                        <button
+                          className="bg-green-600 text-white px-4 py-2 rounded-md flex justify-center items-center"
+                          onClick={() => handleAuthorize(ticket.id, ticket.order)}
+                        >
+                          <IoIosAddCircle className='mr-2' />
+                          <p>Autorizar</p>
+                        </button>
+                      )}
+                    </div>
                   </div>
                 )}
-              </div>
 
-              <div className='flex justify-between bg-altBlue p-2 rounded-xl mb-2'>
-                <div className='flex justify-center items-center bg-orange-100 rounded-xl px-3'>
-                  <FaLocationCrosshairs className="mr-2 text-primaryBlueDark text-xl" />
-                  <p className='font-semibold text-gray-700'>
-                    {ticket.localProblema}
+                <div className='flex flex-row justify-between  rounded-lg '>
+                  <div className="text-xl px-2 text-white shadow-xl rounded-b-xl pb-2 bg-altBlue font-semibold uppercase  text-center">
+                    {ticket.order}
+                  </div>
+                  <p className={`px-2 pb-2 text-xl font-semibold rounded-b-xl text-white uppercase shadow-xl ${getStatusClass(ticket.status)}`}>
+                    {ticket.status}
                   </p>
                 </div>
-                <div className='bg-orange-100 rounded-xl px-3'>
-                  {ticket.checkproblema && ticket.checkproblema.length > 0 && ticket.checkproblema.some(item => item.trim() !== "") ? (
-                    <ul>
-                      {ticket.checkproblema.map((checkbox, index) => (
-                        checkbox.trim() !== "" && ( // Adiciona esta condição para evitar a exibição de itens vazios
-                          <li key={index} className='flex justify-center items-center font-bold'>
-                            <MdReportProblem className="mr-2 text-primaryBlueDark text-xl" />
-                            <p className='font-semibold text-gray-700'>
-                              {checkbox}
-                            </p>
-                          </li>
-                        )
-                      ))}
-                    </ul>
-                  ) : (
-                    <div className='flex justify-center items-center'>
-                      <MdDoNotDisturb className="mr-2 text-primaryBlueDark text-xl" />
+
+                <div className='flex justify-between gap-4 mb-1 mt-2'>
+                  <div className="flex">
+                    <FaCity className="mr-2 text-primaryBlueDark text-xl" />
+                    <p className='font-semibold text-gray-700'>
+                      {abreviarCidade(ticket.cidade)}
+                    </p>
+                  </div>
+                  <div className="flex">
+                    <FaUser className="mr-2 text-primaryBlueDark text-xl" />
+                    <p className='font-semibold text-gray-700'>
+                      {ticket.user}
+                    </p>
+                  </div>
+                  <div className="flex">
+                    <FaStoreAlt className="mr-2 text-primaryBlueDark text-xl" />
+                    <p className='font-semibold text-gray-700'>
+                      {ticket.loja}
+                    </p>
+                  </div>
+                </div>
+
+                <div className='flex justify-between my-2'>
+                  <div className="flex">
+                    <FaCalendarTimes className="mr-2 text-primaryBlueDark text-xl" />
+                    <p className='font-semibold text-gray-700'>
+                      {ticket.data.toLocaleString('pt-BR')}
+                    </p>
+                  </div>
+                  {ticket.finalizadoData && (
+                    <div className="flex">
+                      <FaCalendarCheck className="mr-2 text-primaryBlueDark text-xl" />
                       <p className='font-semibold text-gray-700'>
-                        Aguardando
+                        {ticket.finalizadoData.toLocaleString('pt-BR')}
                       </p>
                     </div>
                   )}
                 </div>
 
-              </div>
-
-              <div className='flex flex-col justify-between'>
-                <div className='flex justify-between'>
-                  <div className='bg-white text-gray-700 pt-0 px-2 pb-1 rounded-md mb-2 shadow-lg'>
-                    <button
-                      className='bg-primaryBlueDark text-white px-4 py-2 rounded-md w-full flex justify-center items-center'
-                      onClick={() => {
-                        setSelectedDescription(ticket.descricao);
-                        setIsDescriptionModalOpen(true);
-                      }}
-                    >
-                      <MdDescription className='mr-2' />
-                      Descrição
-                    </button>
+                <div className='flex justify-between bg-altBlue p-2 rounded-xl mb-2'>
+                  <div className='flex justify-center items-center bg-orange-100 rounded-xl px-3'>
+                    <FaLocationCrosshairs className="mr-2 text-primaryBlueDark text-xl" />
+                    <p className='font-semibold text-gray-700'>
+                      {ticket.localProblema}
+                    </p>
                   </div>
-
-                  <div className='bg-white text-gray-700 pt-0 px-2 pb-1 rounded-md shadow-lg'>
-                    <button
-                      className={`bg-primaryBlueDark text-white px-4 py-2 rounded-md w-full flex justify-center items-center ${ticket.status === 'Andamento' ? 'blinking' : ''}`}
-                      onClick={() => {
-                        setSelectedContent(ticket.status === 'Andamento' ? ticket.treatment : ticket.tentou);
-                        setContentTitle(ticket.status === 'Andamento' ? 'Andamento' : 'Tentativa');
-                        setIsContentModalOpen(true);
-                      }}
-                    >
-                      <MdDescription className='mr-2' />
-                      {ticket.status === 'Andamento' ? 'Andamento' : 'Tentativa'}
-                    </button>
+                  <div className=''>
+                    {ticket.autorizastatus && ticket.autorizacao && (
+                      <div className="flex justify-center items-center bg-orange-100 rounded-xl px-3">
+                        <FaCheckCircle className="mr-2 text-green-700 text-xl" />
+                        <p className='font-semibold text-gray-700'>
+                          {ticket.autorizacao}
+                        </p>
+                      </div>
+                    )}
                   </div>
-
+                  <div className='bg-orange-100 rounded-xl px-3'>
+                    {ticket.checkproblema && ticket.checkproblema.length > 0 && ticket.checkproblema.some(item => item.trim() !== "") ? (
+                      <ul>
+                        {ticket.checkproblema.map((checkbox, index) => (
+                          checkbox.trim() !== "" && ( // Adiciona esta condição para evitar a exibição de itens vazios
+                            <li key={index} className='flex justify-center items-center font-bold'>
+                              <MdReportProblem className="mr-2 text-primaryBlueDark text-xl" />
+                              <p className='font-semibold text-gray-700'>
+                                {checkbox}
+                              </p>
+                            </li>
+                          )
+                        ))}
+                      </ul>
+                    ) : (
+                      <div className='flex justify-center items-center'>
+                        <MdDoNotDisturb className="mr-2 text-primaryBlueDark text-xl" />
+                        <p className='font-semibold text-gray-700'>
+                          Aguardando
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                {ticket.status !== 'Finalizado' && (
-                  <div className='bg-white text-gray-700 pt-0 px-2 pb-1 rounded-md shadow-lg'>
-                    <button
-                      className='bg-red-700 text-white px-4 py-2 rounded-md w-full flex justify-center items-center'
-                      onClick={() => openUrgentConfirmModal(ticket)}
-                    >
-                      <IoIosAddCircle className='mr-2' />
-                      <p>Atenção</p>
-                    </button>
-                  </div>
-                )}
+                <div className='flex flex-col justify-between'>
+                  <div className='flex justify-between'>
+                    <div className='bg-white text-gray-700 pt-0 px-2 pb-1 rounded-md mb-2 shadow-lg'>
+                      <button
+                        className='bg-primaryBlueDark text-white px-4 py-2 rounded-md w-full flex justify-center items-center'
+                        onClick={() => {
+                          setSelectedDescription(ticket.descricao);
+                          setIsDescriptionModalOpen(true);
+                        }}
+                      >
+                        <MdDescription className='mr-2' />
+                        Descrição
+                      </button>
+                    </div>
 
+                    <div className='bg-white text-gray-700 pt-0 px-2 pb-1 rounded-md shadow-lg'>
+                      <button
+                        className={`bg-primaryBlueDark text-white px-4 py-2 rounded-md w-full flex justify-center items-center ${ticket.status === 'Andamento' ? 'blinking' : ''}`}
+                        onClick={() => {
+                          setSelectedContent(ticket.status === 'Andamento' ? ticket.treatment : ticket.tentou);
+                          setContentTitle(ticket.status === 'Andamento' ? 'Andamento' : 'Tentativa');
+                          setIsContentModalOpen(true);
+                        }}
+                      >
+                        <MdDescription className='mr-2' />
+                        {ticket.status === 'Andamento' ? 'Andamento' : 'Tentativa'}
+                      </button>
+                    </div>
+                  </div>
+                  {ticket.status !== 'Finalizado' && (
+                    <div className='bg-white text-gray-700 pt-0 px-2 pb-1 rounded-md shadow-lg'>
+                      <button
+                        className='bg-red-700 text-white px-4 py-2 rounded-md w-full flex justify-center items-center'
+                        onClick={() => openUrgentConfirmModal(ticket)}
+                      >
+                        <IoIosAddCircle className='mr-2' />
+                        <p>Atenção</p>
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+
         </div>
       )}
       <NotificationModal />
@@ -557,10 +688,11 @@ const UserTickets = () => {
           </p>
           <Dropdown
             label=""
-            options={['Todos', 'Aberto', 'Andamento', 'Finalizado', 'VSM', 'Urgente']} // Adicione 'Urgente' aqui
+            options={['Principais', 'Todos', 'Aberto', 'Andamento', 'Finalizado', 'VSM', 'Urgente']} // Adicione 'Principais' aqui
             selected={statusFilter}
             onSelectedChange={(option) => setStatusFilter(option)}
           />
+
         </div>
         <button
           className="bg-primaryBlueDark flex justify-center items-center hover:bg-secondary text-white font-bold py-2 px-4 rounded"
@@ -569,6 +701,7 @@ const UserTickets = () => {
           Filtrar
         </button>
       </Modal>
+
       <MyModal isOpen={isContentModalOpen} onClose={() => setIsContentModalOpen(false)}>
         <h2 className="text-xl font-bold mb-4">{contentTitle}</h2>
         <div
@@ -603,6 +736,13 @@ const UserTickets = () => {
             Cancelar
           </button>
         </div>
+      </MyModal>
+      <MyModal isOpen={isReasonModalOpen} onClose={() => setIsReasonModalOpen(false)}>
+        <h2 className="text-xl font-bold mb-4">Motivo da Autorização</h2>
+        <div
+          className="overflow-y-auto break-words"
+          dangerouslySetInnerHTML={{ __html: selectedAuthorizationDescription }} // Exibe o conteúdo de descriptautorizacao
+        ></div>
       </MyModal>
 
     </div>
