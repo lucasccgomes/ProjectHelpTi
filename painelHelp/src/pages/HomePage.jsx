@@ -5,6 +5,7 @@ import NotificationModal from '../components/NotificationModal/NotificationModal
 import LastUserTicket from '../components/LastUserTicket/LastUserTicket';
 import LastSolicitacao from '../components/LastSolicitacao/LastSolicitacao';
 import LastSolicitCompras from '../components/LastSolicitCompras/LastSolicitCompras';
+import FullNameModal from '../components/FullNameModal/FullNameModal';
 
 const HomePage = () => {
   const { currentUserRole } = useAuth();
@@ -68,6 +69,7 @@ const HomePage = () => {
         </div>
       )}
       <NotificationModal />
+      <FullNameModal/>
     </div>
   );
 };

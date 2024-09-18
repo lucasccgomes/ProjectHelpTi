@@ -14,6 +14,7 @@ import MyModal from '../MyModal/MyModal'
 import { doc, getDoc } from "firebase/firestore"; // Importe os métodos do Firestore
 import { db } from "../../firebase"; // Importe a instância do Firestore configurada
 import { RiLockPasswordFill } from "react-icons/ri";
+import { GrResources } from "react-icons/gr";
 
 Modal.setAppElement('#root');
 
@@ -72,6 +73,14 @@ const Navbar = () => {
       href: '/horacerta'
     },
     {
+      name: 'Recursos Humanos',
+      icon: GrResources,
+      subItems: [ // Subitens para criar um submenu
+        { name: 'Envio de Documentos', href: '/setorrh' },
+        { name: 'Lista de Envios', href: '/listenvio' },
+      ]
+    },
+    {
       name: 'Suporte Ti',
       icon: MdHelp,
       subItems: [ // Subitens para criar um submenu
@@ -81,16 +90,16 @@ const Navbar = () => {
         { name: 'Geren. Estoque', href: '/estoqueti' },
       ]
     },
-    {
-      name: 'Compras',
-      icon: FaCartShopping,
-      subItems: [
-        { name: 'Solicitações', href: '/solicitacompras' },
-        { name: 'Geren. Estoque', href: '/estoque' },
-        { name: 'Relatório tipo log', href: '/reportcompras' },
-        { name: 'Relatório de Custos', href: '/custocompras' },
-      ]
-    },
+   // {
+   //   name: 'Compras',
+   //   icon: FaCartShopping,
+   //   subItems: [
+   //     { name: 'Solicitações', href: '/solicitacompras' },
+   //     { name: 'Geren. Estoque', href: '/estoque' },
+   //     { name: 'Relatório tipo log', href: '/reportcompras' },
+   //     { name: 'Relatório de Custos', href: '/custocompras' },
+   //   ]
+   // },
     {
       name: 'Tarefas',
       icon: FaTasks,

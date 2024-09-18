@@ -32,9 +32,7 @@ export const AuthProvider = ({ children }) => {
       let userFound = false; // Variável para verificar se o usuário foi encontrado
       querySnapshot.forEach(doc => {
         const userData = doc.data()[username]; // Obtém os dados do usuário específico
-        console.log('Dados recuperados do Firestore:', doc.data()); // Log dos dados do documento para verificação
         if (userData) {
-          console.log('Dados específicos do usuário:', userData); // Log dos dados do usuário específico para verificação
           if (userData.pass === password) { // Verifica se a senha está correta
             setIsAuthenticated(true); // Define o estado de autenticação como verdadeiro
             const user = {
@@ -44,15 +42,22 @@ export const AuthProvider = ({ children }) => {
               assignment: userData.assignment, // Atribuição do usuário
               loja: userData.loja, // Loja do usuário
               whatsapp: userData.whatsapp, // WhatsApp do usuário
-              imageUrl: userData.imageUrl || '' // URL da imagem de perfil do usuário
+              imageUrl: userData.imageUrl || '', // URL da imagem de perfil do usuário
+              fullName: userData.fullName || '' // Adiciona o campo fullName ou vazio se não existir
             };
-            console.log('Usuário logado com sucesso:', user); // Log para confirmar o objeto do usuário
+            
             setCurrentUser(user); // Define o usuário atual
             setCurrentUserRole(userData.cargo); // Define o cargo do usuário atual
             localStorage.setItem('isAuthenticated', 'true'); // Armazena o estado de autenticação no localStorage
             localStorage.setItem('currentUser', JSON.stringify(user)); // Armazena o objeto do usuário no localStorage
             localStorage.setItem('currentUserRole', userData.cargo); // Armazena o cargo do usuário no localStorage
             userFound = true; // Define que o usuário foi encontrado
+  
+            // Se fullName estiver vazio, abre o modal para pedir o nome completo
+            if (!user.fullName) {
+              // Aqui você pode abrir o modal, caso o fullName esteja vazio
+              setIsNameModalOpen(true);
+            }
           } else {
             console.log('Credenciais inválidas'); // Log se as credenciais forem inválidas
           }
@@ -69,6 +74,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
   
+  
   const logout = async () => {
     try {
       setIsAuthenticated(false); // Define o estado de autenticação como falso
@@ -84,7 +90,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, login, logout, loading, currentUser, currentUserRole }}>
+    <AuthContext.Provider value={{ isAuthenticated, login, logout, loading, currentUser, currentUserRole, setCurrentUser  }}>
       {children} {/* Renderiza os componentes filhos dentro do provedor de contexto */}
     </AuthContext.Provider>
   );

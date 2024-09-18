@@ -19,6 +19,9 @@ import GerenciadorChamados from './pages/GerenciadorChamados';
 import SoliciteTi from './pages/SoliciteTi';
 import EstoqueTi from './pages/EstoqueTi';
 import UpdateSystemModal from './components/UpdateSystemModal/UpdateSystemModal';
+import SetorRh from './pages/setorRh';
+import ListRhDocs from './components/ListRhDocs/ListRhDocs';
+import FullNameModal from './components/FullNameModal/FullNameModal';
 
 const useUpdateChecker = (onUpdateAvailable) => {
   useEffect(() => {
@@ -171,6 +174,30 @@ const App = () => {
                 ]}
                 >
                   <GerenciadorChamados />
+                </ProtectedRoute>
+                }
+                />
+                <Route path="/setorrh" element={<ProtectedRoute allowedRoles={[
+                  'T.I',
+                  'Gerente',
+                  'Supervisor',
+                  'RH',
+                  'Claudemir'
+                ]}
+                >
+                  <SetorRh />
+                </ProtectedRoute>
+                }
+                />
+                <Route path="/listenvio" element={<ProtectedRoute allowedRoles={[
+                  'T.I',
+                  'Gerente',
+                  'Supervisor',
+                  'RH',
+                  'Claudemir'
+                ]}
+                >
+                  <ListRhDocs />
                 </ProtectedRoute>
                 }
                 />
