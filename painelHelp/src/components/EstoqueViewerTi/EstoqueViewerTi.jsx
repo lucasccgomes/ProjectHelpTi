@@ -194,7 +194,7 @@ const EstoqueViewer = () => {
     };
 
     return (
-        <div className="lg:p-5 p-3 bg-white border  lg:min-w-[400px] m-1 border-gray-300 rounded-xl shadow-lg">
+        <div className="lg:p-5 p-3 bg-white border lg:min-w-[650px] m-1 border-gray-300 rounded-xl shadow-lg">
             <div className='bg-white w-full px-4'>
                 <h2 className="text-xl font-bold mb-4 text-gray-700">Visualizar Estoque</h2>
                 <div className="mb-4">
@@ -211,12 +211,12 @@ const EstoqueViewer = () => {
                 <div className='max-h-[320px] lg:max-h-[320px] overflow-auto px-2'>
                     {Object.keys(filteredCategorias).map(categoria => (
                         <div key={categoria} className="mb-4 ">
-                            <h3 className="text-lg font-semibold text-gray-800">{categoria}</h3>
+                            <h3 className="text-xl font-bold uppercase text-blue-900">{categoria}</h3>
                             <ul className="pl-4">
                                 {filteredCategorias[categoria].map(item => (
-                                    <li key={item.title} className="mb-2">
+                                    <li key={item.title} className="mb-4 border-b-2">
                                         <div className="flex justify-between items-center">
-                                            <div className="flex items-center gap-1 border-b-2">
+                                            <div className="flex items-center gap-1 ">
                                                 <div className='mr-1'>
                                                     <button
                                                         className="bg-primaryBlueDark text-white p-1 rounded"

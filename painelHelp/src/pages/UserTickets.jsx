@@ -3,7 +3,7 @@ import { collection, query, where, onSnapshot, doc, getDoc, getDocs, updateDoc }
 import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
 import NewTicketModal from '../components/NewTicketModal/NewTicketModal';
-import { MdHelp, MdToggleOff, MdToggleOn } from "react-icons/md";
+import { MdHelp, MdToggleOff, MdToggleOn, MdDoNotDisturbAlt } from "react-icons/md";
 import "react-responsive-carousel/lib/styles/carousel.min.css";
 import Dropdown from '../components/Dropdown/Dropdown';
 import NotificationModal from '../components/NotificationModal/NotificationModal';
@@ -11,10 +11,11 @@ import Modal from '../components/Modal/Modal';
 import { useSpring, animated } from '@react-spring/web';
 import LoadingSpinner from '../components/LoadingSpinner/LoadingSpinner';
 import { FaLocationCrosshairs } from "react-icons/fa6";
-import { FaCity, FaUser, FaStoreAlt, FaCalendarCheck, FaCalendarTimes, FaFilter, FaCheckCircle } from "react-icons/fa";
+import { FaCity, FaUser, FaStoreAlt, FaCalendarCheck, FaCalendarTimes, FaFilter, FaCheckCircle, FaCheck } from "react-icons/fa";
 import { MdReportProblem, MdDoNotDisturb, MdDescription } from "react-icons/md";
-import { IoIosAddCircle } from "react-icons/io";
+import { IoIosAddCircle, IoMdAlert } from "react-icons/io";
 import MyModal from '../components/MyModal/MyModal';
+import ReactQuill from 'react-quill';
 
 // Componente principal que renderiza os tickets do usuário
 const UserTickets = () => {
@@ -44,6 +45,14 @@ const UserTickets = () => {
   const [isReasonModalOpen, setIsReasonModalOpen] = useState(false); // Estado para controlar a abertura do modal
   const [selectedAuthorizationDescription, setSelectedAuthorizationDescription] = useState(''); // Estado para armazenar o conteúdo de descriptautorizacao
   const [isAuthorizationStatus, setIsAuthorizationStatus] = useState(false);
+  const [isDenyModalOpen, setIsDenyModalOpen] = useState(false); // Controle do modal de negação
+  const [denyReason, setDenyReason] = useState(''); // Estado para o motivo de negação
+  const [ticketToDeny, setTicketToDeny] = useState({});
+
+  useEffect(() => {
+    console.log('ticketToDeny atualizado:', ticketToDeny);
+  }, [ticketToDeny]);
+
 
   const openUrgentConfirmModal = (ticket) => {
     setTicketToMakeUrgent(ticket);
@@ -105,6 +114,35 @@ const UserTickets = () => {
       setIsAuthorizationStatus(true);
     } catch (error) {
       console.error('Erro ao autorizar o ticket:', error);
+    }
+  };
+
+  const handleDeny = async () => {
+    if (!denyReason.trim()) {
+      alert("Por favor, preencha todos os campos obrigatórios.");
+      return;
+    }
+
+    try {
+      const ticketDocRef = doc(db, 'chamados', 'aberto', 'tickets', ticketToDeny.id);
+
+      // Atualiza o status do ticket para "Negado" e salva o motivo
+      await updateDoc(ticketDocRef, {
+        autorizastatus: false,
+        noautoriza: denyReason
+      });
+
+      // Atualiza o estado local após a alteração
+      setTickets((prevTickets) =>
+        prevTickets.map((ticket) =>
+          ticket.id === ticketToDeny.id ? { ...ticket, autorizastatus: false, noautoriza: denyReason } : ticket
+        )
+      );
+
+      setIsDenyModalOpen(false); // Fecha o modal de negação
+      setDenyReason(''); // Limpa o motivo de negação
+    } catch (error) {
+      console.error('Erro ao negar a autorização:', error);
     }
   };
 
@@ -459,10 +497,10 @@ const UserTickets = () => {
             .map(ticket => (
               <div key={ticket.id} className="relative bg-white text-white shadow-xl mb-4 px-4 rounded-xl">
 
-                {/* Se o campo 'autorizacao' existir, mostre o overlay */}
-                {ticket.autorizacao && !ticket.autorizastatus && (
+                {/* Se o campo 'autorizacao' existir e autorizastatus não for false, mostre o overlay */}
+                {ticket.autorizacao && ticket.autorizastatus !== false && (
                   <div className="absolute inset-0 rounded-xl bg-black bg-opacity-80 flex flex-col items-center justify-center">
-                    <p className="text-white text-2xl ">
+                    <p className="text-white text-center text-2xl ">
                       Aguardando autorização ({ticket.autorizacao})
                     </p>
 
@@ -473,6 +511,7 @@ const UserTickets = () => {
                           onClick={() => {
                             setSelectedAuthorizationDescription(ticket.descriptautorizacao); // Salva o conteúdo de descriptautorizacao
                             setIsReasonModalOpen(true); // Abre o modal
+                            setTicketToDeny(ticket);
                           }}
                         >
                           <IoIosAddCircle className='mr-2' />
@@ -482,13 +521,27 @@ const UserTickets = () => {
 
                       {/* Botão "Autorizar" - Exibe se o usuário atual for o mesmo no campo `autorizacao` */}
                       {currentUser?.user === ticket.autorizacao && !ticket.autorizastatus && (
-                        <button
-                          className="bg-green-600 text-white px-4 py-2 rounded-md flex justify-center items-center"
-                          onClick={() => handleAuthorize(ticket.id, ticket.order)}
-                        >
-                          <IoIosAddCircle className='mr-2' />
-                          <p>Autorizar</p>
-                        </button>
+                        <>
+                          <div className=''>
+                            <button
+                              className="bg-green-600 mb-2 w-full text-white px-4 py-2 rounded-md flex justify-center items-center"
+                              onClick={() => handleAuthorize(ticket.id, ticket.order)}
+                            >
+                              <FaCheck className='mr-2' />
+                              <p>Autorizar</p>
+                            </button>
+                            <button
+                              className="bg-red-600 w-full text-white px-4 py-2 rounded-md flex justify-center items-center "
+                              onClick={() => {
+                                setTicketToDeny(ticket);
+                                setIsDenyModalOpen(true);
+                              }}
+                            >
+                              <MdDoNotDisturbAlt className='mr-2' />
+                              <p>Negar</p>
+                            </button>
+                          </div>
+                        </>
                       )}
                     </div>
                   </div>
@@ -541,46 +594,82 @@ const UserTickets = () => {
                   )}
                 </div>
 
-                <div className='flex justify-between bg-altBlue p-2 rounded-xl mb-2'>
-                  <div className='flex justify-center items-center bg-orange-100 rounded-xl px-3'>
-                    <FaLocationCrosshairs className="mr-2 text-primaryBlueDark text-xl" />
-                    <p className='font-semibold text-gray-700'>
-                      {ticket.localProblema}
-                    </p>
+                <div className='flex flex-col justify-center gap-2 bg-altBlue p-2 rounded-xl mb-2'>
+                  <div className='flex justify-between'>
+
+                    <div className='flex justify-center items-center bg-orange-100 rounded-xl px-3'>
+                      <FaLocationCrosshairs className="mr-2 text-primaryBlueDark text-xl" />
+                      <p className='font-semibold text-gray-700'>
+                        {ticket.localProblema}
+                      </p>
+                    </div>
+
+                    <div className='bg-orange-100 rounded-xl px-3'>
+                      {ticket.checkproblema && ticket.checkproblema.length > 0 && ticket.checkproblema.some(item => item.trim() !== "") ? (
+                        <ul>
+                          {ticket.checkproblema.map((checkbox, index) => (
+                            checkbox.trim() !== "" && ( // Adiciona esta condição para evitar a exibição de itens vazios
+                              <li key={index} className='flex justify-center items-center font-bold'>
+                                <MdReportProblem className="mr-2 text-primaryBlueDark text-xl" />
+                                <p className='font-semibold text-gray-700'>
+                                  {checkbox}
+                                </p>
+                              </li>
+                            )
+                          ))}
+                        </ul>
+                      ) : (
+                        <div className='flex justify-center items-center'>
+                          <MdDoNotDisturb className="mr-2 text-primaryBlueDark text-xl" />
+                          <p className='font-semibold text-gray-700'>
+                            Aguardando
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
                   </div>
                   <div className=''>
-                    {ticket.autorizastatus && ticket.autorizacao && (
+                    {ticket.autorizacao && (
                       <div className="flex justify-center items-center bg-orange-100 rounded-xl px-3">
-                        <FaCheckCircle className="mr-2 text-green-700 text-xl" />
-                        <p className='font-semibold text-gray-700'>
-                          {ticket.autorizacao}
-                        </p>
+                        {ticket.autorizastatus ? (
+                          <>
+                            <FaCheckCircle className="mr-2 text-green-700 text-xl" />
+                            <p className='font-semibold text-gray-700'>
+                              {ticket.autorizacao}
+                            </p>
+                          </>
+                        ) : (
+                          <>
+                            {ticket.autorizastatus === false ? (
+                              <button
+                                className="flex items-center"
+                                onClick={() => {
+                                  console.log('Clique registrado'); // Verifica se o clique está sendo detectado
+                                  setTicketToDeny(ticket);
+                                  setSelectedAuthorizationDescription(ticket.descriptautorizacao);
+                                  setIsReasonModalOpen(true);
+                                }}
+                              >
+                                <MdDoNotDisturbAlt className="mr-2 text-red-600 text-xl" />
+                                <p className='font-semibold text-gray-700'>
+                                  {ticket.autorizacao}
+                                </p>
+                              </button>
+                            ) : (
+                              <>
+                                <IoMdAlert className="mr-2 text-red-500 text-xl" />
+                                <p className='font-semibold text-gray-700'>
+                                  {ticket.autorizacao}
+                                </p>
+                              </>
+                            )}
+                          </>
+                        )}
                       </div>
                     )}
                   </div>
-                  <div className='bg-orange-100 rounded-xl px-3'>
-                    {ticket.checkproblema && ticket.checkproblema.length > 0 && ticket.checkproblema.some(item => item.trim() !== "") ? (
-                      <ul>
-                        {ticket.checkproblema.map((checkbox, index) => (
-                          checkbox.trim() !== "" && ( // Adiciona esta condição para evitar a exibição de itens vazios
-                            <li key={index} className='flex justify-center items-center font-bold'>
-                              <MdReportProblem className="mr-2 text-primaryBlueDark text-xl" />
-                              <p className='font-semibold text-gray-700'>
-                                {checkbox}
-                              </p>
-                            </li>
-                          )
-                        ))}
-                      </ul>
-                    ) : (
-                      <div className='flex justify-center items-center'>
-                        <MdDoNotDisturb className="mr-2 text-primaryBlueDark text-xl" />
-                        <p className='font-semibold text-gray-700'>
-                          Aguardando
-                        </p>
-                      </div>
-                    )}
-                  </div>
+
                 </div>
 
                 <div className='flex flex-col justify-between'>
@@ -630,6 +719,7 @@ const UserTickets = () => {
         </div>
       )}
       <NotificationModal />
+
       <Modal isOpen={isFilterModalOpen} onClose={() => setIsFilterModalOpen(false)}>
         <div className="flex flex-col w-full mb-8">
           {currentUser.cargo === 'Supervisor' && (
@@ -709,6 +799,7 @@ const UserTickets = () => {
           dangerouslySetInnerHTML={{ __html: selectedContent }}
         ></div>
       </MyModal>
+
       <MyModal isOpen={isDescriptionModalOpen} onClose={() => setIsDescriptionModalOpen(false)}>
         <h2 className="text-xl font-bold mb-4">Descrição</h2>
         <div
@@ -716,6 +807,7 @@ const UserTickets = () => {
           dangerouslySetInnerHTML={{ __html: selectedDescription }}
         ></div>
       </MyModal>
+
       <MyModal isOpen={isUrgentConfirmModalOpen} onClose={() => setIsUrgentConfirmModalOpen(false)}>
         <h2 className="text-xl mb-2 font-bold text-center">Confirmação de Prioridade</h2>
         <p className="text-center mb-4">
@@ -737,12 +829,56 @@ const UserTickets = () => {
           </button>
         </div>
       </MyModal>
+
       <MyModal isOpen={isReasonModalOpen} onClose={() => setIsReasonModalOpen(false)}>
-        <h2 className="text-xl font-bold mb-4">Motivo da Autorização</h2>
+        <h2 className="text-xl font-bold mb-4">
+          {ticketToDeny && ticketToDeny.autorizastatus === false ? 'Motivo da Negação' : 'Motivo da Autorização'}
+        </h2>
+
+        {/* Verifique se `ticketToDeny` está definido antes de renderizar as informações */}
+        {ticketToDeny && (
+          <div className="mb-4">
+            <p><strong>Usuário:</strong> {ticketToDeny.user}</p>
+            <p><strong>Loja:</strong> {ticketToDeny.loja}</p>
+          </div>
+        )}
+
         <div
           className="overflow-y-auto break-words"
-          dangerouslySetInnerHTML={{ __html: selectedAuthorizationDescription }} // Exibe o conteúdo de descriptautorizacao
+          dangerouslySetInnerHTML={{
+            __html: ticketToDeny && ticketToDeny.autorizastatus === false
+              ? ticketToDeny.noautoriza
+              : selectedAuthorizationDescription
+          }}
         ></div>
+      </MyModal>
+
+
+      <MyModal isOpen={isDenyModalOpen} onClose={() => setIsDenyModalOpen(false)}>
+        <h2 className="text-xl font-bold mb-4">Negar Autorização</h2>
+        <ReactQuill
+          value={denyReason}
+          onChange={setDenyReason}
+          placeholder="Descreva o motivo da negação..."
+          className="mb-4"
+        />
+        <div className="flex justify-end gap-2">
+          <button
+            onClick={handleDeny}
+            className="bg-red-600 text-white px-4 py-2 rounded"
+          >
+            Salvar
+          </button>
+          <button
+            onClick={() => {
+              setIsDenyModalOpen(false);
+              setDenyReason('');
+            }}
+            className="bg-gray-500 text-white px-4 py-2 rounded"
+          >
+            Cancelar
+          </button>
+        </div>
       </MyModal>
 
     </div>

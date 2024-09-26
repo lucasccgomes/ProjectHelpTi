@@ -10,13 +10,14 @@ import MyModal from '../MyModal/MyModal';
 import { PiClockCountdownFill } from "react-icons/pi";
 import { FaLocationCrosshairs } from "react-icons/fa6";
 import { FaCity, FaUser, FaStoreAlt, FaFileImage, FaWhatsapp, FaCalendarCheck, FaCalendarTimes, FaHandSparkles } from "react-icons/fa";
-import { MdReportProblem, MdDoNotDisturb, MdDescription, MdRecommend } from "react-icons/md";
+import { MdReportProblem, MdDoNotDisturb, MdDescription, MdRecommend, MdDoNotDisturbAlt } from "react-icons/md";
 import { PiHandDepositFill } from "react-icons/pi";
 import { FaCheckCircle } from "react-icons/fa";
 import { GrDocumentConfig } from "react-icons/gr";
 import { LuImageOff } from "react-icons/lu";
 import { SiInstatus } from "react-icons/si";
 import AlertModal from '../AlertModal/AlertModal';
+import { IoMdAlert } from "react-icons/io";
 
 // Componente principal para gerenciamento de chamados administrativos
 const AdmChamados = () => {
@@ -54,6 +55,9 @@ const AdmChamados = () => {
     const [supervisors, setSupervisors] = useState([]); // Armazena os supervisores
     const [selectedSupervisor, setSelectedSupervisor] = useState(''); // Armazena o supervisor selecionado
     const [description, setDescription] = useState(''); // Estado para armazenar a descrição da autorização
+    const [isReasonModalOpen, setIsReasonModalOpen] = useState(false);
+    const [selectedAuthorizationDescription, setSelectedAuthorizationDescription] = useState('');
+
 
     // Função para abrir o modal de autorização
     const openAuthorizationModal = (ticket) => {
@@ -705,43 +709,76 @@ const AdmChamados = () => {
                                         </div>
                                     )}
                                 </div>
-                                <div className='flex justify-between bg-altBlue p-2 rounded-xl mb-2'>
-                                    <div className='flex justify-center items-center bg-orange-100 rounded-xl px-3'>
-                                        <FaLocationCrosshairs className="mr-2 text-primaryBlueDark text-xl" />
-                                        <p className='font-semibold text-gray-700'>
-                                            {ticket.localProblema}
-                                        </p>
+                                <div className='flex flex-col justify-center gap-2 bg-altBlue p-2 rounded-xl mb-2'>
+                                    <div className='flex justify-between'>
+
+                                        <div className='flex justify-center items-center bg-orange-100 rounded-xl px-3'>
+                                            <FaLocationCrosshairs className="mr-2 text-primaryBlueDark text-xl" />
+                                            <p className='font-semibold text-gray-700'>
+                                                {ticket.localProblema}
+                                            </p>
+                                        </div>
+
+                                        <div className='bg-orange-100 rounded-xl px-3'>
+                                            {ticket.checkproblema && ticket.checkproblema.length > 0 && ticket.checkproblema.some(item => item.trim() !== "") ? (
+                                                <ul>
+                                                    {ticket.checkproblema.map((checkbox, index) => (
+                                                        checkbox.trim() !== "" && ( // Adiciona esta condição para evitar a exibição de itens vazios
+                                                            <li key={index} className='flex justify-center items-center font-bold'>
+                                                                <MdReportProblem className="mr-2 text-primaryBlueDark text-xl" />
+                                                                <p className='font-semibold text-gray-700'>
+                                                                    {checkbox}
+                                                                </p>
+                                                            </li>
+                                                        )
+                                                    ))}
+                                                </ul>
+                                            ) : (
+                                                <div className='flex justify-center items-center'>
+                                                    <MdDoNotDisturb className="mr-2 text-primaryBlueDark text-xl" />
+                                                    <p className='font-semibold text-gray-700'>
+                                                        Aguardando
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </div>
+
                                     </div>
                                     <div className=''>
-                                        {ticket.autorizastatus && ticket.autorizacao && (
+                                        {ticket.autorizacao && (
                                             <div className="flex justify-center items-center bg-orange-100 rounded-xl px-3">
-                                                <FaCheckCircle className="mr-2 text-green-700 text-xl" />
-                                                <p className='font-semibold text-gray-700'>
-                                                    {ticket.autorizacao}
-                                                </p>
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className='bg-orange-100 rounded-xl px-3'>
-                                        {ticket.checkproblema && ticket.checkproblema.length > 0 && ticket.checkproblema.some(item => item.trim() !== "") ? (
-                                            <ul>
-                                                {ticket.checkproblema.map((checkbox, index) => (
-                                                    checkbox.trim() !== "" && ( // Adiciona esta condição para evitar a exibição de itens vazios
-                                                        <li key={index} className='flex justify-center items-center font-bold'>
-                                                            <MdReportProblem className="mr-2 text-primaryBlueDark text-xl" />
-                                                            <p className='font-semibold text-gray-700'>
-                                                                {checkbox}
-                                                            </p>
-                                                        </li>
-                                                    )
-                                                ))}
-                                            </ul>
-                                        ) : (
-                                            <div className='flex justify-center items-center'>
-                                                <MdDoNotDisturb className="mr-2 text-primaryBlueDark text-xl" />
-                                                <p className='font-semibold text-gray-700'>
-                                                    Aguardando
-                                                </p>
+                                                {ticket.autorizastatus ? (
+                                                    <>
+                                                        <FaCheckCircle className="mr-2 text-green-700 text-xl" />
+                                                        <p className='font-semibold text-gray-700'>
+                                                            {ticket.autorizacao}
+                                                        </p>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        {ticket.autorizastatus === false ? (
+                                                            <button
+                                                                className="flex items-center"
+                                                                onClick={() => {
+                                                                    setSelectedAuthorizationDescription(ticket.noautoriza); // Define o conteúdo do modal com o campo `noautoriza`
+                                                                    setIsReasonModalOpen(true); // Abre o modal
+                                                                }}
+                                                            >
+                                                                <MdDoNotDisturbAlt className="mr-2 text-red-600 text-xl" />
+                                                                <p className='font-semibold text-gray-700'>
+                                                                    {ticket.autorizacao}
+                                                                </p>
+                                                            </button>
+                                                        ) : (
+                                                            <>
+                                                                <IoMdAlert className="mr-2 text-red-500 text-xl" />
+                                                                <p className='font-semibold text-gray-700'>
+                                                                    {ticket.autorizacao}
+                                                                </p>
+                                                            </>
+                                                        )}
+                                                    </>
+                                                )}
                                             </div>
                                         )}
                                     </div>
@@ -1130,6 +1167,15 @@ const AdmChamados = () => {
                     </button>
                 </div>
             </MyModal>
+
+            <MyModal isOpen={isReasonModalOpen} onClose={() => setIsReasonModalOpen(false)}>
+                <h2 className="text-xl font-bold mb-4">Motivo da Negação</h2>
+                <div
+                    className="overflow-y-auto break-words"
+                    dangerouslySetInnerHTML={{ __html: selectedAuthorizationDescription }} // Exibe o conteúdo do campo `noautoriza`
+                ></div>
+            </MyModal>
+
 
         </div>
     );

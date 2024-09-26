@@ -22,6 +22,7 @@ import UpdateSystemModal from './components/UpdateSystemModal/UpdateSystemModal'
 import SetorRh from './pages/setorRh';
 import ListRhDocs from './components/ListRhDocs/ListRhDocs';
 import FullNameModal from './components/FullNameModal/FullNameModal';
+import GerenciadorServers from './pages/GerenciadorServers';
 
 const useUpdateChecker = (onUpdateAvailable) => {
   useEffect(() => {
@@ -198,6 +199,15 @@ const App = () => {
                 ]}
                 >
                   <ListRhDocs />
+                </ProtectedRoute>
+                }
+                />
+                <Route path="/servers" element={<ProtectedRoute allowedRoles={[
+                  'T.I',
+                  'Claudemir'
+                ]}
+                >
+                  <GerenciadorServers />
                 </ProtectedRoute>
                 }
                 />

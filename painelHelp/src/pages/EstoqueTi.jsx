@@ -19,7 +19,7 @@ const EstoqueTi = () => {
 
   return (
     <div className="flex-col min-h-screen flex lg:flex-row items-center lg:justify-between justify-center bg-primary text-gray-900 p-4">
-      <div className="hidden lg:flex">
+      <div className="hidden mt-11 lg:flex">
         <CadastroEstoqueTi />
       </div>
       <div className="lg:hidden w-full pt-8">

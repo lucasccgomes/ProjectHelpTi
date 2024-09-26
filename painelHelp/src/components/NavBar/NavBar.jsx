@@ -88,6 +88,7 @@ const Navbar = () => {
         { name: 'Solicitações', href: '/solicitati' },
         { name: 'Geren. Chamados', href: '/gerenchamados' },
         { name: 'Geren. Estoque', href: '/estoqueti' },
+        { name: 'Geren. Servers', href: '/servers' },
       ]
     },
    // {

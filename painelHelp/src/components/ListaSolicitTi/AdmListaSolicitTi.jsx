@@ -20,6 +20,7 @@ import 'react-datepicker/dist/react-datepicker.css';
 import { HiPencilSquare } from "react-icons/hi2";
 import AlertModal from '../AlertModal/AlertModal';
 import MyModal from '../MyModal/MyModal';
+import JsBarcode from 'jsbarcode';
 
 const AdmListaSolicitTi = () => {
     const [isEditAlertModalOpen, setIsEditAlertModalOpen] = useState(false); // Estado para controlar a exibição do modal de alerta de edição
@@ -57,7 +58,18 @@ const AdmListaSolicitTi = () => {
     const [showOkButton, setShowOkButton] = useState(true); // Estado para controlar a visibilidade do botão OK
 
     const PRINTER_API_URL = import.meta.env.VITE_PRINTER_API_URL;
-    const NOTIFICATION_API_URL = import.meta.env.VITE_NOTIFICATION_API_URL;  
+    const NOTIFICATION_API_URL = import.meta.env.VITE_NOTIFICATION_API_URL;
+
+    // Função para gerar código de barras
+    const generateBarcode = (numSolicitacao) => {
+        const canvas = document.createElement("canvas");
+        JsBarcode(canvas, numSolicitacao, {
+            format: "CODE128",
+            width: 2,
+            height: 50
+        });
+        return canvas.toDataURL("image/png");
+    };
 
     // Função para abrir o modal de edição e inicializar os itens selecionados
     const openEditModal = (solicitacao) => {
@@ -124,7 +136,7 @@ const AdmListaSolicitTi = () => {
             if (!solicitacao || !solicitacao.numSolicite) {
                 throw new Error('Solicitação inválida ou não encontrada.');
             }
-   
+
             const response = await fetch(PRINTER_API_URL, {
                 method: 'POST',
                 headers: {
@@ -138,7 +150,7 @@ const AdmListaSolicitTi = () => {
                     itens: solicitacao.item
                 }),
             });
-   
+
             if (response.ok) {
                 setModalMessage('Impressão enviada com sucesso!');
             } else {
@@ -214,17 +226,18 @@ const AdmListaSolicitTi = () => {
     const handleStatusChange = async (id, newStatus) => {
         try {
             const solicitacaoRef = doc(db, 'solicitTi', id);
-   
+
             // Obtenha os dados da solicitação antes de atualizar o status
             const solicitacaoSnap = await getDoc(solicitacaoRef);
             if (!solicitacaoSnap.exists()) {
                 console.error('Solicitação não encontrada.');
                 return;
             }
+
             const solicitacaoData = solicitacaoSnap.data();
             setSelectedSolicitacao(solicitacaoData);  // Define selectedSolicitacao
             const previousStatus = solicitacaoData.status;
-   
+
             // Verifica se o status já é o mesmo que o novo status
             if (previousStatus === newStatus) {
                 setAlertTitle('Status já aplicado');
@@ -232,44 +245,50 @@ const AdmListaSolicitTi = () => {
                 setStatusAlertModalOpen(true);
                 return;
             }
-   
+
             // Variável para armazenar a mensagem de alerta
             let message = `Solicitação "${solicitacaoData.numSolicite}" status alterado para "${newStatus}".`;
-   
-            // Se a mudança for para "Separando", subtrair as quantidades do estoque e mostrar os itens debitados
+
+            // Se a mudança for para "Separando", gere o código de barras e subtraia as quantidades do estoque
             if (newStatus === 'Separando') {
                 message += "\nNeste ponto, está sendo debitado do seu estoque:\n";
                 const itemList = Object.entries(solicitacaoData.item)
                     .map(([itemNome, quantidade]) => `- ${itemNome}: ${quantidade}`)
                     .join("\n");
                 message += itemList;
-   
+
+                // Gerar código de barras e salvar na solicitação
+                const barcodeImage = generateBarcode(solicitacaoData.numSolicite);
+                await updateDoc(solicitacaoRef, {
+                    barcode: barcodeImage,
+                    status: newStatus
+                });
+
                 // Subtrair do estoque
                 await updateStockQuantities(solicitacaoData.item, 'decrease');
-   
+
                 // Definir a mensagem inicial como "Separando"
                 setStatusMessage(message);
                 setStatusChangeAlertModalOpen(true);
+
+            } else {
+                // Se não for "Separando", apenas atualize o status
+                await updateDoc(solicitacaoRef, { status: newStatus });
             }
-   
-            // Atualiza o status da solicitação
-            await updateDoc(solicitacaoRef, {
-                status: newStatus
-            });
-   
+
             // Se a mudança for de "Separando" para "Pendente" ou "Cancelado", devolver as quantidades ao estoque
             if ((previousStatus === 'Separando') && (newStatus === 'Pendente' || newStatus === 'Cancelado')) {
                 await updateStockQuantities(solicitacaoData.item, 'increase');
             }
-   
+
             // Notificação ao usuário
             if (solicitacaoData.user) {
                 const usuariosCollectionRef = collection(db, 'usuarios');
                 const usuariosSnapshot = await getDocs(usuariosCollectionRef);
-   
+
                 let userData = null;
                 let cidadeEncontrada = null;
-   
+
                 usuariosSnapshot.forEach((cidadeDoc) => {
                     const cidadeData = cidadeDoc.data();
                     if (cidadeData[solicitacaoData.user]) {
@@ -277,7 +296,7 @@ const AdmListaSolicitTi = () => {
                         cidadeEncontrada = cidadeDoc.id;
                     }
                 });
-   
+
                 if (userData && userData.token) {
                     const tokens = Array.isArray(userData.token) ? userData.token : [userData.token];
                     const notificationMessage = {
@@ -286,7 +305,7 @@ const AdmListaSolicitTi = () => {
                         click_action: "https://drogalira.com.br/solicitati",
                         icon: "https://iili.io/duTTt8Q.png"
                     };
-   
+
                     // Use a variável de ambiente para a URL de notificação
                     const response = await fetch(NOTIFICATION_API_URL, {
                         method: 'POST',
@@ -295,7 +314,7 @@ const AdmListaSolicitTi = () => {
                         },
                         body: JSON.stringify({ tokens, notification: notificationMessage })
                     });
-   
+
                     const result = await response.json();
                     if (response.ok) {
                         console.log('Notificação enviada com sucesso:', result);
@@ -306,12 +325,12 @@ const AdmListaSolicitTi = () => {
                     console.error(`Token do usuário ${solicitacaoData.user} não encontrado na cidade ${cidadeEncontrada}.`);
                 }
             }
-   
+
         } catch (error) {
             console.error('Erro ao atualizar status da solicitação:', error);
         }
     };
-
+    
     // Função para atualizar as quantidades do estoque
     const updateStockQuantities = async (items, operation) => {
         try {
