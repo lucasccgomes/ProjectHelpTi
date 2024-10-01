@@ -57,6 +57,9 @@ const AdmChamados = () => {
     const [description, setDescription] = useState(''); // Estado para armazenar a descrição da autorização
     const [isReasonModalOpen, setIsReasonModalOpen] = useState(false);
     const [selectedAuthorizationDescription, setSelectedAuthorizationDescription] = useState('');
+    const [modalData, setModalData] = useState({ titulo: '', descricao: '' });
+    const [isModalOpen, setIsModalOpen] = useState(false);
+
 
 
     // Função para abrir o modal de autorização
@@ -68,47 +71,52 @@ const AdmChamados = () => {
     };
 
 
-    // Função para enviar notificação e atualizar status para BLOCK
     const authorizeAndBlockTicket = async (ticketId, supervisorName, description) => {
         try {
-            const ticketDocRef = doc(db, 'chamados', 'aberto', 'tickets', ticketId); // Referência ao documento do chamado
+            // Atualiza o status do ticket
+            const ticketDocRef = doc(db, 'chamados', 'aberto', 'tickets', ticketId);
             const ticketSnapshot = await getDoc(ticketDocRef);
             const ticketData = ticketSnapshot.data();
-
+    
             if (ticketData) {
-                // Atualiza o campo 'autorizacao', 'descriptautorizacao' e o status para 'BLOCK'
+                // Atualiza os campos no ticket
                 await updateDoc(ticketDocRef, {
                     autorizacao: supervisorName,
                     descriptautorizacao: description,
                     status: 'BLOCK'
                 });
-
-                // Pega o token do usuário responsável pela autorização
+    
+                // Busca o token do supervisor no Firebase
                 const userDocRef = doc(db, 'usuarios', 'Osvaldo Cruz');
                 const userSnapshot = await getDoc(userDocRef);
                 const userData = userSnapshot.data();
-
+    
                 if (userData && userData[supervisorName] && userData[supervisorName].token) {
                     const token = userData[supervisorName].token;
-                    // Envia a notificação
-                    await sendNotification([token], {
+    
+                    // Cria a notificação no formato correto
+                    const notificationData = {
                         title: `Chamado ${ticketData.order} precisa de sua autorização`,
                         body: `Chamado ${ticketData.order} está aguardando sua autorização.`,
                         click_action: "https://drogalira.com.br/usertickets",
                         icon: "https://iili.io/duTTt8Q.png"
-                    });
+                    };
+    
+                    // Envia a notificação ao endpoint configurado
+                    await sendNotification([token], notificationData);
                     console.log('Notificação enviada com sucesso!');
                 } else {
-                    console.error('Token do supervisor não encontrado.');
+                    console.error('Token do supervisor não encontrado ou inválido.');
                 }
             }
-
-            // Fecha o modal
+    
             closeAuthorizationModal();
         } catch (error) {
             console.error('Erro ao autorizar e bloquear o chamado:', error);
         }
     };
+    
+
 
     // Função para atualizar o campo 'autorizacao' e 'descriptautorizacao' no chamado
     const authorizeTicket = async (ticketId, supervisorName, description) => {
@@ -150,6 +158,7 @@ const AdmChamados = () => {
                     .map(([id, user]) => ({ id, ...user }));
 
                 setSupervisors(supervisorsList); // Armazena os supervisores no estado
+                console.log('Supervisores encontrados:', supervisorsList); // Verifica os supervisores encontrados
             } else {
                 console.error('Subcoleção Osvaldo Cruz não encontrada.');
             }
@@ -157,6 +166,7 @@ const AdmChamados = () => {
             console.error("Erro ao buscar supervisores:", error);
         }
     };
+
 
     const openNormalizarModal = (ticket) => {
         setTicketToNormalize(ticket);
@@ -346,17 +356,17 @@ const AdmChamados = () => {
         fetchTickets();
     }, [statusFilter]);
 
-
     // Função para enviar uma notificação aos usuários
     const sendNotification = async (tokens, notification) => {
         try {
-            const response = await fetch(NOTIFICATION_API_URL, {  // Substitui a URL fixa pela variável de ambiente
+            // Caso tokens seja uma lista de tokens, não um único token
+            const response = await fetch(NOTIFICATION_API_URL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    tokens,
+                    tokens, // Envie tokens como um array, se for o caso
                     notification: {
                         title: notification.title,
                         body: notification.body,
@@ -365,18 +375,22 @@ const AdmChamados = () => {
                     }
                 })
             });
-
-            const responseData = await response.json(); // Converte a resposta para JSON
-
+    
+            const responseData = await response.json();
+    
             if (response.ok) {
-                console.log('Notificação enviada com sucesso.');
+                console.log('Notificação enviada com sucesso:', responseData);
             } else {
-                console.error('Falha ao enviar notificação. Status:', response.status); // Loga o erro, se ocorrer
+                console.error('Erro ao enviar notificação:', response.status, responseData);
             }
+    
+            return responseData;
         } catch (error) {
-            console.error('Erro ao enviar notificação:', error); // Loga o erro, se ocorrer
+            console.error('Erro ao enviar notificação:', error);
         }
     };
+    
+    
 
     // Função para atualizar o status do ticket
     const updateTicketStatus = async (id, status, descricaoFinalizacao = '', treatment = '', interacao = null) => {
@@ -466,7 +480,6 @@ const AdmChamados = () => {
         }
     };
 
-
     // Filtro para os tickets com base nos filtros e consulta de busca
     const filteredTickets = tickets.filter(ticket => {
         const query = searchQuery.toLowerCase();
@@ -486,7 +499,6 @@ const AdmChamados = () => {
             )
         );
     });
-
 
     // Geração de listas únicas de usuários e lojas para os dropdowns de filtro
     const uniqueUsers = [...new Set(tickets.map(ticket => ticket.user))];
@@ -552,6 +564,9 @@ const AdmChamados = () => {
     const closeConclusaoModal = () => {
         setConclusaoModalIsOpen(false);
     };
+
+
+
 
     return (
         <div className="justify-center items-center">

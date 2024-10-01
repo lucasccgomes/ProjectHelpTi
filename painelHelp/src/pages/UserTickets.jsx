@@ -498,9 +498,9 @@ const UserTickets = () => {
               <div key={ticket.id} className="relative bg-white text-white shadow-xl mb-4 px-4 rounded-xl">
 
                 {/* Se o campo 'autorizacao' existir e autorizastatus não for false, mostre o overlay */}
-                {ticket.autorizacao && ticket.autorizastatus !== false && (
+                {ticket.autorizacao && ticket.autorizastatus == null && (
                   <div className="absolute inset-0 rounded-xl bg-black bg-opacity-80 flex flex-col items-center justify-center">
-                    <p className="text-white text-center text-2xl ">
+                    <p className="text-white text-center text-2xl">
                       Aguardando autorização ({ticket.autorizacao})
                     </p>
 
@@ -509,8 +509,8 @@ const UserTickets = () => {
                         <button
                           className="bg-yellow-600 text-white px-4 py-2 rounded-md flex justify-center items-center"
                           onClick={() => {
-                            setSelectedAuthorizationDescription(ticket.descriptautorizacao); // Salva o conteúdo de descriptautorizacao
-                            setIsReasonModalOpen(true); // Abre o modal
+                            setSelectedAuthorizationDescription(ticket.descriptautorizacao);
+                            setIsReasonModalOpen(true);
                             setTicketToDeny(ticket);
                           }}
                         >
@@ -520,7 +520,7 @@ const UserTickets = () => {
                       )}
 
                       {/* Botão "Autorizar" - Exibe se o usuário atual for o mesmo no campo `autorizacao` */}
-                      {currentUser?.user === ticket.autorizacao && !ticket.autorizastatus && (
+                      {currentUser?.user === ticket.autorizacao && ticket.autorizastatus == null && (
                         <>
                           <div className=''>
                             <button
