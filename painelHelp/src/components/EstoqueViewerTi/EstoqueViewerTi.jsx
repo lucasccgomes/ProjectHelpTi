@@ -21,6 +21,41 @@ const EstoqueViewer = () => {
     const [errorMessage, setErrorMessage] = useState(''); // Estado para armazenar a mensagem de erro
     const [initialItemState, setInitialItemState] = useState(null); // Estado para armazenar o estado inicial do item selecionado
 
+
+    const handlePrintBarcode = async (item) => {
+        const PRINTERLABEL_API_URL = import.meta.env.VITE_PRINTERLABEL_API_URL; // Certifique-se de ter a URL da API configurada
+
+        try {
+            // Envia os dados para o backend para impressão da etiqueta do item
+            const response = await fetch(PRINTERLABEL_API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    categoria: item.categoria,
+                    nomeItem: item.title,
+                    barcode: item.barcode,
+                    quantidadeEtiquetas: item.trueAmount, // Número de etiquetas para imprimir
+                }),
+            });
+
+            if (response.ok) {
+                const responseData = await response.json();
+                console.log('Etiqueta enviada para impressão com sucesso:', responseData);
+                alert(`Etiqueta para o item ${item.title} enviada para impressão com sucesso.`);
+            } else {
+                const errorData = await response.json();
+                console.error('Erro ao imprimir etiqueta:', errorData);
+                alert(`Erro ao imprimir etiqueta: ${errorData.message || 'Erro desconhecido'}`);
+            }
+        } catch (error) {
+            console.error('Erro ao enviar impressão:', error);
+            alert('Erro ao imprimir etiquetas.');
+        }
+    };
+
+
     // useEffect para buscar as categorias e itens do estoque ao carregar o componente
     useEffect(() => {
         const estoqueRef = doc(db, 'estoqueTi', 'estoque'); // Referência ao documento de estoque no Firestore
@@ -74,7 +109,7 @@ const EstoqueViewer = () => {
                 quantidade: quantityChange,
                 usuario: currentUser.user
             };
-        } 
+        }
         // Lida com a ação de saída
         else if (actionType === 'saida') {
             if (quantityChange > updatedItem.trueAmount) { // Verifica se a quantidade a subtrair é maior do que a quantidade real
@@ -90,7 +125,7 @@ const EstoqueViewer = () => {
                 quantidade: -quantityChange,
                 usuario: currentUser.user
             };
-        } 
+        }
         // Lida com a ação de alteração
         else if (actionType === 'alteracao') {
             const changes = {};
@@ -144,29 +179,29 @@ const EstoqueViewer = () => {
     // Função para lidar com a exclusão de um item
     const handleDelete = async () => {
         if (!selectedItem || !currentUser) return;
-    
+
         setIsSaving(true);
-    
+
         const estoqueRef = doc(db, 'estoqueTi', 'estoque'); // Referência ao documento de estoque no Firestore
         const fullReportRef = doc(db, 'relatorioTi', 'fullReport'); // Referência ao documento de relatório completo no Firestore
         const fullReportDoc = await getDoc(fullReportRef); // Obtém o documento de relatório completo
         const fullReportData = fullReportDoc.exists() ? fullReportDoc.data() : {}; // Verifica se os dados do relatório completo existem
         const timestamp = new Date().toISOString(); // Timestamp atual
-    
+
         // Gravação no relatório para exclusão
         const reportEntry = {
             item: selectedItem.title,
             data: new Date().toISOString(),
             usuario: currentUser.user,
         };
-    
+
         await setDoc(fullReportRef, {
             ...fullReportData,
             [timestamp]: {
                 Exclusão: reportEntry
             }
         });
-    
+
         // Remoção do item do estoque
         await setDoc(estoqueRef, {
             ...categorias,
@@ -175,11 +210,11 @@ const EstoqueViewer = () => {
                 [selectedItem.title]: deleteField(),
             }
         }, { merge: true });
-    
+
         setIsSaving(false);
         setDeleteModalIsOpen(false);
     };
-    
+
     // Função para abrir o modal de ações
     const openModal = (item) => {
         setSelectedItem(item);
@@ -254,9 +289,17 @@ const EstoqueViewer = () => {
                                                                 {item.price.toFixed(2)}
                                                             </div>
                                                         </div>
-                                                      
                                                     </div>
                                                 </div>
+                                            </div>
+                                            {/* Botão de impressão */}
+                                            <div className='ml-1'>
+                                                <button
+                                                    onClick={() => handlePrintBarcode(item)}
+                                                    className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 focus:outline-none"
+                                                >
+                                                    Imprimir
+                                                </button>
                                             </div>
                                             <div className='ml-1'>
                                                 <MdDeleteForever
@@ -268,6 +311,7 @@ const EstoqueViewer = () => {
                                         </div>
                                     </li>
                                 ))}
+
                             </ul>
                         </div>
                     ))}
