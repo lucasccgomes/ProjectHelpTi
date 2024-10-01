@@ -161,7 +161,24 @@ app.post('/send-notification', async (req, res) => {
                 })
             });
 
-            const data = await response.json();
+            // Log completo para capturar a resposta antes de processá-la
+            console.log(`Status da resposta: ${response.status}`);
+            console.log(`StatusText da resposta: ${response.statusText}`);
+
+            // Tente capturar o corpo da resposta
+            let data;
+            try {
+                data = await response.json();
+                console.log(`Resposta completa do Firebase para o token ${token}:`, {
+                    status: response.status,
+                    statusText: response.statusText,
+                    data
+                });
+            } catch (err) {
+                console.error('Erro ao processar o JSON da resposta:', err);
+                data = { error: 'Erro ao processar resposta JSON', message: err.message };
+            }
+
             responses.push(data);
             console.log(`Notificação enviada para o token: ${token}`);
         }
@@ -173,7 +190,12 @@ app.post('/send-notification', async (req, res) => {
     }
 });
 
+
 // Iniciar o servidor na mesma porta para ambas as funções
+
+
+
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Servidor rodando na porta ${PORT}`);
