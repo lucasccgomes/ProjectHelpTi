@@ -58,7 +58,7 @@ const AdmListaSolicitCompras = () => {
     const [showOkButton, setShowOkButton] = useState(true); // Estado para controlar a visibilidade do botão OK
 
     const PRINTER_API_URL = import.meta.env.VITE_PRINTER_API_URL;
-    const NOTIFICATION_API_URL = import.meta.env.VITE_NOTIFICATION_API_URL;    
+    const NOTIFICATION_API_URL = import.meta.env.VITE_NOTIFICATION_API_URL;
 
     // Abre o modal de edição e inicializa os itens a serem editados
     const openEditModal = (solicitacao) => {
@@ -180,7 +180,7 @@ const AdmListaSolicitCompras = () => {
             if (!solicitacao || !solicitacao.numSolicite) {
                 throw new Error('Solicitação inválida ou não encontrada.');
             }
-   
+
             const response = await fetch(PRINTER_API_URL, {
                 method: 'POST',
                 headers: {
@@ -194,7 +194,7 @@ const AdmListaSolicitCompras = () => {
                     itens: solicitacao.item
                 }),
             });
-   
+
             if (response.ok) {
                 setModalMessage('Impressão enviada com sucesso!');
             } else {
@@ -212,7 +212,7 @@ const AdmListaSolicitCompras = () => {
     const handleStatusChange = async (id, newStatus) => {
         try {
             const solicitacaoRef = doc(db, 'solicitCompras', id);
-   
+
             const solicitacaoSnap = await getDoc(solicitacaoRef);
             if (!solicitacaoSnap.exists()) {
                 console.error('Solicitação não encontrada.');
@@ -221,44 +221,44 @@ const AdmListaSolicitCompras = () => {
             const solicitacaoData = solicitacaoSnap.data();
             setSelectedSolicitacao(solicitacaoData);
             const previousStatus = solicitacaoData.status;
-   
+
             if (previousStatus === newStatus) {
                 setAlertTitle('Status já aplicado');
                 setAlertMessage(`O status da solicitação já é "${newStatus}".`);
                 setStatusAlertModalOpen(true);
                 return;
             }
-   
+
             let message = `Solicitação "${solicitacaoData.numSolicite}" status alterado para "${newStatus}".`;
-   
+
             if (newStatus === 'Separando') {
                 message += "\nNeste ponto, está sendo debitado do seu estoque:\n";
                 const itemList = Object.entries(solicitacaoData.item)
                     .map(([itemNome, quantidade]) => `- ${itemNome}: ${quantidade}`)
                     .join("\n");
                 message += itemList;
-   
+
                 await updateStockQuantities(solicitacaoData.item, 'decrease');
-   
+
                 setStatusMessage(message);
                 setStatusChangeAlertModalOpen(true);
             }
-   
+
             await updateDoc(solicitacaoRef, {
                 status: newStatus
             });
-   
+
             if ((previousStatus === 'Separando') && (newStatus === 'Pendente' || newStatus === 'Cancelado')) {
                 await updateStockQuantities(solicitacaoData.item, 'increase');
             }
-   
+
             if (solicitacaoData.user) {
                 const usuariosCollectionRef = collection(db, 'usuarios');
                 const usuariosSnapshot = await getDocs(usuariosCollectionRef);
-   
+
                 let userData = null;
                 let cidadeEncontrada = null;
-   
+
                 usuariosSnapshot.forEach((cidadeDoc) => {
                     const cidadeData = cidadeDoc.data();
                     if (cidadeData[solicitacaoData.user]) {
@@ -266,7 +266,7 @@ const AdmListaSolicitCompras = () => {
                         cidadeEncontrada = cidadeDoc.id;
                     }
                 });
-   
+
                 if (userData && userData.token) {
                     const tokens = Array.isArray(userData.token) ? userData.token : [userData.token];
                     const notificationMessage = {
@@ -275,7 +275,7 @@ const AdmListaSolicitCompras = () => {
                         click_action: "https://drogalira.com.br/solicitacompras",
                         icon: "https://iili.io/duTTt8Q.png"
                     };
-   
+
                     const response = await fetch(NOTIFICATION_API_URL, {
                         method: 'POST',
                         headers: {
@@ -283,7 +283,7 @@ const AdmListaSolicitCompras = () => {
                         },
                         body: JSON.stringify({ tokens, notification: notificationMessage })
                     });
-   
+
                     const result = await response.json();
                     if (response.ok) {
                         console.log('Notificação enviada com sucesso:', result);
@@ -294,7 +294,7 @@ const AdmListaSolicitCompras = () => {
                     console.error(`Token do usuário ${solicitacaoData.user} não encontrado na cidade ${cidadeEncontrada}.`);
                 }
             }
-   
+
         } catch (error) {
             console.error('Erro ao atualizar status da solicitação:', error);
         }
@@ -358,6 +358,7 @@ const AdmListaSolicitCompras = () => {
         setFilteredSolicitacoes(filtered);
     }, [userFilter, statusFilter, storeFilter, solicitacoes]);
 
+
     // Adiciona um event listener para ajustar a quantidade de slides quando a janela é redimensionada
     useEffect(() => {
         handleResize();
@@ -405,7 +406,7 @@ const AdmListaSolicitCompras = () => {
                                     <div className='w-full'>
                                         <p className='-mb-2'>Status</p>
                                         <Dropdown
-                                            options={['Todos', 'Pendente', 'Progresso', 'Concluído', 'Enviado']}
+                                            options={['Todos', 'Pendente', 'Cancelado', 'Separando', 'Enviado', 'Concluído']}
                                             selected={statusFilter}
                                             onSelectedChange={(option) => setStatusFilter(option)}
                                         />
@@ -534,7 +535,7 @@ const AdmListaSolicitCompras = () => {
                                                     </p>
                                                 </div>
                                             )}
-                                            <div className={`text-gray-700 ${solicitacao.status === 'Concluído' ? 'text-green-500' : solicitacao.status === 'Progresso' ? 'text-yellow-500' : solicitacao.status === 'Cancelado' || solicitacao.status === 'Pendente' ? 'text-red-500' : 'text-primaryBlueDark'}`}>
+                                            <div className={`text-gray-700 ${solicitacao.status === 'Concluído' ? 'text-green-500' : solicitacao.status === 'Separando' ? 'text-yellow-500' : solicitacao.status === 'Cancelado' || solicitacao.status === 'Pendente' ? 'text-red-500' : 'text-primaryBlueDark'}`}>
                                                 <p className="text-primaryBlueDark flex text-3xl items-center">
                                                     {solicitacao.status === 'Pendente' && <GrStatusUnknown className="ml-2 text-secRed text-3xl" title='Pendente' />}
                                                     {solicitacao.status === 'Separando' && <GrInProgress className="ml-2 text-orange-600 text-3xl" title='Separando' />}

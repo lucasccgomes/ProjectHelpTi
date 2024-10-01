@@ -330,7 +330,7 @@ const AdmListaSolicitTi = () => {
             console.error('Erro ao atualizar status da solicitação:', error);
         }
     };
-    
+
     // Função para atualizar as quantidades do estoque
     const updateStockQuantities = async (items, operation) => {
         try {
@@ -389,6 +389,7 @@ const AdmListaSolicitTi = () => {
         setFilteredSolicitacoes(filtered);
     }, [userFilter, statusFilter, storeFilter, solicitacoes]);
 
+
     // Efeito para ajustar o número de slides a serem mostrados ao redimensionar a janela
     useEffect(() => {
         handleResize();
@@ -437,7 +438,7 @@ const AdmListaSolicitTi = () => {
                                     <div className='w-full'>
                                         <p className='-mb-2'>Status</p>
                                         <Dropdown
-                                            options={['Todos', 'Pendente', 'Progresso', 'Concluído', 'Enviado']}
+                                            options={['Todos', 'Pendente', 'Cancelado', 'Separando', 'Enviado', 'Concluído']}
                                             selected={statusFilter}
                                             onSelectedChange={(option) => setStatusFilter(option)}
                                         />

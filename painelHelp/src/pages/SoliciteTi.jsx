@@ -1,7 +1,5 @@
-
-
 import React, { useState, useEffect } from 'react';
-import { collection, getDoc, getDocs, doc, setDoc, runTransaction } from 'firebase/firestore';
+import { collection, getDoc, getDocs, doc, setDoc, runTransaction, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
 import ListaSolicitTi from '../components/ListaSolicitTi/ListaSolicitTi';
@@ -13,6 +11,7 @@ import Dropdown from '../components/Dropdown/Dropdown';
 import NotificationModal from '../components/NotificationModal/NotificationModal';
 import { IoIosSend } from "react-icons/io";
 import AdmListaSolicitTi from '../components/ListaSolicitTi/AdmListaSolicitTi';
+import MyModal from '../components/MyModal/MyModal';
 
 Modal.setAppElement('#root'); // Ajuste o seletor conforme necessário
 
@@ -39,8 +38,30 @@ const SoliciteTi = () => {
   const [isSendingModalOpen, setIsSendingModalOpen] = useState(false); // Estado para controlar a abertura do modal de envio
   const [quantityErrorModalOpen, setQuantityErrorModalOpen] = useState(false); // Estado para controlar a abertura do modal de erro de quantidade
   const [quantityErrorMessage, setQuantityErrorMessage] = useState(''); // Estado para armazenar a mensagem de erro de quantidade
+  const [modalData, setModalData] = useState({ titulo: '', descricao: '' });
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
 
   const NOTIFICATION_API_URL = import.meta.env.VITE_NOTIFICATION_API_URL;
+
+  useEffect(() => {
+    const unsubscribe = onSnapshot(doc(db, 'modals', 'infoSolicitaTi'), (doc) => {
+      if (doc.exists()) {
+        const data = doc.data();
+        // Verifica se o status é true e o cargo não é "T.I"
+        if (data.status && currentUserRole !== 'T.I') {
+          setModalData({ titulo: data.titulo, descricao: data.descricao });
+          setIsModalOpen(true);
+        }
+      }
+    });
+
+    return () => unsubscribe(); // Limpa o listener ao desmontar
+  }, [currentUserRole]);
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+  };
 
   const handleAddItem = () => {
     if (itensSolicitados.length < 3) { // Permite adicionar até 3 itens
@@ -876,7 +897,7 @@ const SoliciteTi = () => {
           )}
         </div>
       )}
-      
+
       <AlertModal
         isOpen={alertModalOpen}
         onRequestClose={() => setAlertModalOpen(false)}
@@ -910,6 +931,11 @@ const SoliciteTi = () => {
         </div>
       )}
       <NotificationModal />
+
+      <MyModal isOpen={isModalOpen} onClose={handleCloseModal}>
+        <h2 className='font-bold text-2xl mb-2'>{modalData.titulo}</h2>
+        <div dangerouslySetInnerHTML={{ __html: modalData.descricao }}></div>
+      </MyModal>
     </div>
   );
 };
