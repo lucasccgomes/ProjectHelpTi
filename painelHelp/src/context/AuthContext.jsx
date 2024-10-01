@@ -2,6 +2,7 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../firebase';
 import { collection, getDocs } from 'firebase/firestore'; 
+import { saveToLocalStorage, getFromLocalStorage } from '../utils/cryptoUtils'; // Importa funções de criptografia
 
 const AuthContext = createContext(); // Cria o contexto de autenticação
 
@@ -12,14 +13,16 @@ export const AuthProvider = ({ children }) => {
   const [currentUserRole, setCurrentUserRole] = useState(''); // Estado para armazenar o cargo do usuário atual
   const navigate = useNavigate(); // Hook para navegação entre páginas
 
+  // Carrega os dados do usuário no localStorage ao montar o componente
   useEffect(() => {
-    const storedUser = localStorage.getItem('currentUser'); // Recupera o usuário armazenado no localStorage
-    const storedAuth = localStorage.getItem('isAuthenticated'); // Recupera o estado de autenticação armazenado no localStorage
-    const storedRole = localStorage.getItem('currentUserRole'); // Recupera o cargo do usuário armazenado no localStorage
+    const storedUser = getFromLocalStorage('currentUser'); // Recupera o usuário armazenado de forma segura
+    const storedAuth = getFromLocalStorage('isAuthenticated'); // Recupera o estado de autenticação de forma segura
+    const storedRole = getFromLocalStorage('currentUserRole'); // Recupera o cargo do usuário de forma segura
+    
     if (storedUser && storedAuth && storedRole) {
-      setCurrentUser(JSON.parse(storedUser)); // Define o usuário atual com o objeto armazenado
-      setIsAuthenticated(storedAuth === 'true'); // Define o estado de autenticação
-      setCurrentUserRole(storedRole); // Define o cargo do usuário atual
+      setCurrentUser(storedUser);
+      setIsAuthenticated(storedAuth === 'true');
+      setCurrentUserRole(storedRole);
     }
     setLoading(false); // Define o carregamento como concluído
   }, []);
@@ -48,9 +51,12 @@ export const AuthProvider = ({ children }) => {
             
             setCurrentUser(user); // Define o usuário atual
             setCurrentUserRole(userData.cargo); // Define o cargo do usuário atual
-            localStorage.setItem('isAuthenticated', 'true'); // Armazena o estado de autenticação no localStorage
-            localStorage.setItem('currentUser', JSON.stringify(user)); // Armazena o objeto do usuário no localStorage
-            localStorage.setItem('currentUserRole', userData.cargo); // Armazena o cargo do usuário no localStorage
+
+            // Use as funções seguras para armazenar dados criptografados
+            saveToLocalStorage('isAuthenticated', 'true');
+            saveToLocalStorage('currentUser', user);
+            saveToLocalStorage('currentUserRole', userData.cargo);
+
             userFound = true; // Define que o usuário foi encontrado
   
             // Se fullName estiver vazio, abre o modal para pedir o nome completo
@@ -73,7 +79,6 @@ export const AuthProvider = ({ children }) => {
       throw error; // Lança o erro para tratamento posterior
     }
   };
-  
   
   const logout = async () => {
     try {
