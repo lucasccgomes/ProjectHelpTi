@@ -60,13 +60,15 @@ const GerenciaRh = () => {
         querySnapshot.forEach((doc) => {
           const userData = doc.data();
 
-          // Se o usuário logado for RH, busca os Gerentes
-          // Se o usuário logado for Gerente, busca os RH
           Object.keys(userData).forEach((key) => {
             const user = userData[key];
+
+            // Se o usuário logado for RH, busca os Gerentes
             if (currentUser.cargo === 'RH' && user.cargo === 'Gerente' && user.fullName) {
               responsaveis.push(user.fullName);
-            } else if (currentUser.cargo === 'Gerente' && user.cargo === 'RH' && user.fullName) {
+            }
+            // Se o usuário logado não for RH, busca todos os RH
+            else if (currentUser.cargo !== 'RH' && user.cargo === 'RH' && user.fullName) {
               responsaveis.push(user.fullName);
             }
           });
@@ -80,6 +82,7 @@ const GerenciaRh = () => {
 
     fetchResponsaveis();
   }, [currentUser]);
+
 
   // Busca o último número de documento e gera o próximo
   const fetchLastDocumentNumber = async () => {
@@ -251,7 +254,7 @@ const GerenciaRh = () => {
       <style>
        @page {
           size: A4 portrait; /* Força a orientação para retrato */
-          margin: 20mm;
+          margin: 0mm;
         }
         @media print {
           body {
@@ -400,7 +403,7 @@ const GerenciaRh = () => {
 
 
   return (
-    <div className="lg:p-14 p-8 bg-altBlue pt-20">
+    <div className="lg:p-20 p-8 bg-altBlue pt-24">
       <h1 className="text-2xl font-bold mb-4 text-white text-center ">Envio de Documentos RH</h1>
 
       {/* Selecionar Tipo de Documento */}

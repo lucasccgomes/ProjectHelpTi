@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../firebase';
-import { collection, getDocs } from 'firebase/firestore'; 
+import { collection, getDocs } from 'firebase/firestore';
 import { saveToLocalStorage, getFromLocalStorage } from '../utils/cryptoUtils'; // Importa funções de criptografia
 
 const AuthContext = createContext(); // Cria o contexto de autenticação
@@ -12,13 +12,15 @@ export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null); // Estado para armazenar os dados do usuário atual
   const [currentUserRole, setCurrentUserRole] = useState(''); // Estado para armazenar o cargo do usuário atual
   const navigate = useNavigate(); // Hook para navegação entre páginas
+  const [isNameModalOpen, setIsNameModalOpen] = useState(false); // Estado para controlar o modal do nome completo
+
 
   // Carrega os dados do usuário no localStorage ao montar o componente
   useEffect(() => {
     const storedUser = getFromLocalStorage('currentUser'); // Recupera o usuário armazenado de forma segura
     const storedAuth = getFromLocalStorage('isAuthenticated'); // Recupera o estado de autenticação de forma segura
     const storedRole = getFromLocalStorage('currentUserRole'); // Recupera o cargo do usuário de forma segura
-    
+
     if (storedUser && storedAuth && storedRole) {
       setCurrentUser(storedUser);
       setIsAuthenticated(storedAuth === 'true');
@@ -31,7 +33,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const usuariosRef = collection(db, 'usuarios'); // Referência à coleção de usuários no Firestore
       const querySnapshot = await getDocs(usuariosRef); // Obtém todos os documentos da coleção de usuários
-  
+
       let userFound = false; // Variável para verificar se o usuário foi encontrado
       querySnapshot.forEach(doc => {
         const userData = doc.data()[username]; // Obtém os dados do usuário específico
@@ -48,7 +50,7 @@ export const AuthProvider = ({ children }) => {
               imageUrl: userData.imageUrl || '', // URL da imagem de perfil do usuário
               fullName: userData.fullName || '' // Adiciona o campo fullName ou vazio se não existir
             };
-            
+
             setCurrentUser(user); // Define o usuário atual
             setCurrentUserRole(userData.cargo); // Define o cargo do usuário atual
 
@@ -58,18 +60,20 @@ export const AuthProvider = ({ children }) => {
             saveToLocalStorage('currentUserRole', userData.cargo);
 
             userFound = true; // Define que o usuário foi encontrado
-  
+
             // Se fullName estiver vazio, abre o modal para pedir o nome completo
             if (!user.fullName) {
-              // Aqui você pode abrir o modal, caso o fullName esteja vazio
-              setIsNameModalOpen(true);
+              setIsNameModalOpen(true); // Abre o modal para pedir o nome completo
             }
+
+            // Adicione esta navegação para garantir que só ocorra se userFound for true
+            navigate('/'); // Navega para a página inicial após o login bem-sucedido
           } else {
             console.log('Credenciais inválidas'); // Log se as credenciais forem inválidas
           }
         }
       });
-  
+
       if (!userFound) {
         console.log('Usuário não encontrado ou credenciais inválidas'); // Log se o usuário não for encontrado
         throw new Error('Usuário não encontrado ou credenciais inválidas'); // Lança um erro se o usuário não for encontrado ou as credenciais forem inválidas
@@ -79,7 +83,8 @@ export const AuthProvider = ({ children }) => {
       throw error; // Lança o erro para tratamento posterior
     }
   };
-  
+
+
   const logout = async () => {
     try {
       setIsAuthenticated(false); // Define o estado de autenticação como falso
@@ -95,7 +100,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, login, logout, loading, currentUser, currentUserRole, setCurrentUser  }}>
+    <AuthContext.Provider value={{ isAuthenticated, login, logout, loading, currentUser, currentUserRole, setCurrentUser }}>
       {children} {/* Renderiza os componentes filhos dentro do provedor de contexto */}
     </AuthContext.Provider>
   );

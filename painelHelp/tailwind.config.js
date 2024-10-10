@@ -13,6 +13,10 @@ export default {
           '20%, 40%, 60%, 80%': { transform: 'translateX(10px)' },
         },
       },
+      screens: {
+        'custom-xl': '1170px', // Define o breakpoint em 1170px
+        'custom-sm': '781px', // Define o breakpoint em 781px
+      },
       animation: {
         shake: 'shake 0.5s ease-in-out infinite',
       },

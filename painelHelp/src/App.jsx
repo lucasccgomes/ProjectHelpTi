@@ -21,8 +21,12 @@ import EstoqueTi from './pages/EstoqueTi';
 import UpdateSystemModal from './components/UpdateSystemModal/UpdateSystemModal';
 import SetorRh from './pages/setorRh';
 import ListRhDocs from './components/ListRhDocs/ListRhDocs';
-import FullNameModal from './components/FullNameModal/FullNameModal';
 import GerenciadorServers from './pages/GerenciadorServers';
+import RelatorioCompras from './components/RelatorioCompras/RelatorioCompras';
+import RelatorioProblema from './pages/RelatorioProblema';
+import UserForm from './pages/UserFormPage';
+import DocRh from './pages/DocRh';
+import PrintList from './pages/printList';
 
 const useUpdateChecker = (onUpdateAvailable) => {
   useEffect(() => {
@@ -190,6 +194,7 @@ const App = () => {
                 </ProtectedRoute>
                 }
                 />
+
                 <Route path="/listenvio" element={<ProtectedRoute allowedRoles={[
                   'T.I',
                   'Gerente',
@@ -202,6 +207,36 @@ const App = () => {
                 </ProtectedRoute>
                 }
                 />
+
+                <Route path="/tipodoc" element={<ProtectedRoute allowedRoles={[
+                  'T.I',
+                  'RH',
+                ]}
+                >
+                  <DocRh />
+                </ProtectedRoute>
+                }
+                />
+
+                <Route path="/relatorioti" element={<ProtectedRoute allowedRoles={[
+                  'T.I',
+                  'Claudemir'
+                ]}
+                >
+                  <RelatorioProblema />
+                </ProtectedRoute>
+                }
+                />
+
+                <Route path="/newuser" element={<ProtectedRoute allowedRoles={[
+                  'T.I',
+                ]}
+                >
+                  <UserForm />
+                </ProtectedRoute>
+                }
+                />
+
                 <Route path="/servers" element={<ProtectedRoute allowedRoles={[
                   'T.I',
                   'Claudemir'
@@ -211,6 +246,17 @@ const App = () => {
                 </ProtectedRoute>
                 }
                 />
+
+                <Route path="/printerlist" element={<ProtectedRoute allowedRoles={[
+                  'T.I',
+                  'Claudemir'
+                ]}
+                >
+                  <PrintList />
+                </ProtectedRoute>
+                }
+                />
+
                 <Route path="/nopermission" element={<NoPermission />} />
               </Routes>
               {isAuthenticated && <FCMHandler currentUser={currentUser} />}

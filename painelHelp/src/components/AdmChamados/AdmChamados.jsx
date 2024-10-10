@@ -9,6 +9,7 @@ import 'react-quill/dist/quill.snow.css';
 import MyModal from '../MyModal/MyModal';
 import { PiClockCountdownFill } from "react-icons/pi";
 import { FaLocationCrosshairs } from "react-icons/fa6";
+import { GoLog } from "react-icons/go";
 import { FaCity, FaUser, FaStoreAlt, FaFileImage, FaWhatsapp, FaCalendarCheck, FaCalendarTimes, FaHandSparkles } from "react-icons/fa";
 import { MdReportProblem, MdDoNotDisturb, MdDescription, MdRecommend, MdDoNotDisturbAlt } from "react-icons/md";
 import { PiHandDepositFill } from "react-icons/pi";
@@ -57,10 +58,18 @@ const AdmChamados = () => {
     const [description, setDescription] = useState(''); // Estado para armazenar a descrição da autorização
     const [isReasonModalOpen, setIsReasonModalOpen] = useState(false);
     const [selectedAuthorizationDescription, setSelectedAuthorizationDescription] = useState('');
-    const [modalData, setModalData] = useState({ titulo: '', descricao: '' });
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [logModalIsOpen, setLogModalIsOpen] = useState(false); // Controle de abertura do modal de logs
+    const [selectedLogTicket, setSelectedLogTicket] = useState(null); // Armazena o ticket para exibir o log
 
+    const openLogModal = (ticket) => {
+        setSelectedLogTicket(ticket);
+        setLogModalIsOpen(true);
+    };
 
+    const closeLogModal = () => {
+        setSelectedLogTicket(null);
+        setLogModalIsOpen(false);
+    };
 
     // Função para abrir o modal de autorização
     const openAuthorizationModal = (ticket) => {
@@ -70,14 +79,13 @@ const AdmChamados = () => {
         setAuthorizationModalIsOpen(true);
     };
 
-
     const authorizeAndBlockTicket = async (ticketId, supervisorName, description) => {
         try {
             // Atualiza o status do ticket
             const ticketDocRef = doc(db, 'chamados', 'aberto', 'tickets', ticketId);
             const ticketSnapshot = await getDoc(ticketDocRef);
             const ticketData = ticketSnapshot.data();
-    
+
             if (ticketData) {
                 // Atualiza os campos no ticket
                 await updateDoc(ticketDocRef, {
@@ -85,15 +93,15 @@ const AdmChamados = () => {
                     descriptautorizacao: description,
                     status: 'BLOCK'
                 });
-    
+
                 // Busca o token do supervisor no Firebase
                 const userDocRef = doc(db, 'usuarios', 'Osvaldo Cruz');
                 const userSnapshot = await getDoc(userDocRef);
                 const userData = userSnapshot.data();
-    
+
                 if (userData && userData[supervisorName] && userData[supervisorName].token) {
                     const token = userData[supervisorName].token;
-    
+
                     // Cria a notificação no formato correto
                     const notificationData = {
                         title: `Chamado ${ticketData.order} precisa de sua autorização`,
@@ -101,7 +109,7 @@ const AdmChamados = () => {
                         click_action: "https://drogalira.com.br/usertickets",
                         icon: "https://iili.io/duTTt8Q.png"
                     };
-    
+
                     // Envia a notificação ao endpoint configurado
                     await sendNotification([token], notificationData);
                     console.log('Notificação enviada com sucesso!');
@@ -109,34 +117,12 @@ const AdmChamados = () => {
                     console.error('Token do supervisor não encontrado ou inválido.');
                 }
             }
-    
+
             closeAuthorizationModal();
         } catch (error) {
             console.error('Erro ao autorizar e bloquear o chamado:', error);
         }
     };
-    
-
-
-    // Função para atualizar o campo 'autorizacao' e 'descriptautorizacao' no chamado
-    const authorizeTicket = async (ticketId, supervisorName, description) => {
-        try {
-            const ticketDocRef = doc(db, 'chamados', 'aberto', 'tickets', ticketId); // Referência ao documento do chamado
-
-            // Atualiza os campos 'autorizacao' e 'descriptautorizacao' no chamado
-            await updateDoc(ticketDocRef, {
-                autorizacao: supervisorName,
-                descriptautorizacao: description // Adiciona a descrição da autorização
-            });
-
-            // Lógica adicional, como fechar o modal e mostrar uma notificação, se necessário
-            closeAuthorizationModal();
-            console.log('Supervisor autorizado com sucesso!');
-        } catch (error) {
-            console.error('Erro ao autorizar supervisor:', error);
-        }
-    };
-
 
     // Função para fechar o modal de autorização
     const closeAuthorizationModal = () => {
@@ -375,22 +361,20 @@ const AdmChamados = () => {
                     }
                 })
             });
-    
+
             const responseData = await response.json();
-    
+
             if (response.ok) {
                 console.log('Notificação enviada com sucesso:', responseData);
             } else {
                 console.error('Erro ao enviar notificação:', response.status, responseData);
             }
-    
+
             return responseData;
         } catch (error) {
             console.error('Erro ao enviar notificação:', error);
         }
     };
-    
-    
 
     // Função para atualizar o status do ticket
     const updateTicketStatus = async (id, status, descricaoFinalizacao = '', treatment = '', interacao = null) => {
@@ -411,13 +395,17 @@ const AdmChamados = () => {
                 // Prepara o objeto de atualização
                 const updatedData = {
                     status,
-                    descricaoFinalizacao,
-                    treatment,
-                    checkproblema: [selectedProblem],
                 };
 
-                // Adiciona a data de finalização se o status for "Finalizado"
+                // Adiciona `descricaoFinalizacao` se estiver definido
+                if (descricaoFinalizacao) updatedData.descricaoFinalizacao = descricaoFinalizacao;
+
+                // Adiciona `treatment` se estiver definido
+                if (treatment) updatedData.treatment = treatment;
+
+                // Adiciona o checkproblema e a data de finalização se o status for "Finalizado"
                 if (status === 'Finalizado') {
+                    updatedData.checkproblema = [selectedProblem];
                     updatedData.finalizadoData = new Date();
                 }
 
@@ -432,6 +420,18 @@ const AdmChamados = () => {
                     updatedData.interacao = interacao;
                 }
 
+                // Adiciona o registro de alteração de status ao histórico
+                const statusChangeEntry = {
+                    usuario: currentUser.user || 'Usuário Desconhecido', // Adicione um fallback para evitar valores indefinidos
+                    data: new Date().toISOString(),
+                    status: status,
+                };
+
+                // Atualiza o campo `statusAlterado`, adicionando o novo registro ao array
+                updatedData.statusAlterado = currentTicketData.statusAlterado
+                    ? [...currentTicketData.statusAlterado, statusChangeEntry]
+                    : [statusChangeEntry];
+
                 // Atualiza o documento no Firestore
                 await updateDoc(ticketDocRef, updatedData);
 
@@ -442,10 +442,10 @@ const AdmChamados = () => {
                     )
                 );
 
-                // Enviar notificação ao usuário
+                // Notificação ao usuário
                 const updatedTicket = tickets.find(ticket => ticket.id === id);
-                const userDocRef = doc(db, 'usuarios', updatedTicket.cidade); // Referência ao documento do usuário no Firestore
-                const userDocSnap = await getDoc(userDocRef); // Obtém o documento do usuário
+                const userDocRef = doc(db, 'usuarios', updatedTicket.cidade);
+                const userDocSnap = await getDoc(userDocRef);
 
                 if (userDocSnap.exists()) {
                     const userData = userDocSnap.data()[updatedTicket.user];
@@ -457,7 +457,7 @@ const AdmChamados = () => {
                             icon: "https://iili.io/duTTt8Q.png"
                         };
 
-                        await sendNotification(userData.token, notificationMessage); // Envia a notificação
+                        await sendNotification(userData.token, notificationMessage);
                     } else {
                         console.error('Token do usuário não encontrado.');
                     }
@@ -476,7 +476,7 @@ const AdmChamados = () => {
                 setCheckproblema([]);
             }
         } catch (error) {
-            console.error('Erro ao atualizar status do chamado:', error); // Loga o erro, se ocorrer
+            console.error('Erro ao atualizar status do chamado:', error);
         }
     };
 
@@ -565,15 +565,21 @@ const AdmChamados = () => {
         setConclusaoModalIsOpen(false);
     };
 
-
-
-
     return (
         <div className="justify-center items-center">
             <div className='w-full bg-altBlue p-4 fixed mt-[3.5rem] z-10'>
-                <div className='flex flex-col bg-primaryBlueDark p-4 rounded-lg shadow-lg '>
+                <div className='flex flex-col bg-primaryBlueDark p-4 rounded-lg shadow-lg'>
                     <h2 className="text-2xl text-white font-bold">Gerenciador Chamados</h2>
                     <div className='flex justify-between gap-4 w-full'>
+                        <div className='flex justify-between lg:hidden gap-4 w-full'>
+                            <input
+                                type="text"
+                                className="border mt-2 p-2 rounded w-[200px]"
+                                placeholder="Buscar..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                        </div>
                         <input
                             type="text"
                             className="border mt-2 p-2 rounded hidden lg:flex w-full"
@@ -597,7 +603,7 @@ const AdmChamados = () => {
                                 onSelectedChange={(value) => {
                                     setUserFilter(value === 'Todos' ? '' : value);
                                     if (value !== '') {
-                                        setStoreFilter(''); // Reseta o filtro de loja para "Todos"
+                                        setStoreFilter('');
                                     }
                                 }}
                                 className="hidden lg:flex items-center justify-center"
@@ -611,7 +617,7 @@ const AdmChamados = () => {
                                 onSelectedChange={(value) => {
                                     setStoreFilter(value === 'Todos' ? '' : value);
                                     if (value !== '') {
-                                        setUserFilter(''); // Reseta o filtro de usuário para "Todos"
+                                        setUserFilter('');
                                     }
                                 }}
 
@@ -619,24 +625,13 @@ const AdmChamados = () => {
                             />
                         </div>
                     </div>
-                    <div className='flex justify-between lg:hidden gap-4 w-full'>
-                        <input
-                            type="text"
-                            className="border mt-2 p-2 rounded w-full"
-                            placeholder="Buscar..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                        />
-                    </div>
-
                 </div>
             </div>
-
             {filteredTickets.length === 0 ? (
                 <p>Nenhum chamado encontrado.</p>
             ) : (
 
-                <div className="pt-52 p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full bg-altBlue">
+                <div className="pt-56 p-4 grid grid-cols-1 custom-sm:grid-cols-2 custom-xl:grid-cols-3 gap-4 w-full bg-altBlue">
                     {filteredTickets
                         .sort((a, b) => {
                             // Função para definir a prioridade do status
@@ -677,8 +672,13 @@ const AdmChamados = () => {
                                             <p className={`my-1 p-1 uppercase ${getStatusClass(ticket.status)} ${ticket.status === 'Urgente' ? 'animate-[pulseUrgent_2s_ease-in-out_infinite]' : 'text-white'}`}>
                                                 {ticket.status}
                                             </p>
-
                                         </div>
+                                        <button
+                                            onClick={() => openLogModal(ticket)}
+                                            className='rounded'
+                                        >
+                                            <GoLog />
+                                        </button>
                                         <div className='bg-altBlue text-white p-2 rounded-b-xl shadow-xl'>
                                             <p className='bg-green-600 p-2 rounded-2xl shadow-lg'>
                                                 <a target='_blank' href={formatWhatsappLink(ticket.whatsapp)}>
@@ -1190,7 +1190,22 @@ const AdmChamados = () => {
                     dangerouslySetInnerHTML={{ __html: selectedAuthorizationDescription }} // Exibe o conteúdo do campo `noautoriza`
                 ></div>
             </MyModal>
-
+            <MyModal isOpen={logModalIsOpen} onClose={closeLogModal}>
+                <h2 className="text-xl font-bold mb-4">Histórico de Alterações de Status</h2>
+                {selectedLogTicket && selectedLogTicket.statusAlterado ? (
+                    <ul>
+                        {selectedLogTicket.statusAlterado.map((log, index) => (
+                            <li key={index} className="mb-2">
+                                <p><strong>Usuário:</strong> {log.usuario}</p>
+                                <p><strong>Data:</strong> {new Date(log.data).toLocaleString('pt-BR')}</p>
+                                <p><strong>Status:</strong> {log.status}</p>
+                            </li>
+                        ))}
+                    </ul>
+                ) : (
+                    <p>Nenhum log encontrado.</p>
+                )}
+            </MyModal>
 
         </div>
     );

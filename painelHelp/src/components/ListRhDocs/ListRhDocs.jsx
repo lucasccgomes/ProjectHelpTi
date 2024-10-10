@@ -61,7 +61,7 @@ const ListRhDocs = () => {
           </div>
           <div style="display: flex;">
             <p style="font-weight: bold;">Data:</p> 
-            <p>${new Date(selectedDoc.dataInicio).toLocaleDateString()}</p>
+            <p>${new Date(selectedDoc.dataInicio.seconds * 1000).toLocaleDateString()}</p>
           </div> 
         </div>
         <p><strong>Destinatário:</strong> ${selectedDoc.responsavel.destinatario}</p>
@@ -222,7 +222,7 @@ const ListRhDocs = () => {
           ))}
         </ul>
       ) : (
-        <p>Nenhum documento encontrado.</p>
+        <p className='text-center text-gray-300'>Nenhum documento encontrado.</p>
       )}
 
       {/* Modal para exibir os detalhes completos do documento */}

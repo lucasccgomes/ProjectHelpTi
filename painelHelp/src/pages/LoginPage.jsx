@@ -13,6 +13,7 @@ const LoginPage = () => {
   const [isInstalled, setIsInstalled] = useState(false); // Estado para verificar se o aplicativo está instalado
   const navigate = useNavigate(); // Hook para navegação entre páginas
   const { login } = useAuth(); // Hook para acessar a função de login do contexto de autenticação
+  const { isAuthenticated } = useAuth(); // Obtenha o estado de autenticação do contexto
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e) => {
@@ -60,9 +61,18 @@ const LoginPage = () => {
       navigate('/'); // Navega para a página inicial após o login bem-sucedido
     } catch (error) {
       console.error('Erro ao fazer login:', error); // Loga o erro se o login falhar
-      alert('Usuário ou senha incorretos'); // Exibe um alerta se as credenciais estiverem incorretas
+      // Exibe um alerta se as credenciais estiverem incorretas ou houver um erro de autenticação
+      if (error.message === 'Usuário não encontrado ou credenciais inválidas') {
+        alert('Usuário ou senha incorretos');
+      }
     }
   };
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/'); // Redireciona para a página inicial se estiver autenticado
+    }
+  }, [isAuthenticated, navigate]);
 
   const requestNotificationPermission = async () => {
     if ('Notification' in window) {
@@ -133,16 +143,16 @@ const LoginPage = () => {
 
         {!isInstalled && installPrompt && (
           <button
-          onClick={handleInstallClick}
-          className="mt-4 w-full p-2 rounded-md flex justify-center items-center text-white bg-green-600 hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
-        >
-          {isDesktop ? (
-            <IoDesktopSharp className='text-xl' />
-          ) : (
-            <IoLogoAndroid className='text-xl' />
-          )}
-          &nbsp;Instalar App
-        </button>
+            onClick={handleInstallClick}
+            className="mt-4 w-full p-2 rounded-md flex justify-center items-center text-white bg-green-600 hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
+          >
+            {isDesktop ? (
+              <IoDesktopSharp className='text-xl' />
+            ) : (
+              <IoLogoAndroid className='text-xl' />
+            )}
+            &nbsp;Instalar App
+          </button>
         )}
       </div>
       <OfflineNotice />

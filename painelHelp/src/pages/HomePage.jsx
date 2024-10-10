@@ -20,7 +20,9 @@ const HomePage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalContent, setModalContent] = useState({ titulo: '', descricao: '' });
   const now = new Date();
-  const isAfternoon = now.getHours() >= 12 && (now.getHours() > 12 || now.getMinutes() >= 30);
+  const isAfternoon = now.getHours() >= 12 && now.getHours() < 18 || (now.getHours() === 18 && now.getMinutes() < 20);
+  const isNight = now.getHours() >= 18 && (now.getHours() > 18 || now.getMinutes() >= 20);
+
 
 
 
@@ -133,7 +135,11 @@ const HomePage = () => {
       {/*MODAL DE MENSAGEM DO DIA*/}
       <MyModal isOpen={isModalOpen} onClose={handleCloseModal}>
         <h2 className='font-bold text-2xl mb-2 flex items-center'>
-          {isAfternoon ? (
+          {isNight ? (
+            <>
+              <FiSunset className='mr-2 text-yellow-500' /> Boa noite
+            </>
+          ) : isAfternoon ? (
             <>
               <FiSunset className='mr-2 text-yellow-500' /> Boa tarde
             </>

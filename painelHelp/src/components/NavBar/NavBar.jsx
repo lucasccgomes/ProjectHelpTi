@@ -78,6 +78,7 @@ const Navbar = () => {
       subItems: [ // Subitens para criar um submenu
         { name: 'Envio de Documentos', href: '/setorrh' },
         { name: 'Lista de Envios', href: '/listenvio' },
+        { name: 'Gerencia RH', href: '/tipodoc' },
       ]
     },
     {
@@ -89,6 +90,9 @@ const Navbar = () => {
         { name: 'Geren. Chamados', href: '/gerenchamados' },
         { name: 'Geren. Estoque', href: '/estoqueti' },
         { name: 'Geren. Servers', href: '/servers' },
+        { name: 'Relatório Impressoras', href: '/printerlist' },
+        { name: 'Relatório Chamados', href: '/relatorioti' },
+        { name: 'Cadastrar Usuario', href: '/newuser' },
       ]
     },
    // {
