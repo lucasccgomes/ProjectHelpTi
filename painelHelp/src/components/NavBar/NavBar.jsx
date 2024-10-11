@@ -90,6 +90,7 @@ const Navbar = () => {
         { name: 'Geren. Chamados', href: '/gerenchamados' },
         { name: 'Geren. Estoque', href: '/estoqueti' },
         { name: 'Geren. Servers', href: '/servers' },
+        { name: 'Monitor Machine', href: '/monitormachine' },
         { name: 'Relatório Impressoras', href: '/printerlist' },
         { name: 'Relatório Chamados', href: '/relatorioti' },
         { name: 'Cadastrar Usuario', href: '/newuser' },

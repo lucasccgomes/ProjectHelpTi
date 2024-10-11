@@ -229,14 +229,15 @@ const PrinterList = () => {
   return (
     <div className="p-4 pt-20 bg-altBlue">
       <div>
-        <h1 className="text-2xl font-bold mb-4">Lista de Impressoras por Loja</h1>
-        <button
-          onClick={() => setIsPrintModalOpen(true)}
-          className="mt-4 px-4 py-2 bg-gray-600 text-white rounded"
-        >
-          Imprimir Relatório
-        </button>
-
+        <div className='bg-primaryBlueDark mb-4 text-white p-4 rounded-xl shadow-lg flex justify-between lg:flex-row flex-col'>
+          <h1 className="text-2xl font-bold mb-2 lg:mb-0">Lista de Impressoras</h1>
+          <button
+            onClick={() => setIsPrintModalOpen(true)}
+            className="px-4 py-2 bg-altBlue text-white rounded"
+          >
+            Imprimir Relatório
+          </button>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {Object.entries(stores).map(([storeName, storeData]) => (
             <div key={storeName} className="p-4  bg-white shadow-md rounded flex justify-center items-center flex-col ">
@@ -259,7 +260,7 @@ const PrinterList = () => {
                     {/* Adicionando botão para nova contagem */}
                     <button
                       onClick={() => handleNewCount(`${storeName}.${printerName}`)}
-                      className="mt-2 px-4 py-2 bg-blue-500 text-white rounded"
+                      className="mt-2 px-4 py-2 bg-primaryBlueDark text-white rounded"
                     >
                       NOVA CONTAGEM
                     </button>

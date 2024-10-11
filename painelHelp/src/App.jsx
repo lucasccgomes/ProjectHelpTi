@@ -27,6 +27,7 @@ import RelatorioProblema from './pages/RelatorioProblema';
 import UserForm from './pages/UserFormPage';
 import DocRh from './pages/DocRh';
 import PrintList from './pages/printList';
+import MonitorMachine from './pages/MonitorMachine';
 
 const useUpdateChecker = (onUpdateAvailable) => {
   useEffect(() => {
@@ -117,7 +118,8 @@ const App = () => {
                 <Route path="/atribute" element={
                   <ProtectedRoute allowedRoles={[
                     'T.I',
-                    'Claudemir'
+                    'Claudemir',
+                    'Gerente'
                   ]}
                   >
                     <AssignTasksPage />
@@ -253,6 +255,16 @@ const App = () => {
                 ]}
                 >
                   <PrintList />
+                </ProtectedRoute>
+                }
+                />
+
+                <Route path="/monitormachine" element={<ProtectedRoute allowedRoles={[
+                  'T.I',
+                  'Claudemir'
+                ]}
+                >
+                  <MonitorMachine />
                 </ProtectedRoute>
                 }
                 />
