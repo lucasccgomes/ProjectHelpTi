@@ -79,7 +79,7 @@ const NotificationModals = () => {
         >
           <div className="mb-4 !text-black">
             <h2 className="text-2xl font-bold mb-2">{notification.title}</h2>
-            <div className="max-w-[330px] break-words whitespace-normal" dangerouslySetInnerHTML={{ __html: notification.message }} >
+            <div className="max-w-[330px] break-words whitespace-normal ql-editor" dangerouslySetInnerHTML={{ __html: notification.message }} >
             </div>
             <button
               className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700"
