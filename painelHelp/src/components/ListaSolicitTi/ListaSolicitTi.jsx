@@ -374,7 +374,7 @@ const ListaSolicitTi = () => {
                     <h2 className="text-xl font-semibold mb-4">Seu pedido foi alterado</h2>
                     <div className="mb-4">
                         <h3 className="text-lg font-semibold">Motivo da Alteração</h3>
-                        <div dangerouslySetInnerHTML={{ __html: orderChangeDetails?.reasonChange }} />
+                        <div className='ql-editor' dangerouslySetInnerHTML={{ __html: orderChangeDetails?.reasonChange }} />
                     </div>
                     <div className="mb-4">
                         <h3 className="text-lg font-semibold">Pedido Original</h3>
@@ -461,7 +461,7 @@ const ListaSolicitTi = () => {
             <Modal isOpen={isReasonModalOpen} onClose={() => setIsReasonModalOpen(false)}>
                 <div className="text-center text-gray-700">
                     <h2 className="text-xl font-semibold mb-4">Motivo do Cancelamento</h2>
-                    <div dangerouslySetInnerHTML={{ __html: canceledReason }} />
+                    <div className='ql-editor' dangerouslySetInnerHTML={{ __html: canceledReason }} />
                     <div className="flex justify-center mt-4">
                         <button
                             onClick={() => setIsReasonModalOpen(false)}
