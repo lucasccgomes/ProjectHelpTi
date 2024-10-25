@@ -85,7 +85,7 @@ const AdmChamados = () => {
             const ticketDocRef = doc(db, 'chamados', 'aberto', 'tickets', ticketId);
             const ticketSnapshot = await getDoc(ticketDocRef);
             const ticketData = ticketSnapshot.data();
-
+    
             if (ticketData) {
                 // Atualiza os campos no ticket
                 await updateDoc(ticketDocRef, {
@@ -93,15 +93,15 @@ const AdmChamados = () => {
                     descriptautorizacao: description,
                     status: 'BLOCK'
                 });
-
+    
                 // Busca o token do supervisor no Firebase
                 const userDocRef = doc(db, 'usuarios', 'Osvaldo Cruz');
                 const userSnapshot = await getDoc(userDocRef);
                 const userData = userSnapshot.data();
-
-                if (userData && userData[supervisorName] && userData[supervisorName].token) {
-                    const token = userData[supervisorName].token;
-
+    
+                if (userData && userData[supervisorName] && Array.isArray(userData[supervisorName].token)) {
+                    const token = userData[supervisorName].token[0]; // Extrai o primeiro token, caso haja múltiplos
+    
                     // Cria a notificação no formato correto
                     const notificationData = {
                         title: `Chamado ${ticketData.order} precisa de sua autorização`,
@@ -109,15 +109,15 @@ const AdmChamados = () => {
                         click_action: "https://drogalira.com.br/usertickets",
                         icon: "https://iili.io/duTTt8Q.png"
                     };
-
+    
                     // Envia a notificação ao endpoint configurado
-                    await sendNotification([token], notificationData);
+                    await sendNotification([token], notificationData); // Envie como array de tokens
                     console.log('Notificação enviada com sucesso!');
                 } else {
                     console.error('Token do supervisor não encontrado ou inválido.');
                 }
             }
-
+    
             closeAuthorizationModal();
         } catch (error) {
             console.error('Erro ao autorizar e bloquear o chamado:', error);
@@ -345,14 +345,14 @@ const AdmChamados = () => {
     // Função para enviar uma notificação aos usuários
     const sendNotification = async (tokens, notification) => {
         try {
-            // Caso tokens seja uma lista de tokens, não um único token
+            // Verifica se tokens é um array, e envia a notificação
             const response = await fetch(NOTIFICATION_API_URL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    tokens, // Envie tokens como um array, se for o caso
+                    tokens, // Envie tokens como um array
                     notification: {
                         title: notification.title,
                         body: notification.body,
@@ -1080,7 +1080,7 @@ const AdmChamados = () => {
                 <h2 className="text-xl font-bold mb-4">Conclusão</h2>
                 {selectedTicket && (
                     <div
-                        className="overflow-y-auto break-words"
+                        className="ql-editor overflow-y-auto break-words"
                         dangerouslySetInnerHTML={{ __html: selectedTicket.descricaoFinalizacao }}
                     ></div>
                 )}
@@ -1090,7 +1090,7 @@ const AdmChamados = () => {
                 <h2 className="text-xl font-bold mb-4">Tratativa</h2>
                 {selectedTicket && (
                     <div
-                        className="overflow-y-auto break-words"
+                        className="ql-editor overflow-y-auto break-words"
                         dangerouslySetInnerHTML={{ __html: selectedTicket.treatment }}
                     ></div>
                 )}
@@ -1099,7 +1099,7 @@ const AdmChamados = () => {
                 <h2 className="text-xl font-bold mb-4">Descrição</h2>
                 {selectedTicket && (
                     <div
-                        className="overflow-y-auto break-words"
+                        className="ql-editor overflow-y-auto break-words"
                         dangerouslySetInnerHTML={{ __html: selectedTicket.descricao }}
                     ></div>
                 )}
@@ -1108,7 +1108,7 @@ const AdmChamados = () => {
                 <h2 className="text-xl font-bold mb-4">Tentativa</h2>
                 {selectedTicket && (
                     <div
-                        className="overflow-y-auto break-words"
+                        className="ql-editor overflow-y-auto break-words"
                         dangerouslySetInnerHTML={{ __html: selectedTicket.tentou }}
                     ></div>
                 )}
@@ -1186,7 +1186,7 @@ const AdmChamados = () => {
             <MyModal isOpen={isReasonModalOpen} onClose={() => setIsReasonModalOpen(false)}>
                 <h2 className="text-xl font-bold mb-4">Motivo da Negação</h2>
                 <div
-                    className="overflow-y-auto break-words"
+                    className="ql-editor overflow-y-auto break-words"
                     dangerouslySetInnerHTML={{ __html: selectedAuthorizationDescription }} // Exibe o conteúdo do campo `noautoriza`
                 ></div>
             </MyModal>
