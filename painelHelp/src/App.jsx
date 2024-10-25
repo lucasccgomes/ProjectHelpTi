@@ -118,8 +118,12 @@ const App = () => {
                 <Route path="/atribute" element={
                   <ProtectedRoute allowedRoles={[
                     'T.I',
+                    'Gerente',
+                    'Supervisor',
+                    'Compras',
                     'Claudemir',
-                    'Gerente'
+                    'RH',
+                    'Marketing',
                   ]}
                   >
                     <AssignTasksPage />
