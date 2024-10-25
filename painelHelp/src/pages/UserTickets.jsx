@@ -689,17 +689,18 @@ const UserTickets = () => {
 
                     <div className='bg-white text-gray-700 pt-0 px-2 pb-1 rounded-md shadow-lg'>
                       <button
-                        className={`bg-primaryBlueDark text-white px-4 py-2 rounded-md w-full flex justify-center items-center ${ticket.status === 'Andamento' ? 'blinking' : ''}`}
+                        className={`${ticket.descricaoFinalizacao ? 'bg-green-600' : 'bg-primaryBlueDark'} text-white px-4 py-2 rounded-md w-full flex justify-center items-center ${ticket.status === 'Andamento' ? 'blinking' : ''}`}
                         onClick={() => {
-                          setSelectedContent(ticket.status === 'Andamento' ? ticket.treatment : ticket.tentou);
-                          setContentTitle(ticket.status === 'Andamento' ? 'Andamento' : 'Tentativa');
+                          setSelectedContent(ticket.descricaoFinalizacao || (ticket.status === 'Andamento' ? ticket.treatment : ticket.tentou));
+                          setContentTitle(ticket.descricaoFinalizacao ? 'Conclusão' : (ticket.status === 'Andamento' ? 'Andamento' : 'Tentativa'));
                           setIsContentModalOpen(true);
                         }}
                       >
                         <MdDescription className='mr-2' />
-                        {ticket.status === 'Andamento' ? 'Andamento' : 'Tentativa'}
+                        {ticket.descricaoFinalizacao ? 'Conclusão' : (ticket.status === 'Andamento' ? 'Andamento' : 'Tentativa')}
                       </button>
                     </div>
+                    
                   </div>
                   {ticket.status !== 'Finalizado' && (
                     <div className='bg-white text-gray-700 pt-0 px-2 pb-1 rounded-md shadow-lg'>
