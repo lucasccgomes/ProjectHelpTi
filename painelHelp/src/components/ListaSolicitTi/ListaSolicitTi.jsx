@@ -421,6 +421,7 @@ const ListaSolicitTi = () => {
                         className="w-full p-2 border border-gray-300 rounded mb-4"
                         placeholderText="Selecione a data"
                         dateFormat="dd/MM/yyyy"
+                        maxDate={new Date()} // Limita a seleção até a data atual
                     />
                     <div className="flex justify-center mt-4">
                         <button
