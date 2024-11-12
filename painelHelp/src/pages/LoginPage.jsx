@@ -5,6 +5,7 @@ import logo from '../assets/logo.png';
 import OfflineNotice from '../components/OffLineNotice/OfflineNotice';
 import { IoLogoAndroid, IoDesktopSharp } from 'react-icons/io5';
 import { isDesktop } from 'react-device-detect';
+import MyModal from '../components/MyModal/MyModal';
 
 const LoginPage = () => {
   const [username, setUsername] = useState(''); // Estado para armazenar o nome de usuário
@@ -14,6 +15,8 @@ const LoginPage = () => {
   const navigate = useNavigate(); // Hook para navegação entre páginas
   const { login } = useAuth(); // Hook para acessar a função de login do contexto de autenticação
   const { isAuthenticated } = useAuth(); // Obtenha o estado de autenticação do contexto
+  const [isMaintenanceModalOpen, setIsMaintenanceModalOpen] = useState(false); // Estado para controlar o modal de manutenção
+
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e) => {
@@ -60,9 +63,12 @@ const LoginPage = () => {
       requestNotificationPermission(); // Solicita permissão de notificação após o login
       navigate('/'); // Navega para a página inicial após o login bem-sucedido
     } catch (error) {
-      console.error('Erro ao fazer login:', error); // Loga o erro se o login falhar
-      // Exibe um alerta se as credenciais estiverem incorretas ou houver um erro de autenticação
-      if (error.message === 'Usuário não encontrado ou credenciais inválidas') {
+      console.error('Erro ao fazer login:', error);
+
+      // Verifique se o erro é "Quota exceeded"
+      if (error.message.includes('Quota exceeded')) {
+        setIsMaintenanceModalOpen(true); // Abre o modal de manutenção
+      } else if (error.message === 'Usuário não encontrado ou credenciais inválidas') {
         alert('Usuário ou senha incorretos');
       }
     }
@@ -155,6 +161,27 @@ const LoginPage = () => {
           </button>
         )}
       </div>
+      {/* Modal de Manutenção */}
+      <MyModal isOpen={isMaintenanceModalOpen} onClose={() => setIsMaintenanceModalOpen(false)} showCloseButton={true}>
+        <div className="p-6 text-center">
+          <h2 className="text-2xl font-semibold mb-4">Sistema em Manutenção</h2>
+          <p className="mb-6">Desculpe o transtorno! Estamos trabalhando para resolver o problema.</p>
+          <div className="space-y-4">
+            <button
+              onClick={() => window.open('https://wa.me/5547991399367', '_blank')}
+              className="w-full bg-green-500 text-white py-2 rounded-lg flex items-center justify-center hover:bg-green-600"
+            >
+              WhatsApp: (47) 99139-9367
+            </button>
+            <button
+              onClick={() => window.open('https://wa.me/55018997530027', '_blank')}
+              className="w-full bg-green-500 text-white py-2 rounded-lg flex items-center justify-center hover:bg-green-600"
+            >
+              WhatsApp: (18) 99753-0027
+            </button>
+          </div>
+        </div>
+      </MyModal>
       <OfflineNotice />
     </div>
   );
