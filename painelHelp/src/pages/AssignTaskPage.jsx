@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { collection, doc, setDoc, getDocs, deleteDoc, updateDoc, onSnapshot } from 'firebase/firestore';
+import { collection, doc, setDoc, getDocs, deleteDoc, updateDoc, onSnapshot, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
+import Select from 'react-select'; // Importa o react-select
 import { AuthContext } from '../context/AuthContext';
 import { v4 as uuidv4 } from 'uuid';
 import MyModal from '../components/MyModal/MyModal';
@@ -12,6 +13,8 @@ import { FaCheck } from "react-icons/fa";
 import ReactQuill from 'react-quill'; // Importando React Quill
 import 'react-quill/dist/quill.snow.css'; // Importando os estilos do Quill
 import AlertModal from '../components/AlertModal/AlertModal';
+import { BsPlus } from "react-icons/bs";
+import { MdOutlineAddTask, MdToggleOff, MdToggleOn } from "react-icons/md";
 
 // Configuração da toolbar do ReactQuill
 const modules = {
@@ -54,9 +57,214 @@ const AssignTasksPage = () => {
   const [descriptionCanceled, setDescriptionCanceled] = useState(''); // Controle da descrição do cancelamento
   const [selectedTaskForCancel, setSelectedTaskForCancel] = useState(null); // Controle da tarefa que está sendo cancelada
   const [showAllUsers, setShowAllUsers] = useState(false); // Novo estado para o checkbox
+  const [markers, setMarkers] = useState([]);
+  const [newMarker, setNewMarker] = useState('');
+  const [newMarkerColor, setNewMarkerColor] = useState('#000000'); // Valor padrão de cor preta
+  const [selectedMarker, setSelectedMarker] = useState('');
+  const [selectedFilterMarker, setSelectedFilterMarker] = useState(null);
+  const [selectedStatus, setSelectedStatus] = useState('pendente'); // Novo estado para o filtro de status
+  const [formattedUsers, setFormattedUsers] = useState([]);
 
+  const filteredTasks = selectedFilterMarker
+    ? tasks.filter(task => task.marker === selectedFilterMarker && task.status === selectedStatus)
+    : tasks.filter(task => task.status === selectedStatus);
 
   const NOTIFICATION_API_URL = import.meta.env.VITE_NOTIFICATION_API_URL;
+
+  const fetchTasksForSelectedUserWithRequester = async (userId) => {
+    try {
+      const tasksCollection = collection(db, 'tarefas', userId, 'tasks');
+      const tasksSnapshot = await getDocs(tasksCollection);
+      const tasksForSelectedUser = tasksSnapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .filter(task => task.requester === currentUser.user);
+
+      setUsersWithTasks([{ user: userId, tasks: tasksForSelectedUser }]);
+    } catch (error) {
+      console.error("Erro ao buscar tarefas para o usuário selecionado:", error);
+    }
+  };
+
+  const fetchUsersWithLoggedUserTasks = async () => {
+    try {
+      const allUsersWithTasks = [];
+      const usersCollection = collection(db, 'usuarios');
+      const usersSnapshot = await getDocs(usersCollection);
+
+      // Itera sobre cada documento de cidade dentro da coleção `usuarios`
+      for (const cityDoc of usersSnapshot.docs) {
+        const cityData = cityDoc.data();
+
+        // Itera sobre cada campo (usuário) dentro do documento da cidade
+        for (const userId in cityData) {
+          const userData = cityData[userId];
+          if (userData && userData.user) {
+            // Busca as tarefas de cada usuário para verificar o campo `requester`
+            const tasksCollection = collection(db, 'tarefas', userData.user, 'tasks');
+            const tasksSnapshot = await getDocs(tasksCollection);
+            const userTasks = tasksSnapshot.docs.map(doc => doc.data());
+
+            // Verifica se alguma tarefa tem `requester` igual ao usuário logado
+            const hasTaskFromLoggedUser = userTasks.some(task => task.requester === currentUser.user);
+            if (hasTaskFromLoggedUser) {
+              allUsersWithTasks.push({ value: userData.user, label: `${userData.user} - ${userData.cargo || ''}` });
+            }
+          }
+        }
+      }
+
+      setFormattedUsers(allUsersWithTasks);
+    } catch (error) {
+      console.error("Erro ao buscar usuários com tarefas do usuário logado:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsersWithLoggedUserTasks();
+  }, [currentUser.user]);
+
+  // Função para buscar todos os usuários dentro da coleção `usuarios` e armazená-los em uma lista
+  const fetchAllUsers = async () => {
+    try {
+      const usersCollection = collection(db, 'usuarios');
+      const usersSnapshot = await getDocs(usersCollection);
+      const allUsers = [];
+
+      // Itera sobre cada documento de cidade dentro da coleção `usuarios`
+      for (const cityDoc of usersSnapshot.docs) {
+        const cityData = cityDoc.data();
+
+        // Itera sobre cada campo (usuário) dentro do documento da cidade
+        Object.keys(cityData).forEach(userId => {
+          const userData = cityData[userId];
+          if (userData && userData.user) {
+            allUsers.push(userData.user); // Armazena o nome do usuário
+          }
+        });
+      }
+
+      return allUsers;
+    } catch (error) {
+      console.error("Erro ao buscar todos os usuários:", error);
+      return [];
+    }
+  };
+
+  // Função para buscar e exibir todas as tarefas de um usuário específico
+  const fetchTasksForUser = async (userId) => {
+    try {
+      // Acessa a subcoleção `tasks` dentro do documento `tarefas/{userId}`
+      const tasksCollection = collection(db, 'tarefas', userId, 'tasks');
+      const tasksSnapshot = await getDocs(tasksCollection);
+
+    } catch (error) {
+      console.error(`Erro ao buscar tarefas para o usuário ${userId}:`, error);
+    }
+  };
+
+  // Função principal para buscar todos os usuários e, em seguida, buscar tarefas para cada um
+  const fetchAllUsersAndTasks = async () => {
+    const allUsers = await fetchAllUsers(); // Pega todos os usuários
+
+    for (const userId of allUsers) {
+      await fetchTasksForUser(userId); // Busca tarefas para cada usuário
+    }
+  };
+
+  useEffect(() => {
+    fetchAllUsersAndTasks();
+  }, []);
+
+  // Função para buscar marcadores específicos do usuário no Firebase
+  const fetchMarkers = async () => {
+    try {
+      const markersDocRef = doc(db, 'ordersControl', 'marcadoresTarefas', currentUser.user, 'marker');
+      const docSnap = await getDoc(markersDocRef);
+
+      if (docSnap.exists()) {
+        const markersData = docSnap.data().array || [];
+        setMarkers(markersData);
+      } else {
+        console.log("Documento de marcadores não encontrado.");
+      }
+    } catch (error) {
+      console.error("Erro ao buscar marcadores: ", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchMarkers();
+  }, []);
+
+  // Formatação das opções do select
+  const formattedMarkers = markers.map(marker => ({
+    value: marker.label,
+    label: marker.label,
+    color: marker.color
+  }));
+
+  // Estilos customizados para o react-select
+  const customStyles = {
+    option: (provided, state) => ({
+      ...provided,
+      backgroundColor: state.data.color,
+      color: 'white',
+      padding: 10,
+      cursor: 'pointer',
+    }),
+    singleValue: (provided, state) => ({
+      ...provided,
+      backgroundColor: state.data.color,
+      color: 'white',
+      padding: '5px 10px',
+      borderRadius: '5px',
+    }),
+    control: (provided, state) => ({
+      ...provided,
+      cursor: 'pointer',
+      opacity: state.isDisabled ? 0.5 : 1,  // Define opacidade quando desabilitado
+      backgroundColor: state.isDisabled ? '#f3f3f3' : 'white',  // Altera a cor do fundo quando desabilitado
+    })
+  };
+
+  const statusOptions = [
+    { value: 'pendente', label: 'Pendente' },
+    { value: 'concluido', label: 'Concluído' },
+    { value: 'cancelado', label: 'Cancelado' },
+  ];
+
+  // Função para adicionar novo marcador ao Firebase para o usuário atual
+  const addMarker = async () => {
+    if (newMarker.trim() !== '' && newMarkerColor) { // Verifica se a cor foi escolhida
+      const markersDocRef = doc(db, 'ordersControl', 'marcadoresTarefas', currentUser.user, 'marker');
+      try {
+        const docSnap = await getDoc(markersDocRef);
+
+        const newMarkerObject = { label: newMarker, color: newMarkerColor };
+
+        // Verifica se já existe um marcador com o mesmo label
+        const existingMarker = docSnap.exists() && docSnap.data().array.some(marker => marker.label === newMarker);
+
+        if (existingMarker) {
+          console.log("Erro: Marcador com esse label já existe.");
+          return; // Não prossegue se já existir um marcador com o mesmo label
+        }
+
+        if (!docSnap.exists()) {
+          await setDoc(markersDocRef, { array: [newMarkerObject] });
+        } else {
+          const updatedMarkers = [...docSnap.data().array, newMarkerObject];
+          await updateDoc(markersDocRef, { array: updatedMarkers });
+        }
+
+        setMarkers(prevMarkers => [...prevMarkers, newMarkerObject]);
+        setNewMarker('');
+        setNewMarkerColor('#000000');
+      } catch (error) {
+        console.error("Erro ao adicionar marcador: ", error);
+      }
+    }
+  };
 
   const handleDateChange = (e) => {
     const selectedDate = new Date(e.target.value);
@@ -138,16 +346,14 @@ const AssignTasksPage = () => {
         for (const city of citiesList) {
           Object.keys(city).forEach(key => {
             if (typeof city[key] === 'object' && city[key].user) {
-              // Adiciona todos os usuários à lista, independentemente de estarem atribuídos
               usersList.push({ id: key, ...city[key] });
             }
           });
         }
 
-        // Atualiza a lista de todos os usuários
         setAllUsers(usersList);
 
-        // Agora filtra apenas os usuários atribuídos
+        // Filtrando e atribuindo usuários com tarefas
         const assignedUsers = usersList.filter(user => user.assignment === currentUser.user);
 
         const usersWithTasksPromises = assignedUsers.map(async (user) => {
@@ -173,14 +379,16 @@ const AssignTasksPage = () => {
   };
 
   const handleCreateTask = async () => {
-    if (!newTaskTitle || !newTaskDescription || !newTaskDueDate || !priority) {
+    if (!newTaskTitle || !newTaskDescription || !newTaskDueDate || !priority || !selectedMarker) {
       setAlertTitle('Erro ao Criar Tarefa');
-      setAlertMessage('Por favor, preencha todos os campos obrigatórios antes de criar a tarefa.');
+      setAlertMessage('Por favor, preencha todos os campos obrigatórios, incluindo o marcador, antes de criar a tarefa.');
       setAlertOpen(true);
       return;
     }
 
     const requesterName = currentUser.user; // Use o campo 'user' em vez de 'displayName'
+
+    const selectedMarkerObject = markers.find(marker => marker.label === selectedMarker);
 
     const taskId = uuidv4();
     const taskRef = doc(db, 'tarefas', currentUser.user, 'tasks', taskId);
@@ -192,21 +400,70 @@ const AssignTasksPage = () => {
       dueDate: newTaskDueDate,
       priority: priority,
       requester: currentUser.user,
-      requesterName: requesterName // Aqui estamos usando 'user' corretamente
+      marker: selectedMarkerObject.label,  // Salva o label do marcador
+      markerColor: selectedMarkerObject.color  // Salva a cor do marcador
     });
 
     setModalOpen(false);
     setNewTaskTitle('');
     setNewTaskDescription('');
     setNewTaskDueDate('');
-    setPriority(''); // Limpa o campo de prioridade
+    setPriority('');
+    setSelectedMarker('');
   };
 
   const handleStatusChange = async (taskId, newStatus) => {
     const taskRef = doc(db, 'tarefas', currentUser.user, 'tasks', taskId);
+
+    // Atualiza o status da tarefa
     await updateDoc(taskRef, {
       status: newStatus
     });
+
+    // Agora, vamos enviar uma notificação para o usuário que está no campo "requester"
+    try {
+      const taskSnapshot = await getDoc(taskRef); // Obtém os detalhes da tarefa
+      const taskData = taskSnapshot.data();
+      const requester = taskData.requester; // Obtém o campo "requester"
+
+      // Agora, buscamos o token do requester
+      const citiesSnapshot = await getDocs(collection(db, 'usuarios'));
+      let userDocFound = null;
+
+      for (const cityDoc of citiesSnapshot.docs) {
+        const cityData = cityDoc.data();
+
+        if (cityData[requester]) {
+          userDocFound = cityData[requester];
+
+          const userTokenArray = userDocFound.token;
+
+          if (userTokenArray && userTokenArray.length > 0) {
+            const userToken = userTokenArray[0]; // Pega o token do usuário
+
+            // Configura a notificação
+            const notification = {
+              title: "Atualização de status da tarefa",
+              body: `O status da sua tarefa foi alterado para: ${newStatus}`,
+              click_action: "https://drogalira.com.br/atribute", // URL de redirecionamento
+              icon: "https://iili.io/duTTt8Q.png" // URL do ícone da notificação
+            };
+
+            // Envia a notificação
+            await sendNotification([userToken], notification); // Envia a notificação para o token do usuário
+          } else {
+            console.error("Token não encontrado para o usuário:", requester);
+          }
+          break;
+        }
+      }
+
+      if (!userDocFound) {
+        console.error("Usuário não encontrado:", requester);
+      }
+    } catch (error) {
+      console.error("Erro ao enviar notificação de status:", error);
+    }
   };
 
   const handleAssignTask = (task) => {
@@ -258,67 +515,65 @@ const AssignTasksPage = () => {
       setAlertOpen(true);
       return;
     }
-  
+
     if (selectedTask) {
       const oldTaskRef = doc(db, 'tarefas', currentUser.user, 'tasks', selectedTask.id);
       const newTaskRef = doc(db, 'tarefas', selectedUser, 'tasks', selectedTask.id);
-  
+
+      // Cria uma cópia da tarefa sem os campos marker e markerColor
       const updatedTask = {
         ...selectedTask,
-        requesterName: selectedUser,  // Atualiza apenas o requesterName para o novo usuário
-        orientation: orientation,  // Grava o campo orientação
+        requesterName: selectedUser,  // Atualiza o requesterName para o novo usuário
+        orientation: orientation,     // Grava o campo orientação
+        dueDate: changeDueDate && newTaskDueDate ? newTaskDueDate : selectedTask.dueDate, // Atualiza o prazo se necessário
       };
-  
-      // Se o checkbox estiver marcado e houver um novo prazo, atualiza o dueDate
-      if (changeDueDate && newTaskDueDate) {
-        updatedTask.dueDate = newTaskDueDate;
-      }
-  
+
+      // Remove os campos marker e markerColor
+      delete updatedTask.marker;
+      delete updatedTask.markerColor;
+
+      // Salva a tarefa para o novo usuário e apaga a tarefa antiga
       await setDoc(newTaskRef, updatedTask);
       await deleteDoc(oldTaskRef);
-  
-      // Fecha o modal imediatamente, antes de enviar a notificação
+
+      // Fecha o modal e redefine os campos
       setAtributeModalOpen(false);
       setSelectedTask(null);
       setSelectedUser('');
       setOrientation('');
-      setChangeDueDate(false);  // Reseta o checkbox após salvar
-      setNewTaskDueDate('');  // Reseta o campo de data
-  
-      // Agora envia a notificação sem depender do modal estar aberto
+      setChangeDueDate(false);
+      setNewTaskDueDate('');
+
+      // Envia notificação para o novo usuário
       try {
         const citiesSnapshot = await getDocs(collection(db, 'usuarios'));
         let userDocFound = null;
-  
+
         for (const cityDoc of citiesSnapshot.docs) {
           const cityData = cityDoc.data();
-  
+
           if (cityData[selectedUser]) {
             userDocFound = cityData[selectedUser];
-            console.log("Usuário encontrado na cidade:", cityDoc.id);
-            console.log("Dados do usuário:", userDocFound);
-  
             const userTokenArray = userDocFound.token;
-  
+
             if (userTokenArray && userTokenArray.length > 0) {
-              const userToken = userTokenArray[0]; // Extraia o token do array
-  
+              const userToken = userTokenArray[0]; // Token do usuário
+
               const notification = {
                 title: "Você tem uma nova tarefa",
                 body: `Uma nova tarefa foi atribuída a você: ${selectedTask.task}`,
-                click_action: "https://drogalira.com.br/atribute", // URL de redirecionamento
-                icon: "https://iili.io/duTTt8Q.png" // URL do ícone da notificação
+                click_action: "https://drogalira.com.br/atribute",
+                icon: "https://iili.io/duTTt8Q.png"
               };
-  
-              // Envia a notificação
-              await sendNotification([userToken], notification); // Envia o array de tokens (mesmo que seja 1)
+
+              await sendNotification([userToken], notification);
             } else {
               console.error("Token não encontrado para o usuário:", selectedUser);
             }
             break;
           }
         }
-  
+
         if (!userDocFound) {
           console.error("Usuário não encontrado em nenhuma cidade:", selectedUser);
         }
@@ -389,80 +644,103 @@ const AssignTasksPage = () => {
     <div className="flex bg-altBlue w-full">
       <div className="flex mt-14 w-full h-full">
         <div className='p-4 mt-4 w-full'>
-          <div className='flex flex-col lg:flex-row gap-2 justify-center items-center'>
-            <div>
+          <div className='flex flex-col lg:flex-row gap-2 justify-center items-center p-4 rounded-md shadow bg-primaryBlueDark'>
+            <div className='flex gap-2 justify-between items-center '>
+
               <button
                 onClick={() => {
                   setSelectedTask(null);
                   setModalOpen(true);
                 }}
-                className="bg-blue-500 text-white p-2 rounded"
+                className="bg-green-800 shadow text-white p-2 rounded"
               >
-                Criar Tarefa
+                <MdOutlineAddTask className='text-2xl' />
               </button>
 
-              <select
-                value={selectedUser}
-                onChange={handleUserSelect}
-                className="ml-4 p-2 border rounded"
-              >
-                <option value="">Selecione um usuário</option>
-                {usersWithTasks.length > 0 ? (
-                  usersWithTasks.map(user => (
-                    <option key={user.id} value={user.user}>
-                      {user.user} - {user.cargo}
-                    </option>
-                  ))
-                ) : (
-                  <option value="" disabled>
-                    Nenhum usuário disponível
-                  </option>
-                )}
-              </select>
-            </div>
-            <div>
-              <button
-                onClick={() => setShowAssignedTasks(!showAssignedTasks)}
-                className={`ml-4 bg-${showAssignedTasks ? 'red' : 'green'}-500 text-white p-2 rounded`}
-                disabled={!isToggleEnabled}
-              >
-                {showAssignedTasks ? 'Mostrar Minhas Tarefas' : 'Mostrar Tarefas Atribuídas'}
-              </button>
+              <div className="w-56">
+                <Select
+                  options={formattedMarkers}
+                  value={formattedMarkers.find(marker => marker.value === selectedFilterMarker)}
+                  onChange={(selectedOption) => setSelectedFilterMarker(selectedOption ? selectedOption.value : null)}
+                  styles={customStyles}
+                  isClearable
+                  placeholder="Marcador para filtrar"
+                  isDisabled={showAssignedTasks}  // Desabilita o seletor quando `showAssignedTasks` estiver ativo
+                />
+              </div>
+
+              <Select
+                options={statusOptions}
+                value={statusOptions.find(option => option.value === selectedStatus)}
+                onChange={(selectedOption) => setSelectedStatus(selectedOption.value)}
+                placeholder="Status da Tarefa"
+                className="w-56 ml-4"
+                isClearable={false}  // Remove a opção de limpar para sempre ter um status
+              />
+
+              <div className='flex justify-center items-center bg-altBlue rounded-md'>
+                <Select
+                  options={formattedUsers} // Agora utiliza o estado `formattedUsers` filtrado
+                  value={formattedUsers.find(user => user.value === selectedUser)}
+                  onChange={(selectedOption) => {
+                    setSelectedUser(selectedOption ? selectedOption.value : '');
+                    setIsToggleEnabled(!!selectedOption);
+                  }}
+                  placeholder="Selecione um usuário"
+                  isClearable
+                  className="w-56 ml-4"
+                />
+                <button
+                  onClick={() => {
+                    const newShowAssignedTasks = !showAssignedTasks;
+                    setShowAssignedTasks(newShowAssignedTasks);
+
+                    if (newShowAssignedTasks && selectedUser) {
+                      fetchTasksForSelectedUserWithRequester(selectedUser);
+                    } else {
+                      setUsersWithTasks([]); // Limpa a lista de tarefas se o botão for desativado
+                    }
+                  }}
+                  disabled={!isToggleEnabled}
+                >
+                  {showAssignedTasks ? <MdToggleOn className='text-green-600 text-5xl' /> : <MdToggleOff className='text-red-600 text-5xl' />}
+                </button>
+              </div>
             </div>
           </div>
 
-          {showAssignedTasks && selectedUser
+          {showAssignedTasks && selectedUser && usersWithTasks.length > 0
             ? (
               <div className="mt-4 w-full">
-                {usersWithTasks
-                  .filter(user => user.user === selectedUser)
-                  .map(user => (
-                    <div key={`user-${user.id}`} className="mb-2 p-4 w-full">
-                      <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
-                        {user.tasks.map(task => (
-                          <div key={`task-${task.id}-${user.id}`} className="p-2 rounded">
-                            <h3 className="font-semibold text-white">
-                              {user.user} - {user.cargo}
-                            </h3>
+                {usersWithTasks.map(user => (
+                  <div key={`user-${user.id}`} className="mb-2 p-4 w-full">
+                    <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
+                      {user.tasks
+                        .filter(task => task.status === selectedStatus) // Filtra as tarefas atribuídas pelo status
+                        .map(task => (
+                          <div key={`task-${task.id}-${user.id}`} className="px-2 pb-2 rounded bg-gray-400 shadow-md">
+                            <div className="font-semibold text-white text-center bg-altBlue mb-2 rounded-b-lg shadow">
+                              {user.user}
+                            </div>
                             <Task task={task} onStatusChange={handleStatusChange} />
                           </div>
                         ))}
-                      </div>
                     </div>
-                  ))}
+                  </div>
+                ))}
               </div>
             )
             : (
               <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {tasks.map(task => (
+                {filteredTasks.map(task => (
                   <div key={task.id} className="">
                     <Task task={task} onStatusChange={handleStatusChange} />
                     <div className='bg-white rounded-b-xl flex justify-between px-4 pb-2'>
                       <div className='bg-primaryBlueDark w-full rounded-b-xl pb-2 flex justify-between px-2'>
                         <button
                           onClick={() => handleAssignTask(task)}
-                          className={`text-white p-2 rounded mt-2 ${task.status === 'concluido' || task.requestSender || task.status === 'cancelado' ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-500'}`}
-                          disabled={task.status === 'concluido' || task.requestSender || task.status === 'cancelado'}
+                          className={`text-white p-2 rounded mt-2 ${task.status === 'concluido' || task.requestSender || task.status === 'cancelado' || task.requesterName ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-500'}`}
+                          disabled={task.status === 'concluido' || task.requestSender || task.status === 'cancelado' || task.requesterName}
                         >
                           <BsFillSendPlusFill className='text-xl' />
                         </button>
@@ -497,7 +775,6 @@ const AssignTasksPage = () => {
                   </div>
                 ))}
               </div>
-
             )}
         </div>
       </div>
@@ -546,6 +823,39 @@ const AssignTasksPage = () => {
             </p>
           </div>
         </div>
+
+        {/* Select para Marcador */}
+        <div className="mb-4">
+          <label className="text-lg font-medium leading-6 text-gray-900">Marcador</label>
+          <Select
+            options={formattedMarkers}
+            value={formattedMarkers.find(marker => marker.value === selectedMarker)}
+            onChange={(selectedOption) => setSelectedMarker(selectedOption.value)}
+            styles={customStyles}
+            placeholder="Selecione um marcador"
+          />
+        </div>
+
+        {/* Input e Botão para Adicionar Novo Marcador */}
+        <div className="flex items-center gap-2 mb-4">
+          <input
+            type="text"
+            placeholder="Adicionar novo marcador"
+            value={newMarker}
+            onChange={(e) => setNewMarker(e.target.value)}
+            className="w-full p-2 border rounded"
+          />
+          {/* Input de Cor */}
+          <input
+            type="color"
+            value={newMarkerColor}
+            onChange={(e) => setNewMarkerColor(e.target.value)}
+            className="w-10 h-10 p-1 rounded"
+          />
+          <button onClick={addMarker} className="p-2 bg-blue-500 text-white rounded">
+            <BsPlus className="text-xl" />
+          </button>
+        </div>
         <div className="mt-4">
           <button
             type="button"
@@ -569,7 +879,6 @@ const AssignTasksPage = () => {
               onChange={() => {
                 const newShowAllUsers = !showAllUsers;
                 setShowAllUsers(newShowAllUsers); // Alterna o estado
-                console.log('Checkbox alterado. Mostrar todos os usuários:', newShowAllUsers); // Adiciona log
               }}
             />
             <span className="ml-2">Mostrar todos os usuários</span>
@@ -606,8 +915,6 @@ const AssignTasksPage = () => {
               </option>
             )}
           </select>
-          {console.log('Quantidade total de usuários:', allUsers.length)} {/* Log para verificar quantos usuários existem no total */}
-          {console.log('Usuários:', allUsers)} {/* Log para inspecionar os dados brutos de usuários */}
         </div>
 
         {/* Checkbox para alterar o prazo */}
@@ -620,7 +927,6 @@ const AssignTasksPage = () => {
               onChange={() => {
                 const newChangeDueDate = !changeDueDate;
                 setChangeDueDate(newChangeDueDate);
-                console.log('Checkbox "Alterar Prazo" alterado. Novo valor:', newChangeDueDate); // Log para checkbox de data
               }}
             />
             <span className="ml-2">Alterar Prazo</span>
@@ -635,7 +941,6 @@ const AssignTasksPage = () => {
               value={newTaskDueDate}
               onChange={(e) => {
                 setNewTaskDueDate(e.target.value);
-                console.log('Nova data de vencimento da tarefa:', e.target.value); // Log para o campo de data
               }}
               className="w-full p-2 border rounded mb-2"
               min={new Date().toISOString().slice(0, 16)} // Define o mínimo como a data e hora atuais
