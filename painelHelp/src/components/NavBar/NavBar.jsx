@@ -5,7 +5,7 @@ import { FaBars, FaTimes, FaTasks, FaUserCircle, FaHome, FaSignOutAlt, FaSignInA
 import { useAuth } from '../../context/AuthContext';
 import OfflineNotice from '../OffLineNotice/OfflineNotice';
 import { IoLogoAndroid, IoDesktopSharp, IoDocumentTextSharp } from 'react-icons/io5';
-import { FaCartShopping } from "react-icons/fa6";
+import { SiCoinmarketcap } from "react-icons/si";
 import { isDesktop } from 'react-device-detect';
 import UserProfile from '../UserProfile/UserProfile';
 import Modal from 'react-modal';
@@ -15,6 +15,7 @@ import { doc, getDoc } from "firebase/firestore"; // Importe os métodos do Fire
 import { db } from "../../firebase"; // Importe a instância do Firestore configurada
 import { RiLockPasswordFill } from "react-icons/ri";
 import { GrResources } from "react-icons/gr";
+import { FaTag } from "react-icons/fa";
 
 Modal.setAppElement('#root');
 
@@ -27,6 +28,8 @@ const Navbar = () => {
   const { isAuthenticated, logout, currentUser } = useAuth(); // Obtém o estado de autenticação e funções do contexto
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false); // Estado para controlar a abertura do modal de perfil
   const navRef = useRef(null); // Referência para o elemento da barra de navegação
+  const permittedRoles = ['T.I', 'Supervisor', 'Compras', 'Claudemir', 'Marketing']; // Lista de cargos permitidos
+
 
   const fetchSenhaDoDia = async () => {
     const today = new Date();
@@ -36,6 +39,7 @@ const Navbar = () => {
     const dataString = `${dia}/${mes}/${ano}`;
     const docRef = doc(db, "senhasVsm", "senhasDiaria");
     const docSnap = await getDoc(docRef);
+   
 
     if (docSnap.exists()) {
       const senhas = docSnap.data();
@@ -67,11 +71,24 @@ const Navbar = () => {
       icon: FaHome, // Ícone do item de navegação
       href: '/' // Link para onde o item aponta
     },
+
+
+
     {
       name: 'Hora Certa',
       icon: FaClock,
       href: '/horacerta'
     },
+
+    // Condição para exibir "Etiquetas p/ Envio" apenas para os cargos permitidos
+    ...(permittedRoles.includes(currentUser?.cargo) ? [
+      {
+        name: 'Etiquetas p/ Envio',
+        icon: FaTag,
+        href: '/printpersonalizado'
+      }
+    ] : []),
+
     {
       name: 'Recursos Humanos',
       icon: GrResources,
@@ -81,31 +98,54 @@ const Navbar = () => {
         { name: 'Gerencia RH', href: '/tipodoc' },
       ]
     },
+
+
+
     {
       name: 'Suporte Ti',
       icon: MdHelp,
-      subItems: [ // Subitens para criar um submenu
+      subItems: [
         { name: 'Abrir Chamados', href: '/usertickets' },
         { name: 'Solicitações', href: '/solicitati' },
-        { name: 'Geren. Chamados', href: '/gerenchamados' },
-        { name: 'Geren. Estoque', href: '/estoqueti' },
-        { name: 'Geren. Servers', href: '/servers' },
-        { name: 'Monitor Machine', href: '/monitormachine' },
-        { name: 'Relatório Impressoras', href: '/printerlist' },
-        { name: 'Relatório Chamados', href: '/relatorioti' },
-        { name: 'Cadastrar Usuario', href: '/newuser' },
+
+        // Itens adicionais específicos para o cargo "T.I"
+        ...(currentUser?.cargo === "T.I" ? [
+          { name: 'Geren. Chamados', href: '/gerenchamados' },
+          { name: 'Geren. Estoque', href: '/estoqueti' },
+          { name: 'Geren. Servers', href: '/servers' },
+          { name: 'Monitor Machine', href: '/monitormachine' },
+          { name: 'Relatório Impressoras', href: '/printerlist' },
+          { name: 'Relatório Chamados', href: '/relatorioti' },
+          { name: 'Cadastrar Usuario', href: '/newuser' }
+        ] : []),
       ]
     },
-   // {
-   //   name: 'Compras',
-   //   icon: FaCartShopping,
-   //   subItems: [
-   //     { name: 'Solicitações', href: '/solicitacompras' },
-   //     { name: 'Geren. Estoque', href: '/estoque' },
-   //     { name: 'Relatório tipo log', href: '/reportcompras' },
-   //     { name: 'Relatório de Custos', href: '/custocompras' },
-   //   ]
-   // },
+
+
+    {
+      name: 'Marketing',
+      icon: SiCoinmarketcap,
+      subItems: [
+        { name: 'Web Panfleto', href: '/webpanfleto' },
+        { name: 'Uploud MP3', href: '/anunciamp3' },
+      ]
+    },
+
+
+
+    // {
+    //   name: 'Compras',
+    //   icon: FaCartShopping,
+    //   subItems: [
+    //     { name: 'Solicitações', href: '/solicitacompras' },
+    //     { name: 'Geren. Estoque', href: '/estoque' },
+    //     { name: 'Relatório tipo log', href: '/reportcompras' },
+    //     { name: 'Relatório de Custos', href: '/custocompras' },
+    //   ]
+    // },
+
+
+
     {
       name: 'Tarefas',
       icon: FaTasks,
