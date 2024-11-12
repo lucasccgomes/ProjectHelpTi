@@ -131,7 +131,7 @@ const LastSolicitacao = () => {
                     </div>
                     <div className='flex justify-end -mr-5'>
                         <Link
-                            to="/solicitacao"
+                            to="/solicitati"
                             className="flex justify-center items-center gap-1 bg-white text-gray-700 pt-1 px-1 rounded-tl-lg"
                         >
                             <div className='flex justify-center items-center gap-1 hover:scale-[0.8]'>
