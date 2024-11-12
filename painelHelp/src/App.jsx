@@ -28,6 +28,9 @@ import UserForm from './pages/UserFormPage';
 import DocRh from './pages/DocRh';
 import PrintList from './pages/printList';
 import MonitorMachine from './pages/MonitorMachine';
+import EditWebPanfleto from './pages/EditWebPanfleto';
+import PrintForm from './pages/PrintForm';
+import AnuncioMp3 from './pages/AnuncioMp3';
 
 const useUpdateChecker = (onUpdateAvailable) => {
   useEffect(() => {
@@ -87,12 +90,31 @@ const App = () => {
                 }
                 />
                 <Route path="/login" element={<LoginPage />} />
+
+
                 <Route path="/usertickets" element={
                   <ProtectedRoute>
                     <UserTickets />
                   </ProtectedRoute>
                 }
                 />
+
+
+
+                <Route path="/printpersonalizado" element={<ProtectedRoute allowedRoles={[
+                  'T.I',
+                  'Supervisor',
+                  'Compras',
+                  'Claudemir',
+                  'Marketing'
+                ]}
+                >
+                  <PrintForm />
+                </ProtectedRoute>
+                }
+                />
+
+
                 <Route path="/solicitati" element={<ProtectedRoute allowedRoles={[
                   'T.I',
                   'Gerente',
@@ -105,6 +127,9 @@ const App = () => {
                 </ProtectedRoute>
                 }
                 />
+
+
+
                 <Route path="/estoqueti" element={
                   <ProtectedRoute allowedRoles={[
                     'T.I',
@@ -115,6 +140,10 @@ const App = () => {
                   </ProtectedRoute>
                 }
                 />
+
+
+
+
                 <Route path="/atribute" element={
                   <ProtectedRoute allowedRoles={[
                     'T.I',
@@ -130,6 +159,11 @@ const App = () => {
                   </ProtectedRoute>
                 }
                 />
+
+
+
+
+
                 <Route path="/solicitacompras" element={
                   <ProtectedRoute allowedRoles={[
                     'T.I',
@@ -141,12 +175,22 @@ const App = () => {
                   </ProtectedRoute>
                 }
                 />
+
+
+
+
+
                 <Route path="/horacerta" element={
                   <ProtectedRoute>
                     <TimeClock />
                   </ProtectedRoute>
                 }
                 />
+
+
+
+
+
                 <Route path="/estoque" element={
                   <ProtectedRoute allowedRoles={[
                     'T.I',
@@ -158,6 +202,12 @@ const App = () => {
                   </ProtectedRoute>
                 }
                 />
+
+
+
+
+
+
                 <Route path="/reportcompras" element={
                   <ProtectedRoute allowedRoles={[
                     'T.I',
@@ -169,6 +219,12 @@ const App = () => {
                   </ProtectedRoute>
                 }
                 />
+
+
+
+
+
+
                 <Route path="/custocompras" element={<ProtectedRoute allowedRoles={[
                   'T.I',
                   'Compras',
@@ -179,6 +235,12 @@ const App = () => {
                 </ProtectedRoute>
                 }
                 />
+
+
+
+
+
+
                 <Route path="/gerenchamados" element={<ProtectedRoute allowedRoles={[
                   'T.I',
                   'Claudemir'
@@ -188,6 +250,12 @@ const App = () => {
                 </ProtectedRoute>
                 }
                 />
+
+
+
+
+
+
                 <Route path="/setorrh" element={<ProtectedRoute allowedRoles={[
                   'T.I',
                   'Gerente',
@@ -200,6 +268,10 @@ const App = () => {
                 </ProtectedRoute>
                 }
                 />
+
+
+
+
 
                 <Route path="/listenvio" element={<ProtectedRoute allowedRoles={[
                   'T.I',
@@ -214,6 +286,12 @@ const App = () => {
                 }
                 />
 
+
+
+
+
+
+
                 <Route path="/tipodoc" element={<ProtectedRoute allowedRoles={[
                   'T.I',
                   'RH',
@@ -223,6 +301,11 @@ const App = () => {
                 </ProtectedRoute>
                 }
                 />
+
+
+
+
+
 
                 <Route path="/relatorioti" element={<ProtectedRoute allowedRoles={[
                   'T.I',
@@ -234,6 +317,12 @@ const App = () => {
                 }
                 />
 
+
+
+
+
+
+
                 <Route path="/newuser" element={<ProtectedRoute allowedRoles={[
                   'T.I',
                 ]}
@@ -242,6 +331,11 @@ const App = () => {
                 </ProtectedRoute>
                 }
                 />
+
+
+
+
+
 
                 <Route path="/servers" element={<ProtectedRoute allowedRoles={[
                   'T.I',
@@ -253,6 +347,12 @@ const App = () => {
                 }
                 />
 
+
+
+
+
+
+
                 <Route path="/printerlist" element={<ProtectedRoute allowedRoles={[
                   'T.I',
                   'Claudemir'
@@ -263,6 +363,13 @@ const App = () => {
                 }
                 />
 
+
+
+
+
+
+
+
                 <Route path="/monitormachine" element={<ProtectedRoute allowedRoles={[
                   'T.I',
                   'Claudemir'
@@ -272,6 +379,32 @@ const App = () => {
                 </ProtectedRoute>
                 }
                 />
+
+
+                <Route path="/webpanfleto" element={<ProtectedRoute allowedRoles={[
+                  'Marketing',
+                  'Claudemir'
+                ]}
+                >
+                  <EditWebPanfleto />
+                </ProtectedRoute>
+                }
+                />
+
+
+
+                <Route path="/anunciamp3" element={<ProtectedRoute allowedRoles={[
+                  'Marketing',
+                  'T.I',
+                  'Claudemir'
+                ]}
+                >
+                  <AnuncioMp3 />
+                </ProtectedRoute>
+                }
+                />
+
+
 
                 <Route path="/nopermission" element={<NoPermission />} />
               </Routes>
