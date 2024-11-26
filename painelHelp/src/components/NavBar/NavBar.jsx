@@ -39,7 +39,7 @@ const Navbar = () => {
     const dataString = `${dia}/${mes}/${ano}`;
     const docRef = doc(db, "senhasVsm", "senhasDiaria");
     const docSnap = await getDoc(docRef);
-   
+
 
     if (docSnap.exists()) {
       const senhas = docSnap.data();
@@ -126,8 +126,14 @@ const Navbar = () => {
       name: 'Marketing',
       icon: SiCoinmarketcap,
       subItems: [
-        { name: 'Web Panfleto', href: '/webpanfleto' },
-        { name: 'Uploud MP3', href: '/anunciamp3' },
+        { name: 'Abrir Chamado', href: '/mknewchamados' },
+
+        // Itens adicionais específicos para o cargo "T.I"
+        ...(currentUser?.cargo === "Marketing" ? [
+          { name: 'Geren. Chamados', href: '/mkchamados' },
+          { name: 'Web Panfleto', href: '/webpanfleto' },
+          { name: 'Uploud MP3', href: '/anunciamp3' },
+        ] : []),
       ]
     },
 
