@@ -9,6 +9,7 @@ import FullNameModal from '../components/FullNameModal/FullNameModal';
 import MyModal from '../components/MyModal/MyModal';
 import { getFirestore, doc, onSnapshot } from 'firebase/firestore';
 import { FiSun, FiSunset } from 'react-icons/fi';
+import ModalSendConfirm from '../components/ModalSendConfirm/ModalSendConfirm';
 
 
 const db = getFirestore();
@@ -131,6 +132,7 @@ const HomePage = () => {
       )}
       <NotificationModal />
       <FullNameModal />
+      <ModalSendConfirm/>
 
       {/*MODAL DE MENSAGEM DO DIA*/}
       <MyModal isOpen={isModalOpen} onClose={handleCloseModal}>
