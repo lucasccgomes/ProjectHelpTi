@@ -16,6 +16,7 @@ import { MdReportProblem, MdDoNotDisturb, MdDescription } from "react-icons/md";
 import { IoIosAddCircle, IoMdAlert } from "react-icons/io";
 import MyModal from '../components/MyModal/MyModal';
 import ReactQuill from 'react-quill';
+import ModalSendConfirm from '../components/ModalSendConfirm/ModalSendConfirm';
 
 // Componente principal que renderiza os tickets do usuário
 const UserTickets = () => {
@@ -80,20 +81,20 @@ const UserTickets = () => {
         )
       );
 
-      // Busca os tokens dos usuários com o cargo "T.I."
+      // Busca os tokens dos usuários com o cargo "T.I"
       const usersSnapshot = await getDocs(
-        query(collection(db, 'usuarios'), where('cargo', '==', 'T.I.'))
+        query(collection(db, 'usuarios'), where('cargo', '==', 'T.I'))
       );
 
       const tiTokens = [];
       usersSnapshot.forEach((doc) => {
         const userData = doc.data();
         if (userData.token) {
-          tiTokens.push(userData.token); // Armazena os tokens dos usuários "T.I."
+          tiTokens.push(userData.token); // Armazena os tokens dos usuários "T.I"
         }
       });
 
-      // Dispara a notificação para os usuários "T.I."
+      // Dispara a notificação para os usuários "T.I"
       if (tiTokens.length > 0) {
         await fetch(NOTIFICATION_API_URL, {
           method: 'POST',
@@ -460,7 +461,7 @@ const UserTickets = () => {
               Todos da {currentUser.loja}
               <animated.button
                 style={toggleSpring}
-                className={`flex items-center ${showStoreTickets ? '' : ''} hover:bg-${showStoreTickets ? 'green-500' : 'gray-500'} text-white font-bold `}
+                className={`flex items-center ${showStoreTickets ? '' : ''} hover:bg-${showStoreTickets ? '' : ''} text-white font-bold `}
                 onClick={() => setShowStoreTickets(!showStoreTickets)}
               >
                 {showStoreTickets ?
@@ -881,7 +882,7 @@ const UserTickets = () => {
           </button>
         </div>
       </MyModal>
-
+      <ModalSendConfirm/>
     </div>
   );
 };
