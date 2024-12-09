@@ -85,7 +85,7 @@ const MkAdmChamados = () => {
             const ticketDocRef = doc(db, 'marketingChamados', 'aberto', 'tickets', ticketId);
             const ticketSnapshot = await getDoc(ticketDocRef);
             const ticketData = ticketSnapshot.data();
-    
+
             if (ticketData) {
                 // Atualiza os campos no ticket
                 await updateDoc(ticketDocRef, {
@@ -93,15 +93,15 @@ const MkAdmChamados = () => {
                     descriptautorizacao: description,
                     status: 'BLOCK'
                 });
-    
+
                 // Busca o token do supervisor no Firebase
                 const userDocRef = doc(db, 'usuarios', 'Osvaldo Cruz');
                 const userSnapshot = await getDoc(userDocRef);
                 const userData = userSnapshot.data();
-    
+
                 if (userData && userData[supervisorName] && Array.isArray(userData[supervisorName].token)) {
                     const token = userData[supervisorName].token[0]; // Extrai o primeiro token, caso haja múltiplos
-    
+
                     // Cria a notificação no formato correto
                     const notificationData = {
                         title: `Chamado ${ticketData.order} precisa de sua autorização`,
@@ -109,7 +109,7 @@ const MkAdmChamados = () => {
                         click_action: "https://drogalira.com.br/usertickets",
                         icon: "https://iili.io/duTTt8Q.png"
                     };
-    
+
                     // Envia a notificação ao endpoint configurado
                     await sendNotification([token], notificationData); // Envie como array de tokens
                     console.log('Notificação enviada com sucesso!');
@@ -117,7 +117,7 @@ const MkAdmChamados = () => {
                     console.error('Token do supervisor não encontrado ou inválido.');
                 }
             }
-    
+
             closeAuthorizationModal();
         } catch (error) {
             console.error('Erro ao autorizar e bloquear o chamado:', error);
@@ -878,7 +878,33 @@ const MkAdmChamados = () => {
                                     )}
                                 </div>
                                 <div className="flex flex-col gap-2 mt-2 w-full justify-between border-2 rounded-md p-2">
-                                    <p className='text-gray-800 font-semibold text-center text-xl'>Alteração de Status</p>
+                                <div className='flex justify-between gap-2'>
+                                        {!ticket.autorizastatus && !ticket.autorizacao && (
+                                            <button
+                                                className="bg-primaryBlueDark text-white p-2 hover:scale-[0.9] rounded-full w-10 h-10"
+                                                onClick={() => openAuthorizationModal(ticket)} // Passa o ticket selecionado ao abrir o modal
+                                            >
+                                                <PiHandDepositFill className='text-2xl' />
+                                            </button>
+                                        )}
+                                        {ticket.interacao && (
+                                            <div className="flex gap-2">
+
+                                                <button
+                                                    onClick={() => openNormalizarModal(ticket)}
+                                                    className="bg-gray-500 text-white px-4 py-2 rounded w-full"
+                                                >
+                                                    Normalizar
+                                                </button>
+                                            </div>
+                                        )}
+                                        <p className='text-gray-800 font-semibold text-center text-xl'>Alteração de Status</p>
+                                        <div>
+
+                                            
+                                        </div>
+                                    </div>
+                                    
                                     <div className='flex w-full justify-between'>
                                         <button
                                             onClick={() => updateTicketStatus(ticket.id, 'Aberto')}
@@ -902,34 +928,7 @@ const MkAdmChamados = () => {
                                             Finalizado
                                         </button>
                                     </div>
-                                    <div className='flex justify-between gap-2'>
-                                        {!ticket.autorizastatus && !ticket.autorizacao && (
-                                            <button
-                                                className="bg-primaryBlueDark text-white p-2 hover:scale-[0.9] rounded-full w-10 h-10"
-                                                onClick={() => openAuthorizationModal(ticket)} // Passa o ticket selecionado ao abrir o modal
-                                            >
-                                                <PiHandDepositFill className='text-2xl' />
-                                            </button>
-                                        )}
-                                        <button
-                                            onClick={() => updateTicketStatus(ticket.id, 'VSM')}
-                                            className={`bg-blue-400 text-white px-4 w-full py-2 rounded ${ticket.status === 'Finalizado' ? 'opacity-50 cursor-not-allowed' : ''} ${ticket.status === 'VSM' ? 'bg-blue-700 ring-2 ring-white' : ''}`}
-                                            disabled={ticket.status === 'Finalizado' || (ticket.autorizacao && !ticket.autorizastatus)}
-                                        >
-                                            (VSM)-Externo
-                                        </button>
-                                        {ticket.interacao && (
-                                            <div className="flex gap-2">
-
-                                                <button
-                                                    onClick={() => openNormalizarModal(ticket)}
-                                                    className="bg-gray-500 text-white px-4 py-2 rounded w-full"
-                                                >
-                                                    Normalizar
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
+                                    
                                 </div>
 
                             </div>

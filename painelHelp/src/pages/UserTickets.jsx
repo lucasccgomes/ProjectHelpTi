@@ -130,7 +130,8 @@ const UserTickets = () => {
       // Atualiza o status do ticket para "Negado" e salva o motivo
       await updateDoc(ticketDocRef, {
         autorizastatus: false,
-        noautoriza: denyReason
+        noautoriza: denyReason,
+        status: 'RECUS', // Atualiza o status para RECUS
       });
 
       // Atualiza o estado local após a alteração
@@ -701,13 +702,15 @@ const UserTickets = () => {
                         {ticket.descricaoFinalizacao ? 'Conclusão' : (ticket.status === 'Andamento' ? 'Andamento' : 'Tentativa')}
                       </button>
                     </div>
-                    
+
                   </div>
                   {ticket.status !== 'Finalizado' && (
                     <div className='bg-white text-gray-700 pt-0 px-2 pb-1 rounded-md shadow-lg'>
                       <button
-                        className='bg-red-700 text-white px-4 py-2 rounded-md w-full flex justify-center items-center'
+                        className={`${ticket.status === 'BLOCK' ? 'bg-gray-500 cursor-not-allowed' : 'bg-red-700'
+                          } text-white px-4 py-2 rounded-md w-full flex justify-center items-center`}
                         onClick={() => openUrgentConfirmModal(ticket)}
+                        disabled={ticket.status === 'BLOCK'}
                       >
                         <IoIosAddCircle className='mr-2' />
                         <p>Atenção</p>
@@ -882,7 +885,7 @@ const UserTickets = () => {
           </button>
         </div>
       </MyModal>
-      <ModalSendConfirm/>
+      <ModalSendConfirm />
     </div>
   );
 };

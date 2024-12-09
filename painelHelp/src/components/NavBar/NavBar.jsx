@@ -9,13 +9,14 @@ import { SiCoinmarketcap } from "react-icons/si";
 import { isDesktop } from 'react-device-detect';
 import UserProfile from '../UserProfile/UserProfile';
 import Modal from 'react-modal';
-import { useSpring, animated } from '@react-spring/web';
+import { useSpring } from '@react-spring/web';
 import MyModal from '../MyModal/MyModal'
 import { doc, getDoc } from "firebase/firestore"; // Importe os métodos do Firestore
 import { db } from "../../firebase"; // Importe a instância do Firestore configurada
 import { RiLockPasswordFill } from "react-icons/ri";
 import { GrResources } from "react-icons/gr";
 import { FaTag } from "react-icons/fa";
+import { MdAssessment } from "react-icons/md";
 
 Modal.setAppElement('#root');
 
@@ -132,7 +133,11 @@ const Navbar = () => {
         ...(currentUser?.cargo === "Marketing" ? [
           { name: 'Geren. Chamados', href: '/mkchamados' },
           { name: 'Web Panfleto', href: '/webpanfleto' },
+        ] : []),
+
+        ...(currentUser?.cargo === "Marketing", "T.I" ? [
           { name: 'Uploud MP3', href: '/anunciamp3' },
+          { name: 'Video Senhas', href: '/videosenhas' },
         ] : []),
       ]
     },
@@ -156,6 +161,17 @@ const Navbar = () => {
       name: 'Tarefas',
       icon: FaTasks,
       href: '/atribute'
+    },
+
+    {
+      name: 'Avalição',
+      icon: MdAssessment,
+      subItems: [
+        // Itens adicionais específicos para o cargo "T.I"
+        ...(currentUser?.cargo === "T.I", "Gerente", "Claudemir", "Supervisor", "Marketing" ? [
+          { name: 'Relatorio', href: '/relatavaliacao' },
+        ] : []),
+      ]
     },
   ];
 

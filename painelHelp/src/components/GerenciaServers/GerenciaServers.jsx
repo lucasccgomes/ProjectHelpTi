@@ -23,6 +23,10 @@ export default function GerenciaServer() {
   const [saveMessage, setSaveMessage] = useState('');
   const [showAddServerModal, setShowAddServerModal] = useState(false); // Modal de Adicionar Servidor
   const [showStatusModal, setShowStatusModal] = useState(false); // Modal de Status
+  const [loadingButton, setLoadingButton] = useState(null); // Estado para o botão que está carregando
+  const [loadingCorrigir, setLoadingCorrigir] = useState(false);
+  const [loadingButtons, setLoadingButtons] = useState({});
+
 
   const getBackgroundColor = (situations) => {
     if (situations.includes('Servidor Inacessível')) return 'bg-gray-500';
@@ -160,45 +164,37 @@ export default function GerenciaServer() {
     }
   };
 
-  const handleCorrigir = async (host, port, serverName) => {
-    setAlertModalMessage('Aplicando correção...');
-    setAlertModalLoading(true);
-    setShowOkButton(false);
-    setAlertModalOpen(true);
-
-    // Primeiro executa o StopSlave
-    const stopSuccess = await controlSlave(host, port, 'StopSlave', serverName);
-    if (stopSuccess) {
-      // Depois executa o StartSlave
-      await controlSlave(host, port, 'StartSlave', serverName);
-
-      // Após Stop e Start, chama o endpoint de verificação
-      try {
+  const handleCorrigir = async (host, port, serverId) => {
+    setLoadingButtons((prev) => ({ ...prev, [serverId]: true }));
+    try {
+      const stopSuccess = await controlSlave(host, port, 'StopSlave');
+      if (stopSuccess) {
+        await controlSlave(host, port, 'StartSlave');
         const checkResponse = await fetch('https://api.drogalira.com.br/api/check-server', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${AUTH_TOKEN}`,
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
           },
           body: JSON.stringify({ host }),
         });
-
+  
         if (checkResponse.ok) {
           setAlertModalMessage('Correção Concluída');
         } else {
           setAlertModalMessage('Erro ao verificar o status do servidor');
         }
-      } catch (error) {
-        console.error('Erro ao chamar /api/check-server:', error);
-        setAlertModalMessage('Erro ao verificar o status do servidor');
+      } else {
+        setAlertModalMessage('Erro ao aplicar correção');
       }
-    } else {
-      setAlertModalMessage('Erro ao aplicar correção');
+    } catch (error) {
+      console.error('Erro ao corrigir:', error);
+      setAlertModalMessage('Erro inesperado na correção');
+    } finally {
+      setLoadingButtons((prev) => ({ ...prev, [serverId]: false }));
+      setAlertModalOpen(true);
     }
-
-    setAlertModalLoading(false);
-    setShowOkButton(true);
-  };
+  };  
 
   const closeModal = () => {
     setShowStatusModal(false);
@@ -225,7 +221,7 @@ export default function GerenciaServer() {
           <div></div>
           <h1 className="text-xl font-semibold text-center mb-4 text-white">MySQL Slave Control</h1>
           <div>
-          <button
+            <button
               onClick={() => setShowAddServerModal(true)} // Abre o modal de Adicionar Servidor
               className="bg-green-600 text-white p-2 rounded hover:bg-green-500 shadow-md"
             >
@@ -252,21 +248,25 @@ export default function GerenciaServer() {
                 </div>
                 <div className="mt-2 flex gap-2">
                   <button
-                    onClick={() => handleCorrigir(server.host, server.port, server.Loja)}
-                    className={`w-full bg-primaryBlueDark text-white p-2 rounded hover:bg-altBlue ${situations.length === 0 || situations.includes('Servidor Inacessível')
-                      ? 'bg-slate-300 !text-gray-500 hover:bg-slate-300 cursor-not-allowed'
-                      : ''
-                      }`}
-                    disabled={situations.length === 0 || situations.includes('Servidor Inacessível')}
+                    onClick={() => handleCorrigir(server.host, server.port, server.id)}
+                    className={`w-full ${loadingButtons[server.id] ? 'bg-gray-500 cursor-wait' : 'bg-primaryBlueDark'
+                      } text-white p-2 rounded`}
                   >
-                    Corrigir
+                    {loadingButtons[server.id] ? 'Corrigindo...' : 'Corrigir'}
                   </button>
                   <button
-                    onClick={() => getSlaveStatus(server.host, server.port, server.Loja)}
-                    className="w-full bg-yellow-500 text-white p-2 rounded hover:bg-yellow-600"
+                    onClick={async () => {
+                      setLoadingButton(`status-${server.id}`); // Define o botão atual como carregando
+                      await getSlaveStatus(server.host, server.port, server.Loja); // Chama a função de status
+                      setLoadingButton(null); // Reseta o estado de carregamento após a resposta
+                    }}
+                    className={`w-full ${loadingButton === `status-${server.id}` ? 'bg-gray-500 cursor-wait' : 'bg-yellow-500 hover:bg-yellow-600'
+                      } text-white p-2 rounded`}
+                    disabled={loadingButton === `status-${server.id}`} // Desabilita o botão enquanto está carregando
                   >
-                    Status
+                    {loadingButton === `status-${server.id}` ? <LoadingSpinner /> : 'Status'}
                   </button>
+
                 </div>
               </div>
             </div>

@@ -275,14 +275,14 @@ const MarketingMp3 = () => {
             showAlert("Erro", "Por favor, selecione uma data, um arquivo e uma loja.");
             return;
         }
-    
+
         try {
             const formattedDate = selectedDate.split('-').reverse().join('/'); // Formata a data para dd/mm/aaaa
             const lojaFormatted = selectedServer.replace(/-/g, ' '); // Substitui traços por espaços no nome da loja
-    
+
             // Obtenha a referência ao documento "agendaPlayer" dentro da coleção "webPanfleto"
             const docRef = doc(db, "webPanfleto", "agendaPlayer");
-    
+
             // Atualize o documento com os dados da agenda
             await setDoc(
                 docRef,
@@ -295,7 +295,7 @@ const MarketingMp3 = () => {
                 },
                 { merge: true } // Garante que os dados existentes não sejam sobrescritos
             );
-    
+
             setIsScheduleSaved(true); // Marca como salvo
             showAlert("Sucesso", "Agendamento salvo com sucesso!");
         } catch (error) {
@@ -303,7 +303,19 @@ const MarketingMp3 = () => {
             showAlert("Erro", "Erro ao salvar agendamento.");
         }
     };
-    
+
+    useEffect(() => {
+        if (timeModalIsOpen) {
+            const timeout = setTimeout(() => {
+                setTimeModalIsOpen(false);
+                stopRealTimeUpdate();
+            }, 15000); // 15 segundos
+
+            // Limpar o timeout caso o modal seja fechado antes dos 15 segundos
+            return () => clearTimeout(timeout);
+        }
+    }, [timeModalIsOpen]);
+
 
     return (
         <div className="max-w-md mx-auto pt-24">
