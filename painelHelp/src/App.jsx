@@ -33,6 +33,8 @@ import PrintForm from './pages/PrintForm';
 import AnuncioMp3 from './pages/AnuncioMp3';
 import MkUserTickets from './pages/MkUserTickets';
 import MkGerenciadorChamados from './pages/MkGerenciadorChamados';
+import AvaliacoesConsulta from './pages/AvaliacoesConsulta';
+import TelaPass from './pages/TelaPass';
 
 const useUpdateChecker = (onUpdateAvailable) => {
   useEffect(() => {
@@ -340,6 +342,30 @@ const App = () => {
                 ]}
                 >
                   <MkGerenciadorChamados />
+                </ProtectedRoute>
+                }
+                />
+
+                <Route path="/videosenhas" element={<ProtectedRoute allowedRoles={[
+                  'Marketing',
+                  'T.I',
+                  'Claudemir'
+                ]}
+                >
+                  <TelaPass />
+                </ProtectedRoute>
+                }
+                />
+
+                
+
+                <Route path="/relatavaliacao" element={<ProtectedRoute allowedRoles={[
+                  'Marketing',
+                  'T.I',
+                  'Claudemir'
+                ]}
+                >
+                  <AvaliacoesConsulta />
                 </ProtectedRoute>
                 }
                 />
