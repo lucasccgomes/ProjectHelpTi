@@ -85,7 +85,7 @@ const AdmChamados = () => {
             const ticketDocRef = doc(db, 'chamados', 'aberto', 'tickets', ticketId);
             const ticketSnapshot = await getDoc(ticketDocRef);
             const ticketData = ticketSnapshot.data();
-    
+
             if (ticketData) {
                 // Atualiza os campos no ticket
                 await updateDoc(ticketDocRef, {
@@ -93,15 +93,15 @@ const AdmChamados = () => {
                     descriptautorizacao: description,
                     status: 'BLOCK'
                 });
-    
+
                 // Busca o token do supervisor no Firebase
                 const userDocRef = doc(db, 'usuarios', 'Osvaldo Cruz');
                 const userSnapshot = await getDoc(userDocRef);
                 const userData = userSnapshot.data();
-    
+
                 if (userData && userData[supervisorName] && Array.isArray(userData[supervisorName].token)) {
                     const token = userData[supervisorName].token[0]; // Extrai o primeiro token, caso haja múltiplos
-    
+
                     // Cria a notificação no formato correto
                     const notificationData = {
                         title: `Chamado ${ticketData.order} precisa de sua autorização`,
@@ -109,7 +109,7 @@ const AdmChamados = () => {
                         click_action: "https://drogalira.com.br/usertickets",
                         icon: "https://iili.io/duTTt8Q.png"
                     };
-    
+
                     // Envia a notificação ao endpoint configurado
                     await sendNotification([token], notificationData); // Envie como array de tokens
                     console.log('Notificação enviada com sucesso!');
@@ -117,7 +117,7 @@ const AdmChamados = () => {
                     console.error('Token do supervisor não encontrado ou inválido.');
                 }
             }
-    
+
             closeAuthorizationModal();
         } catch (error) {
             console.error('Erro ao autorizar e bloquear o chamado:', error);
@@ -483,7 +483,7 @@ const AdmChamados = () => {
     // Filtro para os tickets com base nos filtros e consulta de busca
     const filteredTickets = tickets.filter(ticket => {
         const query = searchQuery.toLowerCase();
-
+    
         return (
             (userFilter ? ticket.user === userFilter : true) &&
             (storeFilter ? ticket.loja === storeFilter : true) &&
@@ -495,10 +495,12 @@ const AdmChamados = () => {
                 ticket.descricao?.toLowerCase().includes(query) ||
                 ticket.localProblema?.toLowerCase().includes(query) ||
                 (ticket.checkproblema && ticket.checkproblema.some(cp => cp.toLowerCase().includes(query))) ||
-                ticket.loja.toLowerCase().includes(query)
+                ticket.loja.toLowerCase().includes(query) ||
+                ticket.order.toLowerCase().includes(query) // Verificação adicionada
             )
         );
     });
+    
 
     // Geração de listas únicas de usuários e lojas para os dropdowns de filtro
     const uniqueUsers = [...new Set(tickets.map(ticket => ticket.user))];
@@ -840,39 +842,33 @@ const AdmChamados = () => {
                                             </button>
                                         </div>
                                     )}
-                                    {ticket.treatment ? (
+                                    {ticket.status === 'Finalizado' ? (
                                         <div className='w-full'>
                                             <button
-                                                onClick={() => openTratativaViewModal(ticket)}
-                                                className='bg-orange-600 gap-2 flex justify-center items-center w-full text-white px-4 py-2 rounded-md'
+                                                onClick={() => openConclusaoModal(ticket)}
+                                                className='bg-green-600 gap-2 flex justify-center items-center w-full text-white px-4 py-2 rounded-md'
                                             >
-                                                <GrDocumentConfig />
-                                                <p>Tratativa</p>
+                                                <MdRecommend />
+                                                <p>Conclusão</p>
                                             </button>
                                         </div>
                                     ) : (
                                         <div className='w-full'>
-                                            {ticket.descricaoFinalizacao ? (
-                                                <div className='w-full '>
-                                                    <button
-                                                        onClick={() => openConclusaoModal(ticket)}
-                                                        className='bg-green-600 gap-2 flex justify-center items-center w-full text-white px-4 py-2 rounded-md'
-                                                    >
-                                                        <MdRecommend />
-                                                        <p>Conclusão</p>
-                                                    </button>
-                                                </div>
+                                            {ticket.treatment ? (
+                                                <button
+                                                    onClick={() => openTratativaViewModal(ticket)}
+                                                    className='bg-orange-600 gap-2 flex justify-center items-center w-full text-white px-4 py-2 rounded-md'
+                                                >
+                                                    <GrDocumentConfig />
+                                                    <p>Tratativa</p>
+                                                </button>
                                             ) : (
-                                                <div className='w-full'>
-                                                    <button
-                                                        className='bg-gray-500 gap-2 cursor-not-allowed  w-full pointer-events-none flex justify-center items-center text-white px-4 py-2 rounded'
-                                                    >
-                                                        <PiClockCountdownFill className="text-xl" />
-                                                        <p>
-                                                            Aguardando
-                                                        </p>
-                                                    </button>
-                                                </div>
+                                                <button
+                                                    className='bg-gray-500 gap-2 cursor-not-allowed  w-full pointer-events-none flex justify-center items-center text-white px-4 py-2 rounded'
+                                                >
+                                                    <PiClockCountdownFill className="text-xl" />
+                                                    <p>Aguardando</p>
+                                                </button>
                                             )}
                                         </div>
                                     )}
