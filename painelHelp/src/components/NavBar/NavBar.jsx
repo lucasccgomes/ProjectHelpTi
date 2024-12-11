@@ -128,6 +128,9 @@ const Navbar = () => {
       icon: SiCoinmarketcap,
       subItems: [
         { name: 'Abrir Chamado', href: '/mknewchamados' },
+        { name: 'Envio de Documentos', href: '/setormk' },
+        { name: 'Lista de Envios', href: '/listenviomk' },
+        { name: 'Tipo Doc', href: '/tipodocmk' },
 
         // Itens adicionais específicos para o cargo "T.I"
         ...(currentUser?.cargo === "Marketing" ? [

@@ -35,6 +35,9 @@ import MkUserTickets from './pages/MkUserTickets';
 import MkGerenciadorChamados from './pages/MkGerenciadorChamados';
 import AvaliacoesConsulta from './pages/AvaliacoesConsulta';
 import TelaPass from './pages/TelaPass';
+import DocMK from './pages/DocMK';
+import ListMarketingDocs from './components/ListMarketingDocs/ListMarketingDocs';
+import SetorMK from './pages/setorMK';
 
 const useUpdateChecker = (onUpdateAvailable) => {
   useEffect(() => {
@@ -305,9 +308,6 @@ const App = () => {
                 />
 
 
-
-
-
                 <Route path="/webpanfleto" element={<ProtectedRoute allowedRoles={[
                   'Marketing',
                   'Claudemir'
@@ -357,7 +357,45 @@ const App = () => {
                 }
                 />
 
-                
+
+
+                <Route path="/setormk" element={<ProtectedRoute allowedRoles={[
+                  'T.I',
+                  'Gerente',
+                  'Supervisor',
+                  'Marketing',
+                  'Claudemir'
+                ]}
+                >
+                  <SetorMK />
+                </ProtectedRoute>
+                }
+                />
+
+                <Route path="/listenviomk" element={<ProtectedRoute allowedRoles={[
+                  'T.I',
+                  'Gerente',
+                  'Supervisor',
+                  'Marketing',
+                  'Claudemir'
+                ]}
+                >
+                  <ListMarketingDocs />
+                </ProtectedRoute>
+                }
+                />
+
+                <Route path="/tipodocmk" element={<ProtectedRoute allowedRoles={[
+                  'T.I',
+                  'Marketing',
+                ]}
+                >
+                  <DocMK />
+                </ProtectedRoute>
+                }
+                />
+
+
 
                 <Route path="/relatavaliacao" element={<ProtectedRoute allowedRoles={[
                   'Marketing',
