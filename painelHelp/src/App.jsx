@@ -38,6 +38,7 @@ import TelaPass from './pages/TelaPass';
 import DocMK from './pages/DocMK';
 import ListMarketingDocs from './components/ListMarketingDocs/ListMarketingDocs';
 import SetorMK from './pages/setorMK';
+import ManagerFrasesPass from './pages/ManagerFrasesPass';
 
 const useUpdateChecker = (onUpdateAvailable) => {
   useEffect(() => {
@@ -391,6 +392,16 @@ const App = () => {
                 ]}
                 >
                   <DocMK />
+                </ProtectedRoute>
+                }
+                />
+
+                <Route path="/frasestelasenhas" element={<ProtectedRoute allowedRoles={[
+                  'T.I',
+                  'Marketing',
+                ]}
+                >
+                  <ManagerFrasesPass />
                 </ProtectedRoute>
                 }
                 />

@@ -141,6 +141,7 @@ const Navbar = () => {
         ...(currentUser?.cargo === "Marketing", "T.I" ? [
           { name: 'Uploud MP3', href: '/anunciamp3' },
           { name: 'Video Senhas', href: '/videosenhas' },
+          { name: 'Frases Gera Senhas', href: '/frasestelasenhas' },
         ] : []),
       ]
     },
