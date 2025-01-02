@@ -28,15 +28,14 @@ export default function GerenciaServer() {
   const [loadingButtons, setLoadingButtons] = useState({});
 
 
-  const getBackgroundColor = (situations) => {
-    if (situations.includes('Servidor Inacessível')) return 'bg-gray-500';
-    if (situations.includes('SQL Parado')) return 'bg-yellow-500';
-    if (situations.includes('Conexão Parada')) return 'bg-orange-600';
-    if (situations.includes('SQL sem Replicação')) return 'bg-red-600';
-    if (situations.includes('SQL Replicando Lentamente')) return 'bg-blue-500';
+  const getBackgroundColor = (situation) => {
+    if (situation === 'Servidor Inacessível') return 'bg-gray-500';
+    if (situation === 'SQL Parado') return 'bg-yellow-500';
+    if (situation === 'Conexão Parada') return 'bg-orange-600';
+    if (situation === 'SQL sem Replicação') return 'bg-red-600';
+    if (situation === 'SQL Replicando Lentamente') return 'bg-blue-500';
     return 'bg-green-600'; // Cor padrão para status normal
   };
-
 
   // Função para validar Porta
   const isValidPort = (port) => /^[0-9]{1,5}$/.test(port) && port >= 1 && port <= 65535;
@@ -74,14 +73,14 @@ export default function GerenciaServer() {
       const response = await fetch('https://api.drogalira.com.br/api/server-situations', {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${AUTH_TOKEN}`, // Inclui o token no cabeçalho
+          'Authorization': `Bearer ${AUTH_TOKEN}`,
           'Content-Type': 'application/json'
         }
       });
       const data = await response.json();
       setServerSituations(
         data.reduce((acc, server) => {
-          acc[server.host] = server.situations;
+          acc[server.host] = server.situation; // Agora é uma string
           return acc;
         }, {})
       );
@@ -178,7 +177,7 @@ export default function GerenciaServer() {
           },
           body: JSON.stringify({ host }),
         });
-  
+
         if (checkResponse.ok) {
           setAlertModalMessage('Correção Concluída');
         } else {
@@ -194,7 +193,7 @@ export default function GerenciaServer() {
       setLoadingButtons((prev) => ({ ...prev, [serverId]: false }));
       setAlertModalOpen(true);
     }
-  };  
+  };
 
   const closeModal = () => {
     setShowStatusModal(false);
@@ -207,9 +206,10 @@ export default function GerenciaServer() {
   };
 
   // Contagem dos servidores
+  // Atualizar a lógica para calcular os servidores normais
   const normalServersCount = servers.filter(server => {
-    const situations = serverSituations[server.host] || [];
-    return situations.length === 0;
+    const situation = serverSituations[server.host] || '';
+    return situation === ''; // Situação vazia indica normal
   }).length;
 
   const problemServersCount = servers.length - normalServersCount;
@@ -238,13 +238,16 @@ export default function GerenciaServer() {
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-6">
         {servers.map((server) => {
           const situations = serverSituations[server.host] || [];
-          const backgroundColorClass = getBackgroundColor(situations);
+          const backgroundColorClass = getBackgroundColor(serverSituations[server.host] || '');
           return (
             <div key={server.id} className='bg-white p-1 rounded-lg shadow-lg'>
               <div className={`${backgroundColorClass} px-4 pb-4 rounded-lg `}>
                 <div className='flex gap-1 flex-col justify-center items-center'>
                   <h2 className="text-md bg-altBlue text-white p-1 rounded-b-md">{server.Loja}</h2>
-                  <p className="text-sm lg:bg-gray-500 text-white p-1 rounded-md">{server.host}</p>
+                  <p className="text-sm bg-gray-500 text-white p-1 rounded-md">{server.host}</p>
+                  <p className="text-sm bg-gray-500 text-white p-1 rounded-md">
+                    {serverSituations[server.host] || 'Normal'}
+                  </p>
                 </div>
                 <div className="mt-2 flex gap-2">
                   <button
