@@ -11,164 +11,8 @@ const AvaliacoesRelatorio = () => {
   const [avaliacoesDetalhadas, setAvaliacoesDetalhadas] = useState([]); // Estado para avaliações completas
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedObservacao, setSelectedObservacao] = useState("");
-  const [numeroWhatsApp, setNumeroWhatsApp] = useState("");
   const [mensagemWhatsApp, setMensagemWhatsApp] = useState("");
   const [isWhatsAppModalOpen, setIsWhatsAppModalOpen] = useState(false);
-  const [telefoneSelecionado, setTelefoneSelecionado] = useState("");
-  const [numerosSelecionados, setNumerosSelecionados] = useState([]);
-  const [selecionarTodos, setSelecionarTodos] = useState(false);
-
-  // Função para gerar o CSV
-  const gerarCSVContatos = () => {
-    if (avaliacoesDetalhadas.length === 0) {
-      alert("Nenhum contato disponível para exportar.");
-      return;
-    }
-
-    // Monta os dados do CSV com nome e telefone
-    const linhasCSV = ["Nome,Telefone"];
-    avaliacoesDetalhadas.forEach((avaliacao) => {
-      const nome = avaliacao.nome || "Sem Nome"; // Garante que não fique vazio
-      const telefone = formatarNumeroWhatsApp(avaliacao.telefone);
-      linhasCSV.push(`${nome},${telefone}`);
-    });
-
-    const conteudoCSV = linhasCSV.join("\n");
-    const blob = new Blob([conteudoCSV], { type: "text/csv;charset=utf-8;" });
-
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    link.href = url;
-    link.setAttribute("download", "contatos.csv");
-    link.click();
-  };
-
-
-
-  // Alternar seleção de um número
-  const alternarSelecao = (numero) => {
-    if (numerosSelecionados.includes(numero)) {
-      setNumerosSelecionados(numerosSelecionados.filter((n) => n !== numero));
-    } else {
-      setNumerosSelecionados([...numerosSelecionados, numero]);
-    }
-  };
-
-  // Alternar seleção de todos os números
-  const alternarSelecaoTodos = () => {
-    if (selecionarTodos) {
-      setNumerosSelecionados([]);
-      setSelecionarTodos(false);
-    } else {
-      const todosNumeros = avaliacoesDetalhadas.map((avaliacao) =>
-        formatarNumeroWhatsApp(avaliacao.telefone)
-      );
-      setNumerosSelecionados(todosNumeros);
-      setSelecionarTodos(true);
-    }
-  };
-
-
-
-  const abrirModalWhatsApp = (telefone) => {
-    setTelefoneSelecionado(telefone);
-    setIsWhatsAppModalOpen(true);
-  };
-
-
-  const formatarNumeroWhatsApp = (numero) => {
-    // Remove todos os caracteres não numéricos
-    const numeroFormatado = numero.replace(/\D/g, "");
-
-    // Adiciona o código do país (55) se não estiver presente
-    if (!numeroFormatado.startsWith("55")) {
-      return `55${numeroFormatado}`;
-    }
-
-    return numeroFormatado;
-  };
-
-  const enviarMensagemWhatsApp = async () => {
-    if (!mensagemWhatsApp) {
-      alert("Por favor, escreva uma mensagem.");
-      return;
-    }
-
-    const numeroFormatado = formatarNumeroWhatsApp(telefoneSelecionado);
-
-    console.log("Enviando mensagem...");
-    console.log("Número formatado:", numeroFormatado);
-    console.log("Mensagem:", mensagemWhatsApp);
-
-    try {
-      const response = await fetch("https://api.drogalira.com.br/wbot/api/send-message", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          numero: numeroFormatado,
-          mensagem: mensagemWhatsApp,
-        }),
-      });
-
-      const resultado = await response.json();
-      console.log("Resposta do servidor:", resultado);
-
-      if (resultado.status === "Mensagem enviada com sucesso!") {
-        alert("Mensagem enviada com sucesso!");
-        setIsWhatsAppModalOpen(false); // Fecha o modal após o envio
-        setMensagemWhatsApp(""); // Reseta o campo de mensagem
-      } else {
-        alert("Erro ao enviar mensagem.");
-      }
-    } catch (error) {
-      console.error("Erro ao enviar mensagem:", error);
-      alert("Erro ao enviar mensagem. Verifique o console.");
-    }
-  };
-
-  const enviarMensagensWhatsApp = async () => {
-    if (!mensagemWhatsApp) {
-      alert("Por favor, escreva uma mensagem.");
-      return;
-    }
-
-    if (numerosSelecionados.length === 0) {
-      alert("Por favor, selecione pelo menos um número.");
-      return;
-    }
-
-    console.log("Enviando mensagens para:", numerosSelecionados);
-    console.log("Mensagem:", mensagemWhatsApp);
-
-    try {
-      for (const numero of numerosSelecionados) {
-        const response = await fetch("https://api.drogalira.com.br/wbot/api/send-message", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            numero,
-            mensagem: mensagemWhatsApp,
-          }),
-        });
-
-        const resultado = await response.json();
-        console.log(`Resposta para ${numero}:`, resultado);
-      }
-
-      alert("Mensagens enviadas com sucesso!");
-      setNumerosSelecionados([]);
-      setSelecionarTodos(false);
-      setMensagemWhatsApp("");
-    } catch (error) {
-      console.error("Erro ao enviar mensagens:", error);
-      alert("Erro ao enviar mensagens. Verifique o console.");
-    }
-  };
-
 
   const handleVerTudo = (observacao) => {
     setSelectedObservacao(observacao);
@@ -229,7 +73,7 @@ const AvaliacoesRelatorio = () => {
           avaliacaoAtendente,
           avaliacaoCaixa,
           avaliacaoLoja,
-          data: new Date(dataRegistro).toLocaleDateString(),
+          data: new Date(dataRegistro).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }),
           observacao,
         });
       });
@@ -254,7 +98,7 @@ const AvaliacoesRelatorio = () => {
   };
 
   return (
-    <div className="p-4 pt-16 min-h-screen">
+    <div className="p-4 pt-16 min-h-screen bg-altBlue">
       <div className="bg-primaryBlueDark rounded-2xl shadow-xl">
         <h2 className="text-2xl font-semibold mb-4 text-center text-white">Consulta de Avaliações</h2>
 
@@ -320,22 +164,7 @@ const AvaliacoesRelatorio = () => {
               Buscar
             </button>
           </div>
-          {numerosSelecionados.length > 0 && (
-            <div className="fixed bottom-4 right-4 flex gap-4">
-              <button
-                className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600"
-                onClick={() => setIsWhatsAppModalOpen(true)}
-              >
-                Enviar Mensagem para Selecionados
-              </button>
-              <button
-                className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 mt-4"
-                onClick={gerarCSVContatos}
-              >
-                Exportar Contatos
-              </button>
-            </div>
-          )}
+        
         </div>
       </div>
 
@@ -363,13 +192,6 @@ const AvaliacoesRelatorio = () => {
           <table className="w-full text-sm text-left text-gray-700 mt-4 border">
             <thead>
               <tr className="bg-gray-200">
-                <th className="px-4 py-2">
-                  <input
-                    type="checkbox"
-                    checked={selecionarTodos}
-                    onChange={alternarSelecaoTodos}
-                  />
-                </th>
                 <th className="px-4 py-2">Nome</th>
                 <th className="px-4 py-2">Telefone</th>
                 <th className="px-4 py-2">Loja</th>
@@ -382,28 +204,12 @@ const AvaliacoesRelatorio = () => {
             </thead>
             <tbody>
               {avaliacoesDetalhadas.map((avaliacao, index) => {
-                const numeroFormatado = formatarNumeroWhatsApp(avaliacao.telefone);
-
-                return (
+                        return (
                   <tr key={index} className="border-t">
-                    <td className="px-4 py-2">
-                      <input
-                        type="checkbox"
-                        checked={numerosSelecionados.includes(numeroFormatado)}
-                        onChange={() => alternarSelecao(numeroFormatado)}
-                      />
-                    </td>
                     <td className="px-4 py-2">{avaliacao.nome}</td>
                     <td className="px-4 py-2 flex gap-2 items-center">
                       {avaliacao.telefone}
-                      {numerosSelecionados.length <= 1 && (
-                        <button
-                          className="bg-green-500 text-white px-2 py-1 rounded-lg hover:bg-green-600"
-                          onClick={() => abrirModalWhatsApp(avaliacao.telefone)}
-                        >
-                          WhatsApp
-                        </button>
-                      )}
+                      
                     </td>
                     <td className="px-4 py-2">{avaliacao.loja}</td>
                     <td className="px-4 py-2">{avaliacao.avaliacaoAtendente}</td>
@@ -439,17 +245,9 @@ const AvaliacoesRelatorio = () => {
       </MyModal>
       <MyModal isOpen={isWhatsAppModalOpen} onClose={() => setIsWhatsAppModalOpen(false)}>
         <h3 className="text-lg font-semibold mb-4">
-          {numerosSelecionados.length > 1
-            ? "Enviar Mensagem para Selecionados"
-            : `Enviar Mensagem para ${telefoneSelecionado}`}
+          
         </h3>
-        {numerosSelecionados.length > 1 && (
-          <ul className="mb-4">
-            {numerosSelecionados.map((numero) => (
-              <li key={numero}>{numero}</li>
-            ))}
-          </ul>
-        )}
+      
         <textarea
           className="w-full p-2 border border-gray-300 rounded-lg mb-4"
           rows="4"
@@ -459,11 +257,7 @@ const AvaliacoesRelatorio = () => {
         />
         <button
           className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600"
-          onClick={
-            numerosSelecionados.length > 1
-              ? enviarMensagensWhatsApp
-              : enviarMensagemWhatsApp
-          }
+          
         >
           Enviar Mensagem
         </button>
