@@ -145,7 +145,7 @@ const ListaContatos = () => {
   
     try {
       const promises = numerosSelecionados.map((numero) =>
-        fetch("https://api.drogalira.com.br/wbot/api/send-message", {
+        fetch("https://d692-2804-1784-30b3-6700-7285-c2ff-fe34-e4b0.ngrok-free.app/wbot/api/send-message", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -211,7 +211,7 @@ const ListaContatos = () => {
     }
   
     try {
-      const resposta = await fetch("https://api.drogalira.com.br/wbot/api/send-message", {
+      const resposta = await fetch("https://d692-2804-1784-30b3-6700-7285-c2ff-fe34-e4b0.ngrok-free.app/wbot/api/send-message", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
