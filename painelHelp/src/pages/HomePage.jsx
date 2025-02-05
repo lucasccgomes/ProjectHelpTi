@@ -4,7 +4,6 @@ import { useAuth } from '../context/AuthContext';
 import NotificationModal from '../components/NotificationModal/NotificationModal';
 import LastUserTicket from '../components/LastUserTicket/LastUserTicket';
 import LastSolicitacao from '../components/LastSolicitacao/LastSolicitacao';
-import LastSolicitCompras from '../components/LastSolicitCompras/LastSolicitCompras';
 import FullNameModal from '../components/FullNameModal/FullNameModal';
 import MyModal from '../components/MyModal/MyModal';
 import { getFirestore, doc, onSnapshot } from 'firebase/firestore';
@@ -30,7 +29,6 @@ const HomePage = () => {
   const components = [
     <LastUserTicket key="userTicket" />,
     <LastSolicitacao key="solicitacao" />,
-    <LastSolicitCompras key="solicitacompras" />
   ];
 
   useEffect(() => {
@@ -111,7 +109,6 @@ const HomePage = () => {
         <div className='flex gap-2 items-center justify-center lg:flex-row flex-col'>
           <LastUserTicket />
           <LastSolicitacao />
-          <LastSolicitCompras />
         </div>
       ) : (
         <div className='relative w-full max-w-xs h-full flex items-center justify-center overflow-hidden'>
