@@ -25,8 +25,7 @@ const MarketingMp3 = () => {
     const [selectedFile, setSelectedFile] = useState('');
     const [selectedDate, setSelectedDate] = useState('');
     const [isScheduleSaved, setIsScheduleSaved] = useState(false);
-
-
+    const [isPlayEnabled, setIsPlayEnabled] = useState(false);
 
     const MP3_LIST_API_URL = import.meta.env.VITE_MP3_LIST;
     const MP3_UPLOAD_API_URL = import.meta.env.VITE_MP3_UPLOAD;
@@ -40,45 +39,67 @@ const MarketingMp3 = () => {
         setAlertIsOpen(true);
     };
 
-    const startRealTimeUpdate = () => {
+    const handleDisabledPlayClick = () => {
+        showAlert("Ação inválida", "Primeiro você deve dar Stop antes de tocar novamente.");
+    };
+
+    const handlePlay = () => {
+        if (isPlayEnabled) {
+            sendMusicControlCommand("play");
+            setIsPlayEnabled(false); // Desabilita o Play após clicar uma vez
+        } else {
+            handleDisabledPlayClick(); // Exibe o modal caso esteja desabilitado
+        }
+    };
+
+
+    const handleStop = () => {
+        sendMusicControlCommand("stop");
+        setIsPlayEnabled(true); // Ativa o botão Play após o Stop
+    };
+
+    const startRealTimeUpdate = async () => {
         const lojaFormatted = selectedServer.replace(/-/g, ' ');
 
-        const id = setInterval(async () => {
-            try {
-                const timeResponse = await fetch(import.meta.env.VITE_MP3_CONTROL_API, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        loja: lojaFormatted,
-                        action: "time",
-                    }),
-                });
+        try {
+            const timeResponse = await fetch(import.meta.env.VITE_MP3_CONTROL_API, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    loja: lojaFormatted,
+                    action: "time",
+                }),
+            });
 
-                const currentResponse = await fetch(import.meta.env.VITE_MP3_CONTROL_API, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        loja: lojaFormatted,
-                        action: "current",
-                    }),
-                });
+            const currentResponse = await fetch(import.meta.env.VITE_MP3_CONTROL_API, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    loja: lojaFormatted,
+                    action: "current",
+                }),
+            });
 
-                const timeData = await timeResponse.json();
-                const currentData = await currentResponse.json();
+            const timeData = await timeResponse.json();
+            const currentData = await currentResponse.json();
 
-                if (timeResponse.ok && currentResponse.ok) {
-                    setTimeInfo(timeData.output || 'Tempo não disponível');
-                    setCurrentMusic(currentData.output || 'Música não disponível');
+            if (timeResponse.ok && currentResponse.ok) {
+                // Verifica se há música tocando
+                if (currentData.output && currentData.output !== 'Nenhuma música.') {
+                    setTimeInfo('Ativo');
                 } else {
-                    console.error("Erro ao atualizar informações de tempo ou música atual.");
+                    setTimeInfo('Inativo');
                 }
-            } catch (error) {
-                console.error("Erro ao obter informações de tempo em tempo real:", error);
+                setCurrentMusic(currentData.output || 'Nenhuma música.');
+            } else {
+                console.error("Erro ao atualizar informações de tempo ou música atual.");
             }
-        }, 1000); // Atualiza a cada segundo
-
-        setIntervalId(id);
+        } catch (error) {
+            console.error("Erro ao obter informações de tempo:", error);
+            setTimeInfo('AUDIO INATIVO');
+        }
     };
+
 
     const stopRealTimeUpdate = () => {
         if (intervalId) {
@@ -178,13 +199,34 @@ const MarketingMp3 = () => {
     };
 
     const handleDelete = async (filename) => {
-        showAlert("Deletando", "Enviando solicitação...", true); // Define o modal como "carregando"
+        if (currentMusic && currentMusic !== 'Música não disponível') {
+            // Se houver uma música tocando
+            showAlert("Erro de exclusão", "VOCÊ DEVE DAR STOP NO SISTEMA ANTES DE EXCLUIR");
+            return; // Impede a exclusão
+        }
+
+        // Inicia a contagem regressiva para a operação
+        let countdown = 10; // Tempo de espera em segundos
+        const countdownInterval = setInterval(() => {
+            showAlert("Deletando", `Aguarde... Excluindo em ${countdown} segundos`, true);
+            countdown--;
+            if (countdown < 0) {
+                clearInterval(countdownInterval);
+            }
+        }, 1000); // Atualiza a cada 1 segundo
+
+        // Inicia o processo de verificação ou qualquer outra operação com o delay do script bash
         try {
+            // Simula o delay de 10 segundos no backend
+            await new Promise(resolve => setTimeout(resolve, 10000)); // Espera 10 segundos antes de prosseguir
+
+            // Envia a solicitação para verificar se há música tocando ou para realizar a exclusão
             const response = await fetch(VITE_MP3_DELETE_API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ serverId: selectedServer, filename })
             });
+
             const data = await response.json();
 
             if (response.ok) {
@@ -197,6 +239,7 @@ const MarketingMp3 = () => {
             console.error("Erro ao deletar o arquivo:", error);
             showAlert("Erro de exclusão", "Erro ao deletar o arquivo.");
         } finally {
+            clearInterval(countdownInterval); // Limpa a contagem regressiva
             setAlertLoading(false); // Remove o estado de "carregando" ao final da requisição
         }
     };
@@ -304,15 +347,23 @@ const MarketingMp3 = () => {
         }
     };
 
+
+
     useEffect(() => {
         if (timeModalIsOpen) {
+            setTimeInfo(''); // Reseta o estado
+            setCurrentMusic('');
+            startRealTimeUpdate();
+
             const timeout = setTimeout(() => {
                 setTimeModalIsOpen(false);
                 stopRealTimeUpdate();
-            }, 15000); // 15 segundos
+            }, 20000); // 30 segundos
 
-            // Limpar o timeout caso o modal seja fechado antes dos 15 segundos
-            return () => clearTimeout(timeout);
+            return () => {
+                clearTimeout(timeout); // Garante que o timeout seja limpo ao desmontar
+                stopRealTimeUpdate();
+            };
         }
     }, [timeModalIsOpen]);
 
@@ -342,7 +393,7 @@ const MarketingMp3 = () => {
                             </option>
                         ))}
                     </select>
-
+                    {/*
                     <label htmlFor="file" className="block text-sm font-medium text-gray-700 mt-4">
                         Selecione o arquivo MP3
                     </label>
@@ -361,26 +412,32 @@ const MarketingMp3 = () => {
                     >
                         Enviar MP3
                     </button>
+                    */}
                 </form>
 
                 <h3 className="text-xl font-semibold text-center mt-8">Arquivos MP3 na Loja</h3>
-                <ul className="mt-4 h-40 overflow-auto">
+                <ul className="mt-4 h-15 overflow-auto">
                     {files.map((filename) => (
-                        <li key={filename} className="flex justify-between items-center p-2 border-b">
+                        <li key={filename} className="flex justify-center bg-altBlue rounded-xl text-white items-center p-2 border-b">
                             <span className="text-xs">{filename}</span>
                             <div className="flex gap-2">
-                                <button
+
+                                {/* <button
                                     onClick={() => sendMusicControlCommand("choose", filename)}
                                     className="bg-indigo-500 text-white px-2 py-1 rounded hover:bg-indigo-600"
                                 >
                                     Tocar
                                 </button>
+                               
+
                                 <button
                                     onClick={() => handleDelete(filename)}
                                     className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
                                 >
                                     Excluir
-                                </button>
+                                </button> 
+                                */}
+                                {/*
                                 <button
                                     onClick={() => {
                                         setSelectedFile(filename);
@@ -391,26 +448,35 @@ const MarketingMp3 = () => {
                                 >
                                     Agendar
                                 </button>
+                                 */}
                             </div>
                         </li>
                     ))}
                 </ul>
 
                 <div className="mt-6 ">
-                    <h3 className="text-lg font-semibold mb-4">Controles de Música</h3>
+                    <h3 className="text-lg font-semibold mb-4 text-center">Controles de Àudio</h3>
                     <div className="flex justify-between flex-wrap gap-4">
                         <button
-                            onClick={() => sendMusicControlCommand("play")}
-                            className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+                            onClick={() => {
+                                if (isPlayEnabled) {
+                                    handlePlay();
+                                } else {
+                                    handleDisabledPlayClick(); // Exibe o modal se o botão estiver desabilitado
+                                }
+                            }}
+                            className={`px-4 py-2 rounded ${isPlayEnabled ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-400 cursor-pointer'
+                                } text-white`}
                         >
                             Play
                         </button>
                         <button
-                            onClick={() => sendMusicControlCommand("stop")}
+                            onClick={handleStop}
                             className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
                         >
                             Stop
                         </button>
+
                         <button
                             onClick={() => {
                                 setTimeModalIsOpen(true);
@@ -418,32 +484,37 @@ const MarketingMp3 = () => {
                             }}
                             className="bg-teal-500 text-white px-4 py-2 rounded hover:bg-teal-600"
                         >
-                            Time
+                            Status
                         </button>
+                      
                     </div>
+                    <p className='text-center mt-4 bg-red-300 rounded-xl'>ℹ️ Para enviar o áudio favor falar com T.I</p>
                 </div>
                 <MyModal
+                    showCloseButton={false}
                     isOpen={timeModalIsOpen}
                     onRequestClose={() => {
                         setTimeModalIsOpen(false);
-                        stopRealTimeUpdate();
+                        setTimeInfo(''); // Reseta o tempo
+                        setCurrentMusic(''); // Reseta a música atual
                     }}
                 >
                     <div className="text-center">
                         <h2 className="text-lg font-semibold">Informações da Reprodução</h2>
-                        <p className="mt-4"><strong>Tempo de execução:</strong> {timeInfo}</p>
+                        <p className='text-[12px] mt-4'>ℹ️ O sistema pode levar até 10 segundos para exibir o resultado. Por favor, aguarde!</p>
+                        <p className="mt-4"><strong>Status:</strong> {timeInfo}</p>
                         <p className="mt-2"><strong>Música atual:</strong> {currentMusic}</p>
                         <button
                             onClick={() => {
                                 setTimeModalIsOpen(false);
-                                stopRealTimeUpdate();
                             }}
-                            className="mt-4 bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700"
+                            className="mt-4 bg-red-700 text-white py-1 px-3 rounded-md hover:bg-red-600"
                         >
                             Fechar
                         </button>
                     </div>
                 </MyModal>
+
                 <MyModal isOpen={modalIsOpen} showCloseButton={false}>
                     <div className="text-center">
                         <h2 className="text-lg font-semibold">Enviando arquivo...</h2>
@@ -499,7 +570,6 @@ const MarketingMp3 = () => {
                         {isScheduleSaved && <p className="mt-2 text-green-600">Agendamento salvo com sucesso!</p>}
                     </div>
                 </MyModal>
-
 
                 <AlertModal
                     isOpen={alertIsOpen}
