@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from 'react-router-dom';
 import { MdHelp } from "react-icons/md";
-import { FaBars, FaTimes, FaTasks, FaUserCircle, FaHome, FaSignOutAlt, FaSignInAlt, FaChevronDown, FaChevronRight, FaClock } from 'react-icons/fa';
+import { FaUserTie, FaBars, FaTimes, FaTasks, FaUserCircle, FaHome, FaSignOutAlt, FaSignInAlt, FaChevronDown, FaChevronRight, FaClock } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext';
+import { GrInfo } from "react-icons/gr";
 import OfflineNotice from '../OffLineNotice/OfflineNotice';
 import { IoLogoAndroid, IoDesktopSharp, IoDocumentTextSharp } from 'react-icons/io5';
 import { SiCoinmarketcap } from "react-icons/si";
@@ -107,14 +108,13 @@ const Navbar = () => {
       icon: MdHelp,
       subItems: [
         { name: 'Abrir Chamados', href: '/usertickets' },
-        { name: 'Solicitações', href: '/solicitati' },
+        { name: 'Geren. Solicitações', href: '/solicitati' },
 
         // Itens adicionais específicos para o cargo "T.I"
         ...(currentUser?.cargo === "T.I" ? [
           { name: 'Geren. Chamados', href: '/gerenchamados' },
           { name: 'Geren. Estoque', href: '/estoqueti' },
           { name: 'Geren. Servers', href: '/servers' },
-          { name: 'Monitor Machine', href: '/monitormachine' },
           { name: 'Relatório Impressoras', href: '/printerlist' },
           { name: 'Relatório Chamados', href: '/relatorioti' },
           { name: 'Cadastrar Usuario', href: '/newuser' }
@@ -128,38 +128,55 @@ const Navbar = () => {
       icon: SiCoinmarketcap,
       subItems: [
         { name: 'Abrir Chamado', href: '/mknewchamados' },
-        { name: 'Envio de Documentos', href: '/setormk' },
-        { name: 'Lista de Envios', href: '/listenviomk' },
-        { name: 'Tipo Doc', href: '/tipodocmk' },
-
-        // Itens adicionais específicos para o cargo "T.I"
+    
         ...(currentUser?.cargo === "Marketing" ? [
           { name: 'Geren. Chamados', href: '/mkchamados' },
           { name: 'Web Panfleto', href: '/webpanfleto' },
         ] : []),
-
-        ...(currentUser?.cargo === "Marketing", "T.I" ? [
+    
+        ...(currentUser?.cargo === "Marketing" || currentUser?.cargo === "T.I" ? [
           { name: 'Uploud MP3', href: '/anunciamp3' },
+        ] : []),
+    
+        { name: 'Envio de Documentos', href: '/setormk' },
+        { name: 'Lista de Envios', href: '/listenviomk' },
+        { name: 'Tipo Doc', href: '/tipodocmk' },
+    
+        ...(currentUser?.cargo === "Marketing" || currentUser?.cargo === "T.I" ? [
           { name: 'Video Senhas', href: '/videosenhas' },
           { name: 'Frases Gera Senhas', href: '/frasestelasenhas' },
         ] : []),
       ]
     },
+    
+    {
+      name: 'Supervisor',
+      icon: FaUserTie,
+      subItems: [
+        { name: 'Abrir Chamados', href: '/' },
+        { name: 'Geren. Solicitações', href: '/' },
 
+        // Itens adicionais específicos para o cargo "T.I"
+        ...(currentUser?.cargo === "T.I" ? [
+          { name: 'Geren. Chamados', href: '/' },
+          { name: 'Geren. Estoque', href: '/' },
+          { name: 'Geren. Servers', href: '/' },
+          { name: 'Relatório Impressoras', href: '/' },
+          { name: 'Relatório Chamados', href: '/' },
+          { name: 'Cadastrar Usuario', href: '/' }
+        ] : []),
+      ]
+    },
 
-
-    // {
-    //   name: 'Compras',
-    //   icon: FaCartShopping,
-    //   subItems: [
-    //     { name: 'Solicitações', href: '/solicitacompras' },
-    //     { name: 'Geren. Estoque', href: '/estoque' },
-    //     { name: 'Relatório tipo log', href: '/reportcompras' },
-    //     { name: 'Relatório de Custos', href: '/custocompras' },
-    //   ]
-    // },
-
-
+    {
+      name: 'Geral',
+      icon: GrInfo,
+      subItems: [
+        { name: 'PBMs', href: '/pbms' },
+        { name: 'Dados das Lojas', href: '/dadoslojas' },
+        { name: 'Diversos', href: '/diversos' },
+      ]
+    },
 
     {
       name: 'Tarefas',
