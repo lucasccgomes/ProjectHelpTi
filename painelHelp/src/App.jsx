@@ -11,7 +11,6 @@ import AssignTasksPage from './pages/AssignTaskPage';
 import { messaging, getToken, db, isSupported } from './firebase';
 import { doc, updateDoc, arrayUnion, onSnapshot } from 'firebase/firestore';
 import TimeClock from './pages/TimeClock';
-import SoliciteCompras from './pages/SoliciteCompras';
 import Estoque from './pages/Estoque';
 import FullReportCompras from './pages/RelatorioCompras';
 import CustoCompras from './pages/CustoCompras';
@@ -22,7 +21,6 @@ import UpdateSystemModal from './components/UpdateSystemModal/UpdateSystemModal'
 import SetorRh from './pages/setorRh';
 import ListRhDocs from './components/ListRhDocs/ListRhDocs';
 import GerenciadorServers from './pages/GerenciadorServers';
-import RelatorioCompras from './components/RelatorioCompras/RelatorioCompras';
 import RelatorioProblema from './pages/RelatorioProblema';
 import UserForm from './pages/UserFormPage';
 import DocRh from './pages/DocRh';
@@ -39,6 +37,9 @@ import DocMK from './pages/DocMK';
 import ListMarketingDocs from './components/ListMarketingDocs/ListMarketingDocs';
 import SetorMK from './pages/setorMK';
 import ManagerFrasesPass from './pages/ManagerFrasesPass';
+import RoutDadosLojas from './pages/RoutDadosLojas';
+import RoutPbmsLojas from './pages/RoutPbmsLojas';
+import Routdiversos from './pages/Routdiversos';
 
 const useUpdateChecker = (onUpdateAvailable) => {
   useEffect(() => {
@@ -143,6 +144,54 @@ const App = () => {
                 }
                 />
 
+                <Route path="/dadoslojas" element={
+                  <ProtectedRoute allowedRoles={[
+                    'T.I',
+                    'Gerente',
+                    'Supervisor',
+                    'Compras',
+                    'Claudemir',
+                    'RH',
+                    'Marketing',
+                  ]}
+                  >
+                    <RoutDadosLojas />
+                  </ProtectedRoute>
+                }
+                />
+
+                <Route path="/pbms" element={
+                  <ProtectedRoute allowedRoles={[
+                    'T.I',
+                    'Gerente',
+                    'Supervisor',
+                    'Compras',
+                    'Claudemir',
+                    'RH',
+                    'Marketing',
+                  ]}
+                  >
+                    <RoutPbmsLojas />
+                  </ProtectedRoute>
+                }
+                />
+
+                <Route path="/diversos" element={
+                  <ProtectedRoute allowedRoles={[
+                    'T.I',
+                    'Gerente',
+                    'Supervisor',
+                    'Compras',
+                    'Claudemir',
+                    'RH',
+                    'Marketing',
+                  ]}
+                  >
+                    <Routdiversos />
+                  </ProtectedRoute>
+                }
+                />
+
                 <Route path="/atribute" element={
                   <ProtectedRoute allowedRoles={[
                     'T.I',
@@ -155,18 +204,6 @@ const App = () => {
                   ]}
                   >
                     <AssignTasksPage />
-                  </ProtectedRoute>
-                }
-                />
-
-                <Route path="/solicitacompras" element={
-                  <ProtectedRoute allowedRoles={[
-                    'T.I',
-                    'Compras',
-                    'Claudemir'
-                  ]}
-                  >
-                    <SoliciteCompras />
                   </ProtectedRoute>
                 }
                 />
