@@ -28,7 +28,7 @@ const AdmListaSolicitTi = () => {
     const [solicitacoes, setSolicitacoes] = useState([]);  // Estado para armazenar a lista de solicitações   
     const [error, setError] = useState(null); // Estado para armazenar possíveis erros
     const [slidesToShow, setSlidesToShow] = useState(1);// Estado para controlar quantos slides devem ser mostrados
-    const [statusFilter, setStatusFilter] = useState('Todos'); // Estado para controlar o filtro de status das solicitações
+    const [statusFilter, setStatusFilter] = useState('Pendente'); // Estado para controlar o filtro de status das solicitações
     const [isModalOpen, setIsModalOpen] = useState(false);  // Estado para controlar a exibição do modal   
     const [selectedSolicitacao, setSelectedSolicitacao] = useState(null); // Estado para armazenar a solicitação selecionada
     const [buttonDisabled, setButtonDisabled] = useState(false);// Estado para desabilitar o botão de confirmação
@@ -56,6 +56,20 @@ const AdmListaSolicitTi = () => {
     const [statusMessage, setStatusMessage] = useState(''); // Estado para controlar a mensagem no modal
     const [modalMessage, setModalMessage] = useState('');
     const [showOkButton, setShowOkButton] = useState(true); // Estado para controlar a visibilidade do botão OK
+    const [currentPage, setCurrentPage] = useState(1); // Página atual
+    const itemsPerPage = 20; // Itens por página
+
+    // Cálculo do índice inicial e final para a página atual
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentItems = filteredSolicitacoes.slice(indexOfFirstItem, indexOfLastItem);
+
+    // Total de páginas
+    const totalPages = Math.ceil(filteredSolicitacoes.length / itemsPerPage);
+
+    // Funções para mudar de página
+    const nextPage = () => setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+    const prevPage = () => setCurrentPage((prev) => Math.max(prev - 1, 1));
 
     const PRINTER_API_URL = import.meta.env.VITE_PRINTER_API_URL;
     const NOTIFICATION_API_URL = import.meta.env.VITE_NOTIFICATION_API_URL;
@@ -465,181 +479,205 @@ const AdmListaSolicitTi = () => {
                         </div>
                     </div>
                 </div>
-                <div className=' w-full bg-altBlue p-4 pt-48 lg:pt-20'>
+                <div className="w-full bg-altBlue p-4 pt-48 lg:pt-20">
                     {filteredSolicitacoes.length === 0 ? (
                         <div className="text-center text-white">Nenhuma solicitação encontrada</div>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:pt-20 bg-altBlue ">
-                            {filteredSolicitacoes.map(solicitacao => (
-                                <div key={solicitacao.id} className="px-4 pb-4 bg-white text-black border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200">
-                                    <div className='flex justify-between pb-3'>
-
-                                        <h3 className="p-2 rounded-br-xl shadow-xl  -ml-5 -mt-1 text-2xl bg-altBlue text-white font-bold">
-                                            {solicitacao.numSolicite}
-                                        </h3>
-                                        <button
-                                            onClick={() => handlePrint(solicitacao)}
-                                            className="ml-2 text-3xl text-blue-600 hover:scale-[0.9]"
-                                            title="Imprimir"
-                                        >
-                                            🖨️
-                                        </button>
-                                        <button
-                                            onClick={() => openEditModal(solicitacao)}
-                                            disabled={solicitacao.status === 'Cancelado' || solicitacao.status === 'Enviado' || solicitacao.status === 'Concluído'}
-                                            className={`text-red-700 ml-2 text-3xl hover:scale-[0.9] ${solicitacao.status === 'Cancelado' || solicitacao.status === 'Enviado' || solicitacao.status === 'Concluído' ? '!text-gray-500 cursor-not-allowed hover:scale-100' : ''}`}
-                                            title='Alterar'
-                                        >
-                                            <HiPencilSquare />
-                                        </button>
-                                        <p className="text-primaryBlueDark cursor- flex text-3xl items-center">
-                                            {solicitacao.tipo === 'Reposição' && <TbReplaceFilled className="ml-2" title='Item Reposição' />}
-                                            {solicitacao.tipo === 'Novo' && <GrNewWindow className="ml-2" title='Item Novo' />}
-                                        </p>
-
-                                    </div>
-                                    <div className="flex flex-col gap-4 mb-2">
-                                        <div className='flex gap-4 '>
-                                            <div className="flex items-center">
-                                                <FaCity className="mr-2 text-primaryBlueDark text-xl" />
-                                                <p className='font-semibold text-gray-700'>
-                                                    {abreviarCidade(solicitacao.cidade)}
-                                                </p>
-                                            </div>
-                                            <div className="flex items-center">
-                                                <FaStoreAlt className="mr-2 text-primaryBlueDark text-xl" />
-                                                <p className='font-semibold text-gray-700'>
-                                                    {solicitacao.loja}
-                                                </p>
-                                            </div>
-                                            <div className="flex items-center">
-                                                <FaUser className="mr-2 text-primaryBlueDark text-xl" />
-                                                <p className='font-semibold text-gray-700'>
-                                                    {solicitacao.user}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="flex flex-col gap-4 mb-2 p-4">
-                                        {Object.entries(solicitacao.item).map(([itemNome, quantidade]) => (
-                                            <div key={itemNome} className='flex justify-between gap-2 shadow-lg bg-primaryBlueDark p-2 rounded-xl text-white'>
-                                                <div className='font-semibold flex justify-center items-center'>
-                                                    <MdOutlineAddShoppingCart className='text-xl text-white' />
-                                                    <p className='ml-2'>
-                                                        {itemNome}
-                                                    </p>
-                                                </div>
-                                                <div className='font-semibold flex'>
-                                                    <p>
-                                                        Qtd:
-                                                    </p>
-                                                    <p className='font-normal ml-1'>
-                                                        {quantidade}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        ))}
-                                        <div className="flex flex-col items-center w-full break-all">
-                                            <div className='flex justify-center items-center'>
-                                                <SiReasonstudios className="mr-2 text-primaryBlueDark text-xl" />
-                                                <p className='font-semibold text-gray-700'>
-                                                    Motivo
-                                                </p>
-                                            </div>
-                                            <p>
-                                                {solicitacao.motivo}
+                        <>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:pt-20 bg-altBlue">
+                                {currentItems.map((solicitacao) => (
+                                    <div
+                                        key={solicitacao.id}
+                                        className="px-4 pb-4 bg-white text-black border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200"
+                                    >
+                                        <div className="flex justify-between pb-3">
+                                            <h3 className="p-2 rounded-br-xl shadow-xl -ml-5 -mt-1 text-2xl bg-altBlue text-white font-bold">
+                                                {solicitacao.numSolicite}
+                                            </h3>
+                                            <button
+                                                onClick={() => handlePrint(solicitacao)}
+                                                className="ml-2 text-3xl text-blue-600 hover:scale-[0.9]"
+                                                title="Imprimir"
+                                            >
+                                                🖨️
+                                            </button>
+                                            <button
+                                                onClick={() => openEditModal(solicitacao)}
+                                                disabled={solicitacao.status === 'Cancelado' || solicitacao.status === 'Enviado' || solicitacao.status === 'Concluído'}
+                                                className={`text-red-700 ml-2 text-3xl hover:scale-[0.9] ${solicitacao.status === 'Cancelado' || solicitacao.status === 'Enviado' || solicitacao.status === 'Concluído' ? '!text-gray-500 cursor-not-allowed hover:scale-100' : ''}`}
+                                                title='Alterar'
+                                            >
+                                                <HiPencilSquare />
+                                            </button>
+                                            <p className="text-primaryBlueDark cursor- flex text-3xl items-center">
+                                                {solicitacao.tipo === 'Reposição' && <TbReplaceFilled className="ml-2" title='Item Reposição' />}
+                                                {solicitacao.tipo === 'Novo' && <GrNewWindow className="ml-2" title='Item Novo' />}
                                             </p>
-                                        </div>
 
-                                        <div className="flex justify-between items-center text-gray-700">
-                                            <div className="flex justify-center items-center text-gray-700">
-                                                <IoCalendarNumber className="mr-2 text-primaryBlueDark text-xl" />
-                                                <p className='font-semibold text-gray-700'>
-                                                    {new Date(solicitacao.data.toDate()).toLocaleDateString()}
-                                                </p>
-                                            </div>
-                                            {solicitacao.status === 'Enviado' && solicitacao.dateSend && (
-                                                <div className="flex justify-start items-center text-gray-700">
-                                                    <FaShuttleVan className="mr-2 text-primaryBlueDark text-xl" />
+                                        </div>
+                                        <div className="flex flex-col gap-4 mb-2">
+                                            <div className='flex gap-4 '>
+                                                <div className="flex items-center">
+                                                    <FaCity className="mr-2 text-primaryBlueDark text-xl" />
                                                     <p className='font-semibold text-gray-700'>
-                                                        {new Date(solicitacao.dateSend.toDate()).toLocaleDateString()}
+                                                        {abreviarCidade(solicitacao.cidade)}
                                                     </p>
                                                 </div>
-                                            )}
-
-                                            {solicitacao.status === 'Concluído' && solicitacao.dateReceived && (
-                                                <div className="flex justify-start items-center text-gray-700">
-                                                    <RiUserReceived2Fill className="mr-2 text-primaryBlueDark text-xl" />
+                                                <div className="flex items-center">
+                                                    <FaStoreAlt className="mr-2 text-primaryBlueDark text-xl" />
                                                     <p className='font-semibold text-gray-700'>
-                                                        {new Date(solicitacao.dateReceived.toDate()).toLocaleDateString()}
+                                                        {solicitacao.loja}
                                                     </p>
                                                 </div>
-                                            )}
-                                            <div className={`text-gray-700 ${solicitacao.status === 'Concluído' ? 'text-green-500' : solicitacao.status === 'Progresso' ? 'text-yellow-500' : solicitacao.status === 'Cancelado' || solicitacao.status === 'Pendente' ? 'text-red-500' : 'text-primaryBlueDark'}`}>
-                                                <p className="text-primaryBlueDark flex text-3xl items-center">
-                                                    {solicitacao.status === 'Pendente' && <GrStatusUnknown className="ml-2 text-secRed text-3xl" title='Pendente' />}
-                                                    {solicitacao.status === 'Separando' && <GrInProgress className="ml-2 text-orange-600 text-3xl" title='Separando' />}
-                                                    {solicitacao.status === 'Cancelado' && <ImCancelCircle className="ml-2 text-secRed text-3xl" title='Cancelado' />}
-                                                    {solicitacao.status === 'Enviado' && <FaShuttleVan className="ml-2 text-primaryOpaci text-3xl" title='Enviado' />}
-                                                    {solicitacao.status === 'Concluído' && <FaCheckCircle className="ml-2 text-green-700 text-3xl" title='Concluído' />}
-                                                </p>
+                                                <div className="flex items-center">
+                                                    <FaUser className="mr-2 text-primaryBlueDark text-xl" />
+                                                    <p className='font-semibold text-gray-700'>
+                                                        {solicitacao.user}
+                                                    </p>
+                                                </div>
                                             </div>
                                         </div>
+                                        <div className="flex flex-col gap-4 mb-2 p-4">
+                                            {Object.entries(solicitacao.item).map(([itemNome, quantidade]) => (
+                                                <div key={itemNome} className='flex justify-between gap-2 shadow-lg bg-primaryBlueDark p-2 rounded-xl text-white'>
+                                                    <div className='font-semibold flex justify-center items-center'>
+                                                        <MdOutlineAddShoppingCart className='text-xl text-white' />
+                                                        <p className='ml-2'>
+                                                            {itemNome}
+                                                        </p>
+                                                    </div>
+                                                    <div className='font-semibold flex'>
+                                                        <p>
+                                                            Qtd:
+                                                        </p>
+                                                        <p className='font-normal ml-1'>
+                                                            {quantidade}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            <div className="flex flex-col items-center w-full break-all">
+                                                <div className='flex justify-center items-center'>
+                                                    <SiReasonstudios className="mr-2 text-primaryBlueDark text-xl" />
+                                                    <p className='font-semibold text-gray-700'>
+                                                        Motivo
+                                                    </p>
+                                                </div>
+                                                <p>
+                                                    {solicitacao.motivo}
+                                                </p>
+                                            </div>
+
+                                            <div className="flex justify-between items-center text-gray-700">
+                                                <div className="flex justify-center items-center text-gray-700">
+                                                    <IoCalendarNumber className="mr-2 text-primaryBlueDark text-xl" />
+                                                    <p className='font-semibold text-gray-700'>
+                                                        {new Date(solicitacao.data.toDate()).toLocaleDateString()}
+                                                    </p>
+                                                </div>
+                                                {solicitacao.status === 'Enviado' && solicitacao.dateSend && (
+                                                    <div className="flex justify-start items-center text-gray-700">
+                                                        <FaShuttleVan className="mr-2 text-primaryBlueDark text-xl" />
+                                                        <p className='font-semibold text-gray-700'>
+                                                            {new Date(solicitacao.dateSend.toDate()).toLocaleDateString()}
+                                                        </p>
+                                                    </div>
+                                                )}
+
+                                                {solicitacao.status === 'Concluído' && solicitacao.dateReceived && (
+                                                    <div className="flex justify-start items-center text-gray-700">
+                                                        <RiUserReceived2Fill className="mr-2 text-primaryBlueDark text-xl" />
+                                                        <p className='font-semibold text-gray-700'>
+                                                            {new Date(solicitacao.dateReceived.toDate()).toLocaleDateString()}
+                                                        </p>
+                                                    </div>
+                                                )}
+                                                <div className={`text-gray-700 ${solicitacao.status === 'Concluído' ? 'text-green-500' : solicitacao.status === 'Progresso' ? 'text-yellow-500' : solicitacao.status === 'Cancelado' || solicitacao.status === 'Pendente' ? 'text-red-500' : 'text-primaryBlueDark'}`}>
+                                                    <p className="text-primaryBlueDark flex text-3xl items-center">
+                                                        {solicitacao.status === 'Pendente' && <GrStatusUnknown className="ml-2 text-secRed text-3xl" title='Pendente' />}
+                                                        {solicitacao.status === 'Separando' && <GrInProgress className="ml-2 text-orange-600 text-3xl" title='Separando' />}
+                                                        {solicitacao.status === 'Cancelado' && <ImCancelCircle className="ml-2 text-secRed text-3xl" title='Cancelado' />}
+                                                        {solicitacao.status === 'Enviado' && <FaShuttleVan className="ml-2 text-primaryOpaci text-3xl" title='Enviado' />}
+                                                        {solicitacao.status === 'Concluído' && <FaCheckCircle className="ml-2 text-green-700 text-3xl" title='Concluído' />}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className='flex justify-between'>
+                                            <button
+                                                onClick={() => handleStatusChange(solicitacao.id, 'Pendente')}
+                                                disabled={solicitacao.status === 'Enviado' || solicitacao.status === 'Concluído' || solicitacao.status === 'Cancelado'} // Desabilitar se status for "Enviado", "Concluído" ou "Cancelado"
+                                                className={`ml-2 text-3xl ${solicitacao.status === 'Enviado' || solicitacao.status === 'Concluído' || solicitacao.status === 'Cancelado' ? 'text-gray-400 cursor-not-allowed' : 'text-secRed'}`}
+                                                title='Pendente'
+                                            >
+                                                <GrStatusUnknown />
+                                            </button>
+
+                                            <button
+                                                onClick={() => openCancelModal(solicitacao)}
+                                                disabled={solicitacao.status === 'Enviado' || solicitacao.status === 'Concluído' || solicitacao.status === 'Cancelado'} // Desabilitar se status for "Enviado", "Concluído" ou "Cancelado"
+                                                className={`ml-2 text-3xl ${solicitacao.status === 'Enviado' || solicitacao.status === 'Concluído' || solicitacao.status === 'Cancelado' ? 'text-gray-400 cursor-not-allowed' : 'text-secRed'}`}
+                                                title='Cancelado'
+                                            >
+                                                <ImCancelCircle />
+                                            </button>
+
+                                            <button
+                                                onClick={() => handleStatusChange(solicitacao.id, 'Separando')}
+                                                disabled={solicitacao.status === 'Enviado' || solicitacao.status === 'Concluído' || solicitacao.status === 'Cancelado'} // Desabilitar se status for "Enviado", "Concluído" ou "Cancelado"
+                                                className={`ml-2 text-3xl ${solicitacao.status === 'Enviado' || solicitacao.status === 'Concluído' || solicitacao.status === 'Cancelado' ? 'text-gray-400 cursor-not-allowed' : 'text-orange-600'}`}
+                                                title='Separando'
+                                            >
+                                                <GrInProgress />
+                                            </button>
+
+                                            <button
+                                                onClick={() => openSendModal(solicitacao)}
+                                                disabled={solicitacao.status === 'Pendente' || solicitacao.status === 'Cancelado' || solicitacao.status === 'Concluído'} // Desabilitar se status for "Pendente", "Cancelado" ou "Concluído"
+                                                className={`ml-2 text-3xl ${solicitacao.status === 'Pendente' || solicitacao.status === 'Cancelado' || solicitacao.status === 'Concluído' ? 'text-gray-400 cursor-not-allowed' : 'text-primaryOpaci'}`}
+                                                title='Enviado'
+                                            >
+                                                <FaShuttleVan />
+                                            </button>
+
+                                            <button
+                                                onClick={() => openCompleteModal(solicitacao)}
+                                                disabled={solicitacao.status !== 'Enviado' || solicitacao.status === 'Concluído' || solicitacao.status === 'Cancelado'} // Desabilitar se status não for "Enviado", ou se for "Concluído" ou "Cancelado"
+                                                className={`ml-2 text-3xl ${solicitacao.status !== 'Enviado' || solicitacao.status === 'Concluído' || solicitacao.status === 'Cancelado' ? 'text-gray-400 cursor-not-allowed' : 'text-green-700'}`}
+                                                title='Concluído'
+                                            >
+                                                <FaCheckCircle />
+                                            </button>
+                                        </div>
+
                                     </div>
-                                    <div className='flex justify-between'>
-                                        <button
-                                            onClick={() => handleStatusChange(solicitacao.id, 'Pendente')}
-                                            disabled={solicitacao.status === 'Enviado' || solicitacao.status === 'Concluído' || solicitacao.status === 'Cancelado'} // Desabilitar se status for "Enviado", "Concluído" ou "Cancelado"
-                                            className={`ml-2 text-3xl ${solicitacao.status === 'Enviado' || solicitacao.status === 'Concluído' || solicitacao.status === 'Cancelado' ? 'text-gray-400 cursor-not-allowed' : 'text-secRed'}`}
-                                            title='Pendente'
-                                        >
-                                            <GrStatusUnknown />
-                                        </button>
+                                ))}
+                            </div>
 
-                                        <button
-                                            onClick={() => openCancelModal(solicitacao)}
-                                            disabled={solicitacao.status === 'Enviado' || solicitacao.status === 'Concluído' || solicitacao.status === 'Cancelado'} // Desabilitar se status for "Enviado", "Concluído" ou "Cancelado"
-                                            className={`ml-2 text-3xl ${solicitacao.status === 'Enviado' || solicitacao.status === 'Concluído' || solicitacao.status === 'Cancelado' ? 'text-gray-400 cursor-not-allowed' : 'text-secRed'}`}
-                                            title='Cancelado'
-                                        >
-                                            <ImCancelCircle />
-                                        </button>
-
-                                        <button
-                                            onClick={() => handleStatusChange(solicitacao.id, 'Separando')}
-                                            disabled={solicitacao.status === 'Enviado' || solicitacao.status === 'Concluído' || solicitacao.status === 'Cancelado'} // Desabilitar se status for "Enviado", "Concluído" ou "Cancelado"
-                                            className={`ml-2 text-3xl ${solicitacao.status === 'Enviado' || solicitacao.status === 'Concluído' || solicitacao.status === 'Cancelado' ? 'text-gray-400 cursor-not-allowed' : 'text-orange-600'}`}
-                                            title='Separando'
-                                        >
-                                            <GrInProgress />
-                                        </button>
-
-                                        <button
-                                            onClick={() => openSendModal(solicitacao)}
-                                            disabled={solicitacao.status === 'Pendente' || solicitacao.status === 'Cancelado' || solicitacao.status === 'Concluído'} // Desabilitar se status for "Pendente", "Cancelado" ou "Concluído"
-                                            className={`ml-2 text-3xl ${solicitacao.status === 'Pendente' || solicitacao.status === 'Cancelado' || solicitacao.status === 'Concluído' ? 'text-gray-400 cursor-not-allowed' : 'text-primaryOpaci'}`}
-                                            title='Enviado'
-                                        >
-                                            <FaShuttleVan />
-                                        </button>
-
-                                        <button
-                                            onClick={() => openCompleteModal(solicitacao)}
-                                            disabled={solicitacao.status !== 'Enviado' || solicitacao.status === 'Concluído' || solicitacao.status === 'Cancelado'} // Desabilitar se status não for "Enviado", ou se for "Concluído" ou "Cancelado"
-                                            className={`ml-2 text-3xl ${solicitacao.status !== 'Enviado' || solicitacao.status === 'Concluído' || solicitacao.status === 'Cancelado' ? 'text-gray-400 cursor-not-allowed' : 'text-green-700'}`}
-                                            title='Concluído'
-                                        >
-                                            <FaCheckCircle />
-                                        </button>
-                                    </div>
-
-                                </div>
-                            ))}
-                        </div>
+                            {/* Paginação */}
+                            <div className="flex justify-between items-center mt-4">
+                                <button
+                                    onClick={prevPage}
+                                    disabled={currentPage === 1}
+                                    className={`px-4 py-2 rounded ${currentPage === 1 ? 'bg-gray-400' : 'bg-blue-500 text-white'}`}
+                                >
+                                    Anterior
+                                </button>
+                                <span className="text-white">
+                                    Página {currentPage} de {totalPages}
+                                </span>
+                                <button
+                                    onClick={nextPage}
+                                    disabled={currentPage === totalPages}
+                                    className={`px-4 py-2 rounded ${currentPage === totalPages ? 'bg-gray-400' : 'bg-blue-500 text-white'}`}
+                                >
+                                    Próxima
+                                </button>
+                            </div>
+                        </>
                     )}
                 </div>
             </div>
-
 
             <Modal isOpen={isModalOpen} onClose={closeModal}>
                 <div className="text-center text-gray-700">
@@ -753,7 +791,6 @@ const AdmListaSolicitTi = () => {
                     </div>
                 </div>
             </Modal>
-
 
             <Modal
                 isOpen={isCompleteModalOpen}
