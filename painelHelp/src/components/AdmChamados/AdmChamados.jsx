@@ -60,6 +60,8 @@ const AdmChamados = () => {
     const [selectedAuthorizationDescription, setSelectedAuthorizationDescription] = useState('');
     const [logModalIsOpen, setLogModalIsOpen] = useState(false); // Controle de abertura do modal de logs
     const [selectedLogTicket, setSelectedLogTicket] = useState(null); // Armazena o ticket para exibir o log
+    const [currentPage, setCurrentPage] = useState(1); // Página atual
+    const itemsPerPage = 50; // Máximo de itens por página
 
     const openLogModal = (ticket) => {
         setSelectedLogTicket(ticket);
@@ -481,9 +483,9 @@ const AdmChamados = () => {
     };
 
     // Filtro para os tickets com base nos filtros e consulta de busca
-    const filteredTickets = tickets.filter(ticket => {
+    const filteredTickets = tickets
+    .filter(ticket => {
         const query = searchQuery.toLowerCase();
-    
         return (
             (userFilter ? ticket.user === userFilter : true) &&
             (storeFilter ? ticket.loja === storeFilter : true) &&
@@ -496,11 +498,42 @@ const AdmChamados = () => {
                 ticket.localProblema?.toLowerCase().includes(query) ||
                 (ticket.checkproblema && ticket.checkproblema.some(cp => cp.toLowerCase().includes(query))) ||
                 ticket.loja.toLowerCase().includes(query) ||
-                ticket.order.toLowerCase().includes(query) // Verificação adicionada
+                ticket.order.toLowerCase().includes(query)
             )
         );
+    })
+    .sort((a, b) => {
+        const statusPriority = (status) => {
+            switch (status) {
+                case 'Urgente': return 1;
+                case 'BLOCK': return 2;
+                case 'Aberto': return 3;
+                case 'Andamento': return 4;
+                default: return 5;
+            }
+        };
+
+        const priorityComparison = statusPriority(a.status) - statusPriority(b.status);
+        if (priorityComparison !== 0) {
+            return priorityComparison;
+        } else {
+            return new Date(b.data) - new Date(a.data);
+        }
     });
-    
+
+// Calcular o índice inicial e final dos itens a serem exibidos
+const startIndex = (currentPage - 1) * itemsPerPage;
+const endIndex = startIndex + itemsPerPage;
+const paginatedTickets = filteredTickets.slice(startIndex, endIndex);
+
+// Funções de navegação
+const goToNextPage = () => {
+    if (endIndex < filteredTickets.length) setCurrentPage(prev => prev + 1);
+};
+
+const goToPreviousPage = () => {
+    if (startIndex > 0) setCurrentPage(prev => prev - 1);
+};
 
     // Geração de listas únicas de usuários e lojas para os dropdowns de filtro
     const uniqueUsers = [...new Set(tickets.map(ticket => ticket.user))];
@@ -568,7 +601,7 @@ const AdmChamados = () => {
     };
 
     return (
-        <div className="justify-center items-center">
+        <div className="justify-center items-center bg-altBlue pb-4">
             <div className='w-full bg-altBlue p-4 fixed mt-[3.5rem] z-10'>
                 <div className='flex flex-col bg-primaryBlueDark p-4 rounded-lg shadow-lg'>
                     <h2 className="text-2xl text-white font-bold">Gerenciador Chamados</h2>
@@ -632,36 +665,10 @@ const AdmChamados = () => {
             {filteredTickets.length === 0 ? (
                 <p>Nenhum chamado encontrado.</p>
             ) : (
-
-                <div className="pt-56 p-4 grid grid-cols-1 custom-sm:grid-cols-2 custom-xl:grid-cols-3 gap-4 w-full bg-altBlue">
-                    {filteredTickets
-                        .sort((a, b) => {
-                            // Função para definir a prioridade do status
-                            const statusPriority = (status) => {
-                                switch (status) {
-                                    case 'Urgente':
-                                        return 1;
-                                    case 'BLOCK':
-                                        return 2;
-                                    case 'Aberto':
-                                        return 3;
-                                    case 'Andamento':
-                                        return 4;
-                                    default:
-                                        return 5; // Outros status ficam no final
-                                }
-                            };
-
-                            const priorityComparison = statusPriority(a.status) - statusPriority(b.status);
-
-                            if (priorityComparison !== 0) {
-                                return priorityComparison; // Se o status é diferente, ordena por prioridade do status
-                            } else {
-                                return new Date(b.data) - new Date(a.data); // Se o status é igual, ordena por data (mais recente primeiro)
-                            }
-                        })
-                        .map(ticket => (
-                            <div
+                <>
+                    <div className="pt-56 p-4 grid grid-cols-1 custom-sm:grid-cols-2 custom-xl:grid-cols-3 gap-4 w-full bg-altBlue">
+                        {paginatedTickets.map(ticket => (
+                             <div
                                 key={ticket.id}
                                 className={`bg-white shadow-xl mb-4 px-4 pb-4 rounded-xl ${ticket.interacao ? 'animate-shake hover:animate-none' : ''}`}
                             >
@@ -929,9 +936,28 @@ const AdmChamados = () => {
                                 </div>
 
                             </div>
+                           
                         ))}
-                </div>
-
+                    </div>
+                    
+                    {/* Botões de navegação */}
+                    <div className="flex justify-between mx-4 gap-4 mt-4 ">
+                        <button
+                            onClick={goToPreviousPage}
+                            disabled={currentPage === 1}
+                            className="px-4 py-2 bg-gray-300 text-gray-700 rounded disabled:opacity-50"
+                        >
+                            Anterior
+                        </button>
+                        <button
+                            onClick={goToNextPage}
+                            disabled={endIndex >= filteredTickets.length}
+                            className="px-4 py-2 bg-gray-300 text-gray-700 rounded disabled:opacity-50"
+                        >
+                            Próximo
+                        </button>
+                    </div>
+                </>
             )}
 
             {normalizarModalIsOpen && (
