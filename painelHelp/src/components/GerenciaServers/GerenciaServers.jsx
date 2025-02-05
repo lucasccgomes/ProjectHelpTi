@@ -17,7 +17,6 @@ export default function GerenciaServer() {
   const [alertModalMessage, setAlertModalMessage] = useState('');
   const [alertModalLoading, setAlertModalLoading] = useState(false);
   const [showOkButton, setShowOkButton] = useState(true);
-  const [serverSituations, setServerSituations] = useState({});
   const [newServer, setNewServer] = useState({ loja: '', host: '', port: '' });
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
@@ -27,6 +26,9 @@ export default function GerenciaServer() {
   const [loadingCorrigir, setLoadingCorrigir] = useState(false);
   const [loadingButtons, setLoadingButtons] = useState({});
 
+  const SERVER_CONTROL_SLAVE_API = import.meta.env.VITE_SERVER_CONTROL_SLAVE_API;
+  const SERVER_SHOW_STATUS_API = import.meta.env.VITE_SERVER_SHOW_STATUS_API;
+  const SERVER_CHECK_API = import.meta.env.VITE_SERVER_CHECK_API;
 
   const getBackgroundColor = (situation) => {
     if (situation === 'Servidor Inacessível') return 'bg-gray-500';
@@ -68,27 +70,6 @@ export default function GerenciaServer() {
     }
   };
 
-  const loadServerSituations = async () => {
-    try {
-      const response = await fetch('https://api.drogalira.com.br/api/server-situations', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${AUTH_TOKEN}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      const data = await response.json();
-      setServerSituations(
-        data.reduce((acc, server) => {
-          acc[server.host] = server.situation; // Agora é uma string
-          return acc;
-        }, {})
-      );
-    } catch (error) {
-      console.error('Erro ao carregar as situações dos servidores:', error);
-    }
-  };
-
   // Função para carregar os dados dos servidores do Firebase
   const loadServers = async () => {
     try {
@@ -106,18 +87,11 @@ export default function GerenciaServer() {
 
   useEffect(() => {
     loadServers();
-    loadServerSituations();
-
-    // Atualiza as situações a cada 5 segundos
-    const intervalId = setInterval(loadServerSituations, 5000);
-
-    // Limpa o intervalo quando o componente é desmontado
-    return () => clearInterval(intervalId);
   }, []);
 
   const controlSlave = async (host, port, action, serverName) => {
     try {
-      const response = await fetch('https://api.drogalira.com.br/api/control-slave', {
+      const response = await fetch(SERVER_CONTROL_SLAVE_API, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${AUTH_TOKEN}`, // Inclui o token no cabeçalho
@@ -134,7 +108,7 @@ export default function GerenciaServer() {
 
   const getSlaveStatus = async (host, port, serverName) => {
     try {
-      const response = await fetch('https://api.drogalira.com.br/api/show-status-slave', {
+      const response = await fetch(SERVER_SHOW_STATUS_API, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${AUTH_TOKEN}`, // Inclui o token no cabeçalho
@@ -169,7 +143,7 @@ export default function GerenciaServer() {
       const stopSuccess = await controlSlave(host, port, 'StopSlave');
       if (stopSuccess) {
         await controlSlave(host, port, 'StartSlave');
-        const checkResponse = await fetch('https://api.drogalira.com.br/api/check-server', {
+        const checkResponse = await fetch(SERVER_CHECK_API, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${AUTH_TOKEN}`,
@@ -205,15 +179,6 @@ export default function GerenciaServer() {
     setAlertModalMessage('');
   };
 
-  // Contagem dos servidores
-  // Atualizar a lógica para calcular os servidores normais
-  const normalServersCount = servers.filter(server => {
-    const situation = serverSituations[server.host] || '';
-    return situation === ''; // Situação vazia indica normal
-  }).length;
-
-  const problemServersCount = servers.length - normalServersCount;
-
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-8 bg-altBlue">
       <div className='w-full bg-primaryBlueDark p-2 rounded-lg mb-3 shadow-md mt-8'>
@@ -229,25 +194,16 @@ export default function GerenciaServer() {
             </button>
           </div>
         </div>
-        <div className="flex justify-between lg:flex-row flex-col items-center mb-4 p-4 bg-white shadow-md rounded-lg text-center w-full">
-          <p className='lg:bg-red-600 lg:text-white lg:p-1 lg:rounded-md lg:shadow-md'>Servidores com Problemas: {problemServersCount}</p>
-          <p className='lg:bg-gray-600 lg:text-white lg:p-1 lg:rounded-md lg:shadow-md'>Total de Servidores: {servers.length}</p>
-          <p className='lg:bg-green-600 lg:text-white lg:p-1 lg:rounded-md lg:shadow-md'>Servidores Normais: {normalServersCount}</p>
-        </div>
+      
       </div>
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-6">
         {servers.map((server) => {
-          const situations = serverSituations[server.host] || [];
-          const backgroundColorClass = getBackgroundColor(serverSituations[server.host] || '');
           return (
-            <div key={server.id} className='bg-white p-1 rounded-lg shadow-lg'>
-              <div className={`${backgroundColorClass} px-4 pb-4 rounded-lg `}>
+            <div key={server.id} className='bg-white px-1 rounded-lg shadow-lg'>
+              <div className={`px-4 pb-4 rounded-lg `}>
                 <div className='flex gap-1 flex-col justify-center items-center'>
                   <h2 className="text-md bg-altBlue text-white p-1 rounded-b-md">{server.Loja}</h2>
                   <p className="text-sm bg-gray-500 text-white p-1 rounded-md">{server.host}</p>
-                  <p className="text-sm bg-gray-500 text-white p-1 rounded-md">
-                    {serverSituations[server.host] || 'Normal'}
-                  </p>
                 </div>
                 <div className="mt-2 flex gap-2">
                   <button
@@ -269,7 +225,6 @@ export default function GerenciaServer() {
                   >
                     {loadingButton === `status-${server.id}` ? <LoadingSpinner /> : 'Status'}
                   </button>
-
                 </div>
               </div>
             </div>
@@ -317,7 +272,6 @@ export default function GerenciaServer() {
       <MyModal isOpen={showAddServerModal} onClose={() => { setShowAddServerModal(false); setSaveMessage(''); setNewServer({ loja: '', host: '', port: '' }); }}>
         <div className="p-4 rounded">
           <h2 className="text-xl font-semibold mb-2">Adicionar Servidor</h2>
-
           {isSaving ? (
             <LoadingSpinner /> // Mostra o spinner de loading durante o salvamento
           ) : saveMessage ? (
