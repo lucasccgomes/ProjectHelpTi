@@ -1,10 +1,26 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext'; // Importe o caminho correto do AuthContext
+import { getApiUrls } from '../../utils/apiBaseUrl';
 
 const EtiquetaPersonalizada = () => {
   const { currentUser } = useAuth(); // Usa o contexto para obter o usuário logado
   const remetente = currentUser ? currentUser.user : 'Usuário não logado'; // Nome do remetente
-  const VITE_ETIQUETA_API_URL = import.meta.env.VITE_ETIQUETA;
+
+  const [VITE_ETIQUETA_API_URL, setPrinterApiUrl] = useState('');
+
+  useEffect(() => {
+    async function loadUrls() {
+      try {
+        const urls = await getApiUrls();
+        setPrinterApiUrl(urls.VITE_ETIQUETA);
+      } catch (error) {
+        console.error("Erro ao carregar URL da API:", error);
+      }
+    }
+
+    loadUrls();
+  }, []);
+
 
   const [formData, setFormData] = useState({
     data: '',
@@ -49,7 +65,7 @@ const EtiquetaPersonalizada = () => {
       const data = await response.json();
 
     } catch (error) {
-  
+
     }
   };
 
