@@ -7,6 +7,7 @@ import AlertModal from '../AlertModal/AlertModal';
 import { useAuth } from '../../context/AuthContext';
 import JsBarcode from 'jsbarcode';
 import MyModal from '../MyModal/MyModal';
+import { getApiUrls } from '../../utils/apiBaseUrl';
 
 const CadastroEstoque = () => {
     const { currentUser, isAuthenticated, loading } = useAuth();
@@ -28,12 +29,21 @@ const CadastroEstoque = () => {
 
     const barcodeInputRef = useRef(null);  // Referência para o campo de input do código de barras
 
-  
 
-    const PRINTERLABEL_API_URL = import.meta.env.VITE_PRINTERLABEL_API_URL;
+    const [PRINTERLABEL_API_URL, setPrinterLabelApiUrl] = useState('');
 
+    useEffect(() => {
+        async function loadUrls() {
+            try {
+                const urls = await getApiUrls();
+                setPrinterLabelApiUrl(urls.VITE_PRINTERLABEL_API_URL);
+            } catch (error) {
+                console.error("Erro ao carregar URL da API:", error);
+            }
+        }
 
-
+        loadUrls();
+    }, []);
 
 
 
@@ -191,12 +201,12 @@ const CadastroEstoque = () => {
 
         try {
             // Log de verificação antes de iniciar o processo de impressão
-            console.log('Iniciando processo de impressão de múltiplas etiquetas...');
-            console.log(`Quantidade de etiquetas a imprimir: ${trueAmount}`);
+            // console.log('Iniciando processo de impressão de múltiplas etiquetas...');
+            //  console.log(`Quantidade de etiquetas a imprimir: ${trueAmount}`);
 
             // Laço para enviar múltiplas requisições, conforme o valor de trueAmount
             for (let i = 0; i < trueAmount; i++) {
-                console.log(`Imprimindo etiqueta ${i + 1} de ${trueAmount}`);
+                //   console.log(`Imprimindo etiqueta ${i + 1} de ${trueAmount}`);
 
                 // Envia os dados para o backend para impressão de uma única etiqueta
                 const response = await fetch(PRINTERLABEL_API_URL, {
@@ -214,7 +224,7 @@ const CadastroEstoque = () => {
 
                 if (response.ok) {
                     const responseData = await response.json();
-                    console.log(`Etiqueta ${i + 1} de ${trueAmount} enviada com sucesso. Resposta:`, responseData);
+                    // console.log(`Etiqueta ${i + 1} de ${trueAmount} enviada com sucesso. Resposta:`, responseData);
                 } else {
                     const errorData = await response.json();
                     console.error(`Erro ao imprimir etiqueta ${i + 1}:`, errorData);
@@ -249,7 +259,7 @@ const CadastroEstoque = () => {
         }
     };
 
-    
+
     return (
         <div className="p-5 bg-white border lg:min-w-[400px] flex flex-row justify-between m-4 lg:m-0 border-gray-300 rounded-xl shadow-lg">
             <div className='flex flex-col justify-between'>
