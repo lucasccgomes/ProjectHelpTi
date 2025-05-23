@@ -40,6 +40,10 @@ import ManagerFrasesPass from './pages/ManagerFrasesPass';
 import RoutDadosLojas from './pages/RoutDadosLojas';
 import RoutPbmsLojas from './pages/RoutPbmsLojas';
 import Routdiversos from './pages/Routdiversos';
+import RoutVisitaSuper from './pages/RoutVisitaSuper';
+import RoutVisitaGerente from './pages/RoutVisitaGerente';
+import RelatorioConsumo from './pages/RelatorioConsumo';
+import MonitorSql from './components/MonitorSql/MonitorSql';
 
 const useUpdateChecker = (onUpdateAvailable) => {
   useEffect(() => {
@@ -109,9 +113,9 @@ const App = () => {
 
                 <Route path="/printpersonalizado" element={<ProtectedRoute allowedRoles={[
                   'T.I',
-                  'Supervisor',
                   'Compras',
                   'Claudemir',
+                  'RH',
                   'Marketing'
                 ]}
                 >
@@ -176,7 +180,7 @@ const App = () => {
                 }
                 />
 
-                <Route path="/diversos" element={
+                <Route path="/pbms" element={
                   <ProtectedRoute allowedRoles={[
                     'T.I',
                     'Gerente',
@@ -187,7 +191,30 @@ const App = () => {
                     'Marketing',
                   ]}
                   >
-                    <Routdiversos />
+                    <RoutPbmsLojas />
+                  </ProtectedRoute>
+                }
+                />
+
+                <Route path="/visitasuper" element={
+                  <ProtectedRoute allowedRoles={[
+                    'Supervisor',
+                    'T.I',
+                    'Claudemir',
+                  ]}
+                  >
+                    <RoutVisitaSuper />
+                  </ProtectedRoute>
+                }
+                />
+
+                <Route path="/visitagerent" element={
+                  <ProtectedRoute allowedRoles={[
+                    'Gerente',
+                    'T.I',
+                  ]}
+                  >
+                    <RoutVisitaGerente />
                   </ProtectedRoute>
                 }
                 />
@@ -201,6 +228,7 @@ const App = () => {
                     'Claudemir',
                     'RH',
                     'Marketing',
+                    'Financeiro',
                   ]}
                   >
                     <AssignTasksPage />
@@ -260,6 +288,26 @@ const App = () => {
                 }
                 />
 
+                <Route path="/monitorsql" element={<ProtectedRoute allowedRoles={[
+                  'T.I',
+                  'Claudemir'
+                ]}
+                >
+                  <MonitorSql />
+                </ProtectedRoute>
+                }
+                />
+
+                <Route path="/relatconsumoti" element={<ProtectedRoute allowedRoles={[
+                  'T.I',
+                  'Claudemir'
+                ]}
+                >
+                  <RelatorioConsumo />
+                </ProtectedRoute>
+                }
+                />
+
                 <Route path="/setorrh" element={<ProtectedRoute allowedRoles={[
                   'T.I',
                   'Gerente',
@@ -298,6 +346,7 @@ const App = () => {
 
                 <Route path="/relatorioti" element={<ProtectedRoute allowedRoles={[
                   'T.I',
+                  'Supervisor',
                   'Claudemir'
                 ]}
                 >
