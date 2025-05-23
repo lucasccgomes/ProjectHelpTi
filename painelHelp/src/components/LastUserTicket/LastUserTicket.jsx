@@ -63,7 +63,7 @@ const LastUserTicket = () => {
 
         // Inscreve-se para receber atualizações em tempo real dos tickets
         const unsubscribe = onSnapshot(q, (querySnapshot) => {
-            console.log("Query snapshot size:", querySnapshot.size);
+          //  console.log("Query snapshot size:", querySnapshot.size);
             const lastTicketData = querySnapshot.docs.map(doc => {
                 const data = doc.data();
                 return {
@@ -95,7 +95,7 @@ const LastUserTicket = () => {
 
   // Se não houver nenhum ticket, exibe uma mensagem informando o usuário
   if (!lastTicket) {
-    console.log("No last ticket found.");
+ //   console.log("No last ticket found.");
     return (
       <div className="w-full min-w-[266px] min-h-[204px] flex bg-white max-w-[320px] px-2 rounded-xl flex-col justify-center items-center text-gray-700">
         <div className='w-full font-bold flex justify-start'>
