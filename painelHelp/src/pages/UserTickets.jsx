@@ -17,10 +17,11 @@ import { IoIosAddCircle, IoMdAlert } from "react-icons/io";
 import MyModal from '../components/MyModal/MyModal';
 import ReactQuill from 'react-quill';
 import ModalSendConfirm from '../components/ModalSendConfirm/ModalSendConfirm';
+import { getApiUrls } from '../utils/apiBaseUrl';
 
 // Componente principal que renderiza os tickets do usuário
 const UserTickets = () => {
-  const NOTIFICATION_API_URL = import.meta.env.VITE_NOTIFICATION_API_URL;
+  
 
   const { currentUser } = useAuth(); // Obtém o usuário atual do contexto de autenticação
   const [tickets, setTickets] = useState([]); // Estado para armazenar os tickets
@@ -49,9 +50,25 @@ const UserTickets = () => {
   const [isDenyModalOpen, setIsDenyModalOpen] = useState(false); // Controle do modal de negação
   const [denyReason, setDenyReason] = useState(''); // Estado para o motivo de negação
   const [ticketToDeny, setTicketToDeny] = useState({});
+  const [selectedTicket, setSelectedTicket] = useState(null);
+
+  const [NOTIFICATION_API_URL, setNotificaApiUrl] = useState('');
 
   useEffect(() => {
-    console.log('ticketToDeny atualizado:', ticketToDeny);
+      async function loadUrls() {
+          try {
+              const urls = await getApiUrls();
+              setNotificaApiUrl(urls.VITE_NOTIFICATION_API_URL);
+          } catch (error) {
+              console.error("Erro ao carregar URL da API:", error);
+          }
+      }
+
+      loadUrls();
+  }, []);
+
+  useEffect(() => {
+    //console.log('ticketToDeny atualizado:', ticketToDeny);
   }, [ticketToDeny]);
 
 
@@ -647,7 +664,7 @@ const UserTickets = () => {
                               <button
                                 className="flex items-center"
                                 onClick={() => {
-                                  console.log('Clique registrado'); // Verifica se o clique está sendo detectado
+                                  //console.log('Clique registrado'); // Verifica se o clique está sendo detectado
                                   setTicketToDeny(ticket);
                                   setSelectedAuthorizationDescription(ticket.descriptautorizacao);
                                   setIsReasonModalOpen(true);
@@ -693,6 +710,7 @@ const UserTickets = () => {
                       <button
                         className={`${ticket.descricaoFinalizacao ? 'bg-green-600' : 'bg-primaryBlueDark'} text-white px-4 py-2 rounded-md w-full flex justify-center items-center ${ticket.status === 'Andamento' ? 'blinking' : ''}`}
                         onClick={() => {
+                          setSelectedTicket(ticket);
                           setSelectedContent(ticket.descricaoFinalizacao || (ticket.status === 'Andamento' ? ticket.treatment : ticket.tentou));
                           setContentTitle(ticket.descricaoFinalizacao ? 'Conclusão' : (ticket.status === 'Andamento' ? 'Andamento' : 'Tentativa'));
                           setIsContentModalOpen(true);
@@ -803,6 +821,22 @@ const UserTickets = () => {
           className="overflow-y-auto break-words"
           dangerouslySetInnerHTML={{ __html: selectedContent }}
         ></div>
+
+        {selectedTicket?.finalizadoImgUrls?.length > 0 && (
+          <div className="grid grid-cols-2 gap-4 mt-4">
+            {selectedTicket.finalizadoImgUrls.map((url, index) => (
+              <a
+                key={index}
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-primaryBlueDark text-white text-center px-4 py-2 rounded-md shadow-lg"
+              >
+                Ver Imagem {index + 1}
+              </a>
+            ))}
+          </div>
+        )}
       </MyModal>
 
       <MyModal isOpen={isDescriptionModalOpen} onClose={() => setIsDescriptionModalOpen(false)}>

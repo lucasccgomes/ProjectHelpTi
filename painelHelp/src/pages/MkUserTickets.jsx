@@ -16,10 +16,11 @@ import { MdReportProblem, MdDoNotDisturb, MdDescription } from "react-icons/md";
 import { IoIosAddCircle, IoMdAlert } from "react-icons/io";
 import MyModal from '../components/MyModal/MyModal';
 import ReactQuill from 'react-quill';
+import { getApiUrls } from '../utils/apiBaseUrl';
 
 // Componente principal que renderiza os tickets do usuário
 const MkUserTickets = () => {
-  const NOTIFICATION_API_URL = import.meta.env.VITE_NOTIFICATION_API_URL;
+  
 
   const { currentUser } = useAuth(); // Obtém o usuário atual do contexto de autenticação
   const [tickets, setTickets] = useState([]); // Estado para armazenar os tickets
@@ -49,8 +50,23 @@ const MkUserTickets = () => {
   const [denyReason, setDenyReason] = useState(''); // Estado para o motivo de negação
   const [ticketToDeny, setTicketToDeny] = useState({});
 
+  const [NOTIFICATION_API_URL, setNotificaApiUrl] = useState('');
+
   useEffect(() => {
-    console.log('ticketToDeny atualizado:', ticketToDeny);
+      async function loadUrls() {
+          try {
+              const urls = await getApiUrls();
+              setNotificaApiUrl(urls.VITE_NOTIFICATION_API_URL);
+          } catch (error) {
+              console.error("Erro ao carregar URL da API:", error);
+          }
+      }
+
+      loadUrls();
+  }, []);
+
+  useEffect(() => {
+    //console.log('ticketToDeny atualizado:', ticketToDeny);
   }, [ticketToDeny]);
 
 
@@ -645,7 +661,7 @@ const MkUserTickets = () => {
                               <button
                                 className="flex items-center"
                                 onClick={() => {
-                                  console.log('Clique registrado'); // Verifica se o clique está sendo detectado
+                                  //console.log('Clique registrado'); // Verifica se o clique está sendo detectado
                                   setTicketToDeny(ticket);
                                   setSelectedAuthorizationDescription(ticket.descriptautorizacao);
                                   setIsReasonModalOpen(true);

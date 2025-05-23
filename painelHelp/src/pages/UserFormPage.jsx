@@ -46,7 +46,7 @@ const UserForm = () => {
       if (docSnap.exists()) {
         setCidades(docSnap.data());
       } else {
-        console.log("No such document!");
+        //console.log("No such document!");
       }
     };
 
@@ -60,7 +60,7 @@ const UserForm = () => {
       if (docSnap.exists()) {
         setCargos(docSnap.data().typeCargos || []);
       } else {
-        console.log("No such document!");
+        //console.log("No such document!");
       }
     };
 
@@ -77,13 +77,13 @@ const UserForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Selected BD: ", selectedUser);
-    console.log("User: ", user);
-    console.log("Cidade: ", cidade);
-    console.log("Loja: ", loja);
-    console.log("Cargo: ", cargo);
-    console.log("Pass: ", pass);
-    console.log("Whatsapp: ", whatsapp);
+    //console.log("Selected BD: ", selectedUser);
+    //console.log("User: ", user);
+    //console.log("Cidade: ", cidade);
+    //console.log("Loja: ", loja);
+    //console.log("Cargo: ", cargo);
+    //console.log("Pass: ", pass);
+    //console.log("Whatsapp: ", whatsapp);
 
     if (selectedUser && user && cidade && loja && cargo && pass && whatsapp) {
       const userDoc = doc(db, "usuarios", cidade);
@@ -194,22 +194,6 @@ const UserForm = () => {
               placeholder="(00) 00000-0000"
               required
             />
-          </div>
-          <div>
-            <label className="block mb-1">Atribuições</label>
-            <select
-              value={selectedUser}
-              onChange={(e) => setSelectedUser(e.target.value)}
-              className="w-full border border-gray-300 p-2 rounded"
-              required
-            >
-              <option value="">Selecione o usuário</option>
-              {users.map((user) => (
-                <option key={user.userKey} value={user.userKey}>
-                  {user.user} - {user.loja}
-                </option>
-              ))}
-            </select>
           </div>
           <button
             type="submit"

@@ -104,7 +104,7 @@ const EstoqueTi = () => {
         [category]: updatedCategory,
       });
 
-      console.log(`Baixa realizada no item "${itemName}". Quantidade atual: ${updatedItem.amount}, Quantidade real atual: ${updatedItem.trueAmount}`);
+      //console.log(`Baixa realizada no item "${itemName}". Quantidade atual: ${updatedItem.amount}, Quantidade real atual: ${updatedItem.trueAmount}`);
     } catch (error) {
       console.error('Erro ao dar baixa no item:', error);
       throw new Error('Erro ao dar baixa no item.');
@@ -142,7 +142,7 @@ const EstoqueTi = () => {
         [category]: updatedCategory,
       });
 
-      console.log(`Entrada realizada no item "${itemName}". Quantidade atual: ${updatedItem.amount}, Quantidade real atual: ${updatedItem.trueAmount}`);
+      //console.log(`Entrada realizada no item "${itemName}". Quantidade atual: ${updatedItem.amount}, Quantidade real atual: ${updatedItem.trueAmount}`);
     } catch (error) {
       console.error('Erro ao dar entrada no item:', error);
       throw new Error('Erro ao dar entrada no item.');
@@ -163,11 +163,11 @@ const EstoqueTi = () => {
 
   const processBarcode = async (barcode, isEntrada = false) => {
     if (!barcode) {
-      console.log('Código de barras vazio'); // Log para verificar se o código está vazio
+      //console.log('Código de barras vazio'); // Log para verificar se o código está vazio
       return null;
     }
 
-    console.log('Processando código de barras:', barcode); // Log ao iniciar o processamento do código
+    //console.log('Processando código de barras:', barcode); // Log ao iniciar o processamento do código
     try {
       const estoqueRef = doc(db, 'estoqueTi', 'estoque');
       const estoqueDoc = await getDoc(estoqueRef);
@@ -184,7 +184,7 @@ const EstoqueTi = () => {
         for (const [itemNome, itemData] of Object.entries(items)) {
           if (itemData.barcode === barcode) {
             foundItem = { ...itemData, category: cat, itemName: itemNome };
-            console.log('Item correspondente encontrado:', foundItem); // Log quando o item é encontrado
+            //console.log('Item correspondente encontrado:', foundItem); // Log quando o item é encontrado
             break;
           }
         }
@@ -194,16 +194,16 @@ const EstoqueTi = () => {
       if (foundItem) {
         if (isEntrada) {
           await handleEntrada(foundItem);  // Lida com a entrada no estoque
-          console.log(`Entrada no item "${foundItem.title}" concluída com sucesso!`); // Log para entrada concluída
+          //console.log(`Entrada no item "${foundItem.title}" concluída com sucesso!`); // Log para entrada concluída
         } else {
           if (foundItem.trueAmount === 0) {
-            console.log(`Estoque zerado para o item "${foundItem.title}"`); // Log se o estoque está zerado
+            //console.log(`Estoque zerado para o item "${foundItem.title}"`); // Log se o estoque está zerado
             setModalMessage(`Impossível dar baixa no item "${foundItem.title}", pois o estoque está zerado!`);
             return null;
           }
 
           await handleBaixa(foundItem);  // Dá baixa no item encontrado
-          console.log(`Baixa no item "${foundItem.title}" concluída com sucesso!`); // Log para baixa concluída
+          //console.log(`Baixa no item "${foundItem.title}" concluída com sucesso!`); // Log para baixa concluída
 
           if (foundItem.amount < 2) {
             setModalMessage(`Baixa no item "${foundItem.title}" concluída com sucesso! Atenção: o estoque está acabando.`);
@@ -214,7 +214,7 @@ const EstoqueTi = () => {
 
         return foundItem;  // Retorna o item encontrado
       } else {
-        console.log('Nenhum item correspondente encontrado para o código de barras:', barcode); // Log se nenhum item for encontrado
+        //console.log('Nenhum item correspondente encontrado para o código de barras:', barcode); // Log se nenhum item for encontrado
         return null;
       }
     } catch (error) {

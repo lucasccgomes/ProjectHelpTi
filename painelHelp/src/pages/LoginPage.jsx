@@ -22,14 +22,14 @@ const LoginPage = () => {
     const handleBeforeInstallPrompt = (e) => {
       e.preventDefault(); // Impede o comportamento padrão do prompt de instalação
       setInstallPrompt(e); // Armazena o evento de prompt de instalação
-      console.log("beforeinstallprompt event captured"); // Loga quando o evento é capturado
+      //console.log("beforeinstallprompt event captured"); // Loga quando o evento é capturado
     };
 
     const checkInstalledStatus = async () => {
       if ('getInstalledRelatedApps' in navigator) {
         const relatedApps = await navigator.getInstalledRelatedApps(); // Verifica se há aplicativos relacionados instalados
         setIsInstalled(relatedApps.length > 0); // Atualiza o estado com base na verificação
-        console.log("Installed apps:", relatedApps); // Loga os aplicativos instalados
+        //console.log("Installed apps:", relatedApps); // Loga os aplicativos instalados
       }
     };
 
@@ -46,9 +46,9 @@ const LoginPage = () => {
       installPrompt.prompt(); // Mostra o prompt de instalação
       installPrompt.userChoice.then((choiceResult) => {
         if (choiceResult.outcome === 'accepted') {
-          console.log('User accepted the install prompt'); // Loga se o usuário aceitou a instalação
+          //console.log('User accepted the install prompt'); // Loga se o usuário aceitou a instalação
         } else {
-          console.log('User dismissed the install prompt'); // Loga se o usuário rejeitou a instalação
+          //console.log('User dismissed the install prompt'); // Loga se o usuário rejeitou a instalação
         }
         setInstallPrompt(null); // Reseta o evento do prompt de instalação
       });
@@ -85,9 +85,9 @@ const LoginPage = () => {
       try {
         const status = await Notification.requestPermission(); // Solicita permissão para enviar notificações
         if (status === 'granted') {
-          console.log('Permissão de notificação concedida.'); // Loga se a permissão for concedida
+          //console.log('Permissão de notificação concedida.'); // Loga se a permissão for concedida
         } else {
-          console.log('Permissão de notificação não concedida.'); // Loga se a permissão não for concedida
+          //console.log('Permissão de notificação não concedida.'); // Loga se a permissão não for concedida
         }
       } catch (error) {
         console.error('Erro ao solicitar permissão de notificação:', error); // Loga o erro se a solicitação falhar

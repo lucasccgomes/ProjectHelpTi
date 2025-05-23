@@ -47,7 +47,7 @@ const Navbar = () => {
       const senhas = docSnap.data();
       setSenhaVSM(senhas[dataString]); // Armazena a senha do dia no estado
     } else {
-      console.log("Documento não encontrado");
+      //  console.log("Documento não encontrado");
     }
   };
 
@@ -83,7 +83,7 @@ const Navbar = () => {
     },
 
     // Condição para exibir "Etiquetas p/ Envio" apenas para os cargos permitidos
-    ...(permittedRoles.includes(currentUser?.cargo) ? [
+    ...(currentUser?.cargo === "Marketing" || currentUser?.cargo === "Compras" || currentUser?.cargo === "RH" || currentUser?.cargo === "T.I" ? [
       {
         name: 'Etiquetas p/ Envio',
         icon: FaTag,
@@ -95,9 +95,11 @@ const Navbar = () => {
       name: 'Recursos Humanos',
       icon: GrResources,
       subItems: [ // Subitens para criar um submenu
-        { name: 'Envio de Documentos', href: '/setorrh' },
-        { name: 'Lista de Envios', href: '/listenvio' },
-        { name: 'Gerencia RH', href: '/tipodoc' },
+        ...(currentUser?.cargo === "Gerente" || currentUser?.cargo === "Supervisor" || currentUser?.cargo === "RH" ? [
+          { name: 'Envio de Documentos', href: '/setorrh' },
+          { name: 'Lista de Envios', href: '/listenvio' },
+          { name: 'Gerencia RH', href: '/tipodoc' },
+        ] : []),
       ]
     },
 
@@ -108,17 +110,28 @@ const Navbar = () => {
       icon: MdHelp,
       subItems: [
         { name: 'Abrir Chamados', href: '/usertickets' },
-        { name: 'Geren. Solicitações', href: '/solicitati' },
 
-        // Itens adicionais específicos para o cargo "T.I"
-        ...(currentUser?.cargo === "T.I" ? [
+        ...(currentUser?.cargo === "T.I" || currentUser?.cargo === "Claudemir" ? [
           { name: 'Geren. Chamados', href: '/gerenchamados' },
           { name: 'Geren. Estoque', href: '/estoqueti' },
+          { name: 'Relatorio Consumo', href: '/relatconsumoti' },
+          { name: 'Monitor SQL', href: '/monitorsql' },
+        ] : []),
+
+        ...(currentUser?.cargo === "Gerente" || currentUser?.cargo === "Supervisor" || currentUser?.cargo === "T.I" ? [
+          { name: 'Geren. Solicitações', href: '/solicitati' },
+        ] : []),
+
+        ...(currentUser?.cargo === "T.I" ? [
           { name: 'Geren. Servers', href: '/servers' },
           { name: 'Relatório Impressoras', href: '/printerlist' },
-          { name: 'Relatório Chamados', href: '/relatorioti' },
           { name: 'Cadastrar Usuario', href: '/newuser' }
         ] : []),
+
+        ...(currentUser?.cargo === "T.I" || currentUser?.cargo === "Supervisor" || currentUser?.cargo === "Claudemir" ? [
+          { name: 'Relatório Chamados', href: '/relatorioti' },
+        ] : []),
+
       ]
     },
 
@@ -128,42 +141,45 @@ const Navbar = () => {
       icon: SiCoinmarketcap,
       subItems: [
         { name: 'Abrir Chamado', href: '/mknewchamados' },
-    
+
         ...(currentUser?.cargo === "Marketing" ? [
           { name: 'Geren. Chamados', href: '/mkchamados' },
           { name: 'Web Panfleto', href: '/webpanfleto' },
         ] : []),
-    
+
         ...(currentUser?.cargo === "Marketing" || currentUser?.cargo === "T.I" ? [
           { name: 'Uploud MP3', href: '/anunciamp3' },
         ] : []),
-    
-        { name: 'Envio de Documentos', href: '/setormk' },
-        { name: 'Lista de Envios', href: '/listenviomk' },
-        { name: 'Tipo Doc', href: '/tipodocmk' },
-    
+
+        ...(currentUser?.cargo === "Gerente" || currentUser?.cargo === "Supervisor" || currentUser?.cargo === "Marketing" ? [
+          { name: 'Envio de Documentos', href: '/setormk' },
+          { name: 'Lista de Envios', href: '/listenviomk' },
+        ] : []),
+
         ...(currentUser?.cargo === "Marketing" || currentUser?.cargo === "T.I" ? [
           { name: 'Video Senhas', href: '/videosenhas' },
           { name: 'Frases Gera Senhas', href: '/frasestelasenhas' },
         ] : []),
+
+        ...(currentUser?.cargo === "Marketing" ? [
+          { name: 'Tipo Doc', href: '/tipodocmk' },
+        ] : []),
       ]
     },
-    
+
     {
       name: 'Supervisor',
       icon: FaUserTie,
       subItems: [
-        { name: 'Abrir Chamados', href: '/' },
-        { name: 'Geren. Solicitações', href: '/' },
-
         // Itens adicionais específicos para o cargo "T.I"
-        ...(currentUser?.cargo === "T.I" ? [
-          { name: 'Geren. Chamados', href: '/' },
-          { name: 'Geren. Estoque', href: '/' },
-          { name: 'Geren. Servers', href: '/' },
-          { name: 'Relatório Impressoras', href: '/' },
-          { name: 'Relatório Chamados', href: '/' },
-          { name: 'Cadastrar Usuario', href: '/' }
+        ...(currentUser?.cargo === "Supervisor" || currentUser?.cargo === "Claudemir" ? [
+          { name: 'Geren. Visita', href: '/visitasuper' },
+
+        ] : []),
+
+        ...(currentUser?.cargo === "Gerente" ? [
+          { name: 'Geren. Visita', href: '/visitagerent' },
+
         ] : []),
       ]
     },
@@ -185,11 +201,11 @@ const Navbar = () => {
     },
 
     {
-      name: 'Avalição',
+      name: 'Avaliação',
       icon: MdAssessment,
       subItems: [
         // Itens adicionais específicos para o cargo "T.I"
-        ...(currentUser?.cargo === "T.I", "Gerente", "Claudemir", "Supervisor", "Marketing" ? [
+        ...(currentUser?.cargo === "T.I", "Gerente", "Claudemir", "Supervisor", "Marketing", "Compras" ? [
           { name: 'Relatorio', href: '/relatavaliacao' },
         ] : []),
       ]
@@ -200,14 +216,14 @@ const Navbar = () => {
     const handleBeforeInstallPrompt = (e) => {
       e.preventDefault(); // Impede o comportamento padrão do prompt de instalação
       setInstallPrompt(e); // Armazena o evento do prompt de instalação
-      console.log("beforeinstallprompt event captured"); // Loga quando o evento é capturado
+      //  console.log("beforeinstallprompt event captured"); // Loga quando o evento é capturado
     };
 
     const checkInstalledStatus = async () => {
       if ('getInstalledRelatedApps' in navigator) {
         const relatedApps = await navigator.getInstalledRelatedApps(); // Verifica se há apps relacionados instalados
         setIsInstalled(relatedApps.length > 0); // Atualiza o estado com base na verificação
-        console.log("Installed apps:", relatedApps); // Loga os apps instalados
+        //  console.log("Installed apps:", relatedApps); // Loga os apps instalados
       }
     };
 
@@ -224,9 +240,9 @@ const Navbar = () => {
       installPrompt.prompt(); // Mostra o prompt de instalação
       installPrompt.userChoice.then((choiceResult) => {
         if (choiceResult.outcome === 'accepted') {
-          console.log('User accepted the install prompt'); // Loga se o usuário aceitou a instalação
+          //  console.log('User accepted the install prompt'); // Loga se o usuário aceitou a instalação
         } else {
-          console.log('User dismissed the install prompt'); // Loga se o usuário rejeitou a instalação
+          //  console.log('User dismissed the install prompt'); // Loga se o usuário rejeitou a instalação
         }
         setInstallPrompt(null); // Reseta o evento do prompt de instalação
       });
@@ -270,6 +286,7 @@ const Navbar = () => {
             </button>
           </a>
         </div>
+        <p className="text-white">V2</p>
         {!isInstalled && installPrompt && (
           <button
             onClick={handleInstallClick}

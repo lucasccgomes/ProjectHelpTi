@@ -35,43 +35,48 @@ export const AuthProvider = ({ children }) => {
       const querySnapshot = await getDocs(usuariosRef); // Obtém todos os documentos da coleção de usuários
 
       let userFound = false; // Variável para verificar se o usuário foi encontrado
+
       querySnapshot.forEach(doc => {
-        const userData = doc.data()[username]; // Obtém os dados do usuário específico
-        if (userData) {
-          if (userData.pass === password) { // Verifica se a senha está correta
-            setIsAuthenticated(true); // Define o estado de autenticação como verdadeiro
-            const user = {
-              user: username, // Nome de usuário
-              cidade: doc.id, // Cidade do usuário
-              cargo: userData.cargo, // Cargo do usuário
-              assignment: userData.assignment, // Atribuição do usuário
-              loja: userData.loja, // Loja do usuário
-              whatsapp: userData.whatsapp, // WhatsApp do usuário
-              imageUrl: userData.imageUrl || '', // URL da imagem de perfil do usuário
-              fullName: userData.fullName || '' // Adiciona o campo fullName ou vazio se não existir
-            };
+        const usersData = doc.data(); // Obtém todos os usuários do documento (cidade)
 
-            setCurrentUser(user); // Define o usuário atual
-            setCurrentUserRole(userData.cargo); // Define o cargo do usuário atual
+        // Percorre todos os usuários armazenados dentro do documento (cidade)
+        Object.values(usersData).forEach(userData => {
+          if (userData.user === username) { // Agora compara com o campo correto 'user'
+            if (userData.pass === password) { // Verifica se a senha está correta
+              setIsAuthenticated(true); // Define o estado de autenticação como verdadeiro
 
-            // Use as funções seguras para armazenar dados criptografados
-            saveToLocalStorage('isAuthenticated', 'true');
-            saveToLocalStorage('currentUser', user);
-            saveToLocalStorage('currentUserRole', userData.cargo);
+              const user = {
+                user: userData.user, // Agora captura corretamente o usuário
+                cidade: doc.id, // Cidade do usuário
+                cargo: userData.cargo, // Cargo do usuário
+                assignment: userData.assignment, // Atribuição do usuário
+                loja: userData.loja, // Loja do usuário
+                whatsapp: userData.whatsapp, // WhatsApp do usuário
+                imageUrl: userData.imageUrl || '', // URL da imagem de perfil do usuário
+                fullName: userData.fullName || '' // Nome completo do usuário
+              };
 
-            userFound = true; // Define que o usuário foi encontrado
+              setCurrentUser(user); // Define o usuário atual
+              setCurrentUserRole(userData.cargo); // Define o cargo do usuário atual
 
-            // Se fullName estiver vazio, abre o modal para pedir o nome completo
-            if (!user.fullName) {
-              setIsNameModalOpen(true); // Abre o modal para pedir o nome completo
+              // Armazena os dados no localStorage de forma segura
+              saveToLocalStorage('isAuthenticated', 'true');
+              saveToLocalStorage('currentUser', user);
+              saveToLocalStorage('currentUserRole', userData.cargo);
+
+              userFound = true; // Define que o usuário foi encontrado
+
+              // Se fullName estiver vazio, abre o modal para pedir o nome completo
+              if (!user.fullName) {
+                setIsNameModalOpen(true); // Abre o modal para pedir o nome completo
+              }
+
+              navigate('/'); // Navega para a página inicial após o login bem-sucedido
+            } else {
+              console.log('Credenciais inválidas'); // Log se as credenciais forem inválidas
             }
-
-            // Adicione esta navegação para garantir que só ocorra se userFound for true
-            navigate('/'); // Navega para a página inicial após o login bem-sucedido
-          } else {
-            console.log('Credenciais inválidas'); // Log se as credenciais forem inválidas
           }
-        }
+        });
       });
 
       if (!userFound) {
@@ -83,7 +88,6 @@ export const AuthProvider = ({ children }) => {
       throw error; // Lança o erro para tratamento posterior
     }
   };
-
 
   const logout = async () => {
     try {

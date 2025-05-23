@@ -12,6 +12,7 @@ import NotificationModal from '../components/NotificationModal/NotificationModal
 import { IoIosSend } from "react-icons/io";
 import AdmListaSolicitTi from '../components/ListaSolicitTi/AdmListaSolicitTi';
 import MyModal from '../components/MyModal/MyModal';
+import { getApiUrls } from '../utils/apiBaseUrl';
 
 Modal.setAppElement('#root'); // Ajuste o seletor conforme necessário
 
@@ -42,7 +43,20 @@ const SoliciteTi = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
 
-  const NOTIFICATION_API_URL = import.meta.env.VITE_NOTIFICATION_API_URL;
+  const [NOTIFICATION_API_URL, setNotificaApiUrl] = useState('');
+
+  useEffect(() => {
+      async function loadUrls() {
+          try {
+              const urls = await getApiUrls();
+              setNotificaApiUrl(urls.VITE_NOTIFICATION_API_URL);
+          } catch (error) {
+              console.error("Erro ao carregar URL da API:", error);
+          }
+      }
+
+      loadUrls();
+  }, []);
 
   useEffect(() => {
     const unsubscribe = onSnapshot(doc(db, 'modals', 'infoSolicitaTi'), (doc) => {
@@ -184,7 +198,7 @@ const SoliciteTi = () => {
 
         const result = await response.json();
       } else {
-        console.log('Nenhum token encontrado para o cargo "T.I".'); // Loga se não houver tokens para notificar
+        //console.log('Nenhum token encontrado para o cargo "T.I".'); // Loga se não houver tokens para notificar
       }
 
       // Gravação no relatório

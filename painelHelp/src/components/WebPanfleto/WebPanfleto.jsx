@@ -19,7 +19,7 @@ export default function WebPanfleto() {
         setFoto(data.foto);
         setImagens(data.imagens || [""]);
       } else {
-        console.log("Documento não encontrado!");
+        //console.log("Documento não encontrado!");
       }
     } catch (error) {
       console.error("Erro ao buscar dados:", error);

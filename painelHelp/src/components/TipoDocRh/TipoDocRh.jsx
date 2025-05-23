@@ -16,7 +16,7 @@ const TipoDocRh = () => {
             if (docSnap.exists()) {
                 setTipoDocs(docSnap.data().tipoDoc || []); // Atualiza o estado com os itens de tipoDoc
             } else {
-                console.log('Documento não encontrado!');
+                //console.log('Documento não encontrado!');
             }
         } catch (error) {
             console.error('Erro ao buscar itens tipoDoc:', error);

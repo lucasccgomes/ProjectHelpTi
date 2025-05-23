@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { doc, getDoc, updateDoc, arrayUnion, Timestamp } from 'firebase/firestore';
+import { deleteField, setDoc, doc, getDoc, updateDoc, arrayUnion, Timestamp } from 'firebase/firestore';
 import { db } from '../../firebase'; // Certifique-se de que o caminho está correto
 import MyModal from '../MyModal/MyModal'; // Certifique-se de que o caminho está correto
 
@@ -11,6 +11,61 @@ const PrinterList = () => {
   const [newDate, setNewDate] = useState('');
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [printDate, setPrintDate] = useState('');
+
+  // Estado para modal de movimentação
+  const [isMoveModalOpen, setIsMoveModalOpen] = useState(false);
+  const [moveToMaintenance, setMoveToMaintenance] = useState(true); // true = para manutenção
+  const [selectedStoreMove, setSelectedStoreMove] = useState('');
+  const [selectedPrinterMove, setSelectedPrinterMove] = useState('');
+  const [destinationStore, setDestinationStore] = useState('');
+
+  const handleMovePrinter = async () => {
+    if (!selectedPrinterMove || (!selectedStoreMove && moveToMaintenance) || (!destinationStore && !moveToMaintenance)) {
+      alert("Preencha todos os campos.");
+      return;
+    }
+  
+    const docRef = doc(db, 'impressoras', 'list');
+    const snapshot = await getDoc(docRef);
+    const data = snapshot.data();
+  
+    try {
+      const sourceStore = moveToMaintenance ? selectedStoreMove : 'manutencao';
+      const targetStore = moveToMaintenance ? 'manutencao' : destinationStore;
+  
+      let printerNameFinal = selectedPrinterMove;
+  
+      if (moveToMaintenance) {
+        const existingPrinters = Object.keys(data[targetStore] || {});
+        const regex = new RegExp(`^${selectedPrinterMove}( - \\d{2})?$`);
+  
+        // Conta quantas já existem com mesmo nome base
+        const duplicates = existingPrinters.filter(name => regex.test(name));
+  
+        if (duplicates.length > 0) {
+          const nextSuffix = (duplicates.length).toString().padStart(2, '0');
+          printerNameFinal = `${selectedPrinterMove} - ${nextSuffix}`;
+        }
+      }
+  
+      const printerData = data[sourceStore][selectedPrinterMove];
+  
+      await updateDoc(docRef, {
+        [`${targetStore}.${printerNameFinal}`]: printerData,
+        [`${sourceStore}.${selectedPrinterMove}`]: deleteField(),
+      });
+  
+      alert(`Impressora movida com sucesso como "${printerNameFinal}"`);
+      fetchStores();
+      setIsMoveModalOpen(false);
+      setSelectedPrinterMove('');
+      setSelectedStoreMove('');
+      setDestinationStore('');
+    } catch (error) {
+      console.error("Erro ao mover impressora:", error);
+      alert("Erro ao mover impressora.");
+    }
+  };  
 
   // Função para calcular o consumo para impressão
   const calculateConsumoForPrint = (printerData, contagem, index) => {
@@ -28,7 +83,7 @@ const PrinterList = () => {
   };
 
   const handlePrintReport = () => {
-    console.log('Iniciando geração do relatório...');
+    //console.log('Iniciando geração do relatório...');
     const filteredReport = [];
 
     // Pega o mês e ano da data selecionada
@@ -38,14 +93,14 @@ const PrinterList = () => {
     const selectedYear = selectedDate.getFullYear();
 
     // Adicionando log para verificar a data selecionada
-    console.log('Data selecionada:', printDate);
-    console.log('Data processada:', selectedDate);
-    console.log('Mês selecionado:', selectedMonth);
-    console.log('Ano selecionado:', selectedYear);
+    //console.log('Data selecionada:', printDate);
+    //console.log('Data processada:', selectedDate);
+    //console.log('Mês selecionado:', selectedMonth);
+    //console.log('Ano selecionado:', selectedYear);
 
     Object.entries(stores).forEach(([storeName, storeData]) => {
       Object.entries(storeData).forEach(([printerName, printerData]) => {
-        console.log(`Processando loja: ${storeName}, impressora: ${printerName}`);
+        //console.log(`Processando loja: ${storeName}, impressora: ${printerName}`);
 
         // Verifica se contagem existe e não é vazia
         if (printerData.contagem && printerData.contagem.length > 0) {
@@ -56,7 +111,7 @@ const PrinterList = () => {
               const contagemMonth = contagemDate.getMonth() + 1;
               const contagemYear = contagemDate.getFullYear();
 
-              console.log(`Comparando datas: contagem ${contagemMonth}/${contagemYear}, selecionada ${selectedMonth}/${selectedYear}`);
+              //console.log(`Comparando datas: contagem ${contagemMonth}/${contagemYear}, selecionada ${selectedMonth}/${selectedYear}`);
 
               // Comparar mês e ano como números inteiros
               if (contagemMonth === selectedMonth && contagemYear === selectedYear) {
@@ -64,16 +119,16 @@ const PrinterList = () => {
                 filteredReport.push(`Loja: ${storeName} | Impressora: ${printerName} | Consumo (${contagemDate.toLocaleDateString()}): ${consumo} | Total - Contagem: ${contagem.numero}`);
               }
             } else {
-              console.log('Contagem inválida ou sem data:', contagem);
+              //console.log('Contagem inválida ou sem data:', contagem);
             }
           });
         } else {
-          console.log('Contagem não encontrada ou vazia para:', printerName);
+          //console.log('Contagem não encontrada ou vazia para:', printerName);
         }
       });
     });
 
-    console.log('Itens filtrados para o relatório:', filteredReport);
+    //console.log('Itens filtrados para o relatório:', filteredReport);
 
     // Se não houver itens para imprimir, mostre um alerta ou mensagem de erro
     if (filteredReport.length === 0) {
@@ -142,8 +197,8 @@ const PrinterList = () => {
         const [storeName, printerName] = selectedStore.split('.');
 
         // Log para verificar a separação
-        console.log('Loja:', storeName);
-        console.log('Impressora:', printerName);
+        //console.log('Loja:', storeName);
+        //console.log('Impressora:', printerName);
 
         const storeData = docSnap.data()[storeName][printerName];
 
@@ -153,7 +208,7 @@ const PrinterList = () => {
           return; // Parar a execução se não encontrar os dados
         }
 
-        console.log('storeData encontrada:', storeData);
+        //console.log('storeData encontrada:', storeData);
 
         let consumoDoMes = 0;
 
@@ -169,7 +224,7 @@ const PrinterList = () => {
           consumoDoMes = Number(newCount) - contagemInicial;
         }
 
-        console.log('Consumo Calculado para Gravar:', consumoDoMes);
+        //console.log('Consumo Calculado para Gravar:', consumoDoMes);
 
         // Atualiza a contagem para a loja e impressora selecionadas
         await updateDoc(docRef, {
@@ -236,6 +291,12 @@ const PrinterList = () => {
             className="px-4 py-2 bg-altBlue text-white rounded"
           >
             Imprimir Relatório
+          </button>
+          <button
+            onClick={() => setIsMoveModalOpen(true)}
+            className="px-4 py-2 bg-yellow-500 text-white rounded shadow ml-2"
+          >
+            Mover Impressora
           </button>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -328,6 +389,107 @@ const PrinterList = () => {
             className="px-4 py-2 bg-green-500 text-white rounded"
           >
             Ok
+          </button>
+        </div>
+      </MyModal>
+
+      <MyModal isOpen={isMoveModalOpen} onClose={() => setIsMoveModalOpen(false)}>
+        <div>
+          <h2 className="text-xl font-bold mb-4">
+            {moveToMaintenance ? "Enviar para Manutenção" : "Retornar da Manutenção"}
+          </h2>
+
+          <div className="mb-4">
+            <label className="block text-gray-700">Tipo de Movimentação:</label>
+            <select
+              value={moveToMaintenance ? "manutencao" : "retornar"}
+              onChange={(e) => {
+                setMoveToMaintenance(e.target.value === "manutencao");
+                setSelectedStoreMove('');
+                setSelectedPrinterMove('');
+                setDestinationStore('');
+              }}
+              className="mt-1 p-2 border rounded w-full"
+            >
+              <option value="manutencao">Enviar para Manutenção</option>
+              <option value="retornar">Retornar para Loja</option>
+            </select>
+          </div>
+
+          {moveToMaintenance ? (
+            <>
+              <div className="mb-4">
+                <label className="block text-gray-700">Loja:</label>
+                <select
+                  value={selectedStoreMove}
+                  onChange={(e) => {
+                    setSelectedStoreMove(e.target.value);
+                    setSelectedPrinterMove('');
+                  }}
+                  className="mt-1 p-2 border rounded w-full"
+                >
+                  <option value="">Selecione a loja</option>
+                  {Object.keys(stores)
+                    .filter(store => store !== 'manutencao')
+                    .map(store => (
+                      <option key={store} value={store}>{store}</option>
+                    ))}
+                </select>
+              </div>
+              {selectedStoreMove && (
+                <div className="mb-4">
+                  <label className="block text-gray-700">Impressora:</label>
+                  <select
+                    value={selectedPrinterMove}
+                    onChange={(e) => setSelectedPrinterMove(e.target.value)}
+                    className="mt-1 p-2 border rounded w-full"
+                  >
+                    <option value="">Selecione a impressora</option>
+                    {Object.keys(stores[selectedStoreMove] || {}).map(printer => (
+                      <option key={printer} value={printer}>{printer}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              <div className="mb-4">
+                <label className="block text-gray-700">Impressora em Manutenção:</label>
+                <select
+                  value={selectedPrinterMove}
+                  onChange={(e) => setSelectedPrinterMove(e.target.value)}
+                  className="mt-1 p-2 border rounded w-full"
+                >
+                  <option value="">Selecione a impressora</option>
+                  {Object.keys(stores["manutencao"] || {}).map(printer => (
+                    <option key={printer} value={printer}>{printer}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-700">Loja de destino:</label>
+                <select
+                  value={destinationStore}
+                  onChange={(e) => setDestinationStore(e.target.value)}
+                  className="mt-1 p-2 border rounded w-full"
+                >
+                  <option value="">Selecione a loja</option>
+                  {Object.keys(stores)
+                    .filter(store => store !== 'manutencao')
+                    .map(store => (
+                      <option key={store} value={store}>{store}</option>
+                    ))}
+                </select>
+              </div>
+            </>
+          )}
+
+          <button
+            onClick={handleMovePrinter}
+            className="px-4 py-2 bg-green-600 text-white rounded w-full"
+          >
+            Confirmar Movimentação
           </button>
         </div>
       </MyModal>

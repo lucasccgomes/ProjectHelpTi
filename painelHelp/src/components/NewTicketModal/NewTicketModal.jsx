@@ -8,6 +8,7 @@ import { useAuth } from '../../context/AuthContext';
 import MyModal from '../MyModal/MyModal';
 import { FaCity, FaStoreAlt } from "react-icons/fa";
 import ImageUploadButton from '../ImageUploadButton/ImageUploadButton';
+import { getApiUrls } from '../../utils/apiBaseUrl';
 
 // Componente principal que gerencia a criação de novos chamados
 const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
@@ -17,7 +18,6 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
   const [loading, setLoading] = useState(false); // Estado para indicar se a submissão está em andamento
   const [userDetails, setUserDetails] = useState({ cidade: '', loja: '', whatsapp: '' }); // Estado para os detalhes do usuário
   const [localProblema, setLocalProblema] = useState(''); // Estado para o local do problema
-  const [modalMessage, setModalMessage] = useState(''); // Estado para mensagens de modal
   const [images, setImages] = useState([]); // Estado para armazenar imagens selecionadas
   const [cities, setCities] = useState([]); // Estado para armazenar as cidades disponíveis
   const [stores, setStores] = useState([]); // Estado para armazenar as lojas disponíveis
@@ -28,7 +28,20 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
 
   const storage = getStorage(); // Inicialização do serviço de storage do Firebase
 
-  const NOTIFICATION_API_URL = import.meta.env.VITE_NOTIFICATION_API_URL;
+  const [NOTIFICATION_API_URL, setNotificaApiUrl] = useState('');
+
+  useEffect(() => {
+      async function loadUrls() {
+          try {
+              const urls = await getApiUrls();
+              setNotificaApiUrl(urls.VITE_NOTIFICATION_API_URL);
+          } catch (error) {
+              console.error("Erro ao carregar URL da API:", error);
+          }
+      }
+
+      loadUrls();
+  }, []);
 
   // useEffect para buscar e atualizar as cidades e lojas disponíveis quando a cidade selecionada mudar
   useEffect(() => {
@@ -72,7 +85,7 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
           }
 
           if (!found) {
-            console.log('Usuário não encontrado em nenhuma cidade.');
+         //   console.log('Usuário não encontrado em nenhuma cidade.');
           }
 
         } catch (error) {
@@ -106,7 +119,7 @@ const NewTicketModal = ({ isOpen, onClose, addTicket }) => {
       const responseData = await response.json(); // Converte a resposta em JSON
 
       if (response.ok) {
-        console.log('Notificação enviada com sucesso.');
+      //  console.log('Notificação enviada com sucesso.');
       } else {
         console.error('Falha ao enviar notificação. Status:', response.status);
         console.error('Resposta do servidor:', responseData);

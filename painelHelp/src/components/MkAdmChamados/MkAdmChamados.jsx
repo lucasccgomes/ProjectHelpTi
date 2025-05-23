@@ -19,11 +19,12 @@ import { LuImageOff } from "react-icons/lu";
 import { SiInstatus } from "react-icons/si";
 import AlertModal from '../AlertModal/AlertModal';
 import { IoMdAlert } from "react-icons/io";
+import { getApiUrls } from '../../utils/apiBaseUrl';
 
 // Componente principal para gerenciamento de chamados administrativos
 const MkAdmChamados = () => {
 
-    const NOTIFICATION_API_URL = import.meta.env.VITE_NOTIFICATION_API_URL;
+    
     // Estados para controlar a abertura e fechamento de modais
     const [notificationModalIsOpen, setNotificationModalIsOpen] = useState(false);
     const [notificationMessage, setNotificationMessage] = useState('');
@@ -60,6 +61,21 @@ const MkAdmChamados = () => {
     const [selectedAuthorizationDescription, setSelectedAuthorizationDescription] = useState('');
     const [logModalIsOpen, setLogModalIsOpen] = useState(false); // Controle de abertura do modal de logs
     const [selectedLogTicket, setSelectedLogTicket] = useState(null); // Armazena o ticket para exibir o log
+
+    const [NOTIFICATION_API_URL, setNotificaApiUrl] = useState('');
+
+    useEffect(() => {
+        async function loadUrls() {
+            try {
+                const urls = await getApiUrls();
+                setNotificaApiUrl(urls.VITE_NOTIFICATION_API_URL);
+            } catch (error) {
+                console.error("Erro ao carregar URL da API:", error);
+            }
+        }
+
+        loadUrls();
+    }, []);
 
     const openLogModal = (ticket) => {
         setSelectedLogTicket(ticket);
@@ -112,7 +128,7 @@ const MkAdmChamados = () => {
 
                     // Envia a notificação ao endpoint configurado
                     await sendNotification([token], notificationData); // Envie como array de tokens
-                    console.log('Notificação enviada com sucesso!');
+                   // console.log('Notificação enviada com sucesso!');
                 } else {
                     console.error('Token do supervisor não encontrado ou inválido.');
                 }
@@ -144,7 +160,7 @@ const MkAdmChamados = () => {
                     .map(([id, user]) => ({ id, ...user }));
 
                 setSupervisors(supervisorsList); // Armazena os supervisores no estado
-                console.log('Supervisores encontrados:', supervisorsList); // Verifica os supervisores encontrados
+             //   console.log('Supervisores encontrados:', supervisorsList); // Verifica os supervisores encontrados
             } else {
                 console.error('Subcoleção Osvaldo Cruz não encontrada.');
             }
@@ -259,7 +275,7 @@ const MkAdmChamados = () => {
                     const checkboxesData = data.checkProblemas || [];
                     setCheckboxes(checkboxesData); // Atualiza o estado com os checkboxes
                 } else {
-                    console.log('Documento checkbox não encontrado.');
+                 //   console.log('Documento checkbox não encontrado.');
                 }
             } catch (error) {
                 console.error('Erro ao buscar documentos:', error); // Loga o erro, se ocorrer
@@ -365,7 +381,7 @@ const MkAdmChamados = () => {
             const responseData = await response.json();
 
             if (response.ok) {
-                console.log('Notificação enviada com sucesso:', responseData);
+            //    console.log('Notificação enviada com sucesso:', responseData);
             } else {
                 console.error('Erro ao enviar notificação:', response.status, responseData);
             }

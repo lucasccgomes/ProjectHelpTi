@@ -26,7 +26,7 @@ const MyModal = ({ isOpen, onClose, children, showCloseButton = true }) => {
     (styles, item) =>
       item && (
         <div className="fixed inset-0 z-50 overflow-auto bg-smoke-light bg-black/[.6] flex">
-          <animated.div style={styles} className="relative px-6 pb-3 pt-1 bg-white w-full max-w-md lg:max-w-[515px] m-auto flex-col flex rounded-lg shadow-lg">
+          <animated.div style={styles} className="relative px-4 pb-3 pt-1 bg-white w-full max-w-md lg:max-w-[715px] m-auto flex-col flex rounded-lg shadow-lg">
             {showCloseButton && (
               <span
                 onClick={onClose}
