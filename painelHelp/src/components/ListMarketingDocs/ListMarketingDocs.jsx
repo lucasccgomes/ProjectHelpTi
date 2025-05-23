@@ -202,7 +202,7 @@ const ListMarketingDocs = () => {
 
   return (
     <div className='pt-20 bg-altBlue'>
-      <h1 className="text-2xl font-bold text-center text-white mb-4">Lista de Envio Documentos RH</h1>
+      <h1 className="text-2xl font-bold text-center text-white mb-4">Lista de Envio Documentos MK</h1>
       {docs.length > 0 ? (
         <ul className='p-8 grid lg:grid-cols-2 gap-3'>
           {docs.map((doc) => (
