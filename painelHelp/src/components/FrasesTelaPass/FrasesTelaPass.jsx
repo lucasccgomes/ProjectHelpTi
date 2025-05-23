@@ -1,119 +1,143 @@
-import { useState, useEffect } from "react";
-import { doc, updateDoc, getDoc } from "firebase/firestore";
-import { db } from "../../firebase"; // Corrigido para importar corretamente o doc
-import { MdDeleteForever } from "react-icons/md";
+import { useEffect, useState } from "react";
+import { db } from "../../firebase";
+import { collection, getDocs } from "firebase/firestore";
 
-function FrasesTelaPass() {
-    const [frases, setFrases] = useState([]); // Estado para armazenar as frases
-    const [newFrase, setNewFrase] = useState(""); // Estado para o novo valor da frase
-    const [status, setStatus] = useState(false); // Status de exibição das frases
+// Gera lista de datas no formato "YYYY-MM-DD"
+const gerarDatasUltimosDias = (dias = 60) => {
+  const hoje = new Date();
+  const datas = [];
+  for (let i = 0; i < dias; i++) {
+    const data = new Date();
+    data.setDate(hoje.getDate() - i);
+    const ano = data.getFullYear();
+    const mes = String(data.getMonth() + 1).padStart(2, "0");
+    const dia = String(data.getDate()).padStart(2, "0");
+    datas.push(`${ano}-${mes}-${dia}`);
+  }
+  return datas;
+};
 
-    // Buscar as frases e status do Firestore ao carregar o componente
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const docRef = doc(db, "webPanfleto", "frasesTelaPass");
-                const docSnap = await getDoc(docRef);
+export default function FrasesTelaPass() {
+  const [servidores, setServidores] = useState([]);
+  const [datas, setDatas] = useState([]);
+  const [mensagens, setMensagens] = useState([]);
+  const [servidorSelecionado, setServidorSelecionado] = useState(null);
+  const [dataSelecionada, setDataSelecionada] = useState(null);
+  const [carregandoDatas, setCarregandoDatas] = useState(false);
 
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    setFrases(data.frases || []); // Define as frases
-                    setStatus(data.status || false); // Define o status
-                }
-            } catch (error) {
-                console.error("Erro ao buscar dados do Firestore:", error);
-            }
-        };
+  useEffect(() => {
+    const buscarServidores = async () => {
+      const snapshot = await getDocs(collection(db, "logs_mysql"));
+      setServidores(snapshot.docs.map((doc) => doc.id));
+    };
+    buscarServidores();
+  }, []);
 
-        fetchData();
-    }, []);
+  const buscarDatas = async (servidor) => {
+    setServidorSelecionado(servidor);
+    setMensagens([]);
+    setDataSelecionada(null);
+    setDatas([]);
+    setCarregandoDatas(true);
 
-    const handleAddFrase = () => {
-        if (newFrase.trim()) {
-            const updatedFrases = [...frases, newFrase];
-            setFrases(updatedFrases);
-            setNewFrase(""); // Limpar o campo de input
+    const datasEncontradas = new Set();
+    const datasParaVerificar = gerarDatasUltimosDias(60);
 
-            // Atualizar o Firestore com as novas frases
-            updateFrases(updatedFrases);
+    for (const data of datasParaVerificar) {
+      try {
+        const snapshot = await getDocs(collection(db, "logs_mysql", servidor, data));
+        if (!snapshot.empty) {
+          datasEncontradas.add(data);
         }
-    };
+      } catch (err) {
+        // Ignora erros
+      }
+    }
 
-    const handleDeleteFrase = (index) => {
-        const updatedFrases = frases.filter((_, idx) => idx !== index);
-        setFrases(updatedFrases);
+    setDatas(Array.from(datasEncontradas).sort().reverse());
+    setCarregandoDatas(false);
+  };
 
-        // Atualizar o Firestore com as frases restantes
-        updateFrases(updatedFrases);
-    };
+  const buscarMensagens = async (servidor, data) => {
+    setDataSelecionada(data);
+    const snapshot = await getDocs(collection(db, "logs_mysql", servidor, data));
+    const todasMsgs = [];
 
-    const handleStatusChange = () => {
-        const newStatus = !status;
-        setStatus(newStatus);
+    snapshot.forEach((doc) => {
+      const dados = doc.data();
+      if (Array.isArray(dados.mensagens)) {
+        dados.mensagens.forEach((msg) => {
+          if (
+            !msg.includes("Permission denied") &&
+            !msg.includes("inotify cannot be used")
+          ) {
+            todasMsgs.push(`[${doc.id}] ${msg}`);
+          }
+        });
+      }
+    });
 
-        // Atualizar o Firestore com o novo status
-        const docRef = doc(db, "webPanfleto", "frasesTelaPass");
-        updateDoc(docRef, { status: newStatus });
-    };
+    setMensagens(todasMsgs);
+  };
 
-    const updateFrases = (updatedFrases) => {
-        const docRef = doc(db, "webPanfleto", "frasesTelaPass");
-        updateDoc(docRef, { frases: updatedFrases });
-    };
+  return (
+    <div className="min-h-screen bg-[#021d6c] text-white p-4 mt-10">
+      <h1 className="text-4xl font-bold text-center mb-8">Monitoramento de Logs MySQL</h1>
 
-    return (
-        <div className="min-h-screen w-full flex flex-col items-center justify-center bg-[#021d6c]">
-            <div className="text-white text-center text-4xl mb-12">
-                Gerenciar Frases
-            </div>
-
-            {/* Input para adicionar nova frase */}
-            <div className="flex gap-4 mb-4 w-full px-8">
-                <input
-                    type="text"
-                    placeholder="Digite uma nova frase"
-                    value={newFrase}
-                    onChange={(e) => setNewFrase(e.target.value)}
-                    className="px-4 py-2 w-full border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring focus:ring-blue-300"
-                />
-                <button
-                    onClick={handleAddFrase}
-                    className="px-6 py-2 bg-blue-500 text-white rounded-md shadow hover:bg-blue-600 transition"
-                >
-                    +
-                </button>
-                {/* Botão para mudar o status */}
-                <div className="">
-                    <button
-                        onClick={handleStatusChange}
-                        className={`px-6 py-2 ${status ? 'bg-green-500 hover:bg-green-400' : 'bg-gray-500'} text-white rounded-md shadow hover:bg-gray-600 transition`}
-                    >
-                        {status ? "Ativo" : "Inativo"}
-                    </button>
-                </div>
-            </div>
-
-            {/* Exibindo as frases */}
-            <div className="w-full mt-4">
-                {frases.length > 0 && (
-                    <div className="space-y-2">
-                        {frases.map((frase, index) => (
-                            <div key={index} className="flex justify-between items-center bg-white p-2 mx-4 rounded-lg shadow-md">
-                                <span className="text-black text-center text-xl w-full">{frase}</span>
-                                <button
-                                    onClick={() => handleDeleteFrase(index)}
-                                    className="ml-4 px-2 py-2 bg-red-500 text-white rounded-md shadow hover:bg-red-600 transition"
-                                >
-                                    <MdDeleteForever className="text-3xl" />
-                                </button>
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
-
+      {/* Lista de servidores */}
+      <div className="mb-6">
+        <h2 className="text-2xl mb-2">Servidores:</h2>
+        <div className="flex flex-wrap gap-3">
+          {servidores.map((srv) => (
+            <button
+              key={srv}
+              onClick={() => buscarDatas(srv)}
+              className={`px-4 py-2 rounded bg-blue-500 hover:bg-blue-600 transition ${
+                srv === servidorSelecionado ? "ring-2 ring-white" : ""
+              }`}
+            >
+              {srv}
+            </button>
+          ))}
         </div>
-    );
-}
+      </div>
 
-export default FrasesTelaPass;
+      {/* Carregando datas */}
+      {carregandoDatas && (
+        <div className="flex justify-center items-center mt-10">
+          <div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+          <span className="ml-3 text-lg">Buscando datas...</span>
+        </div>
+      )}
+
+      {/* Lista de datas */}
+      {!carregandoDatas && datas.length > 0 && (
+        <div className="mb-6 mt-6">
+          <h2 className="text-2xl mb-2">Datas:</h2>
+          <div className="flex flex-wrap gap-3">
+            {datas.map((dt) => (
+              <button
+                key={dt}
+                onClick={() => buscarMensagens(servidorSelecionado, dt)}
+                className={`px-4 py-2 rounded bg-green-500 hover:bg-green-600 transition ${
+                  dt === dataSelecionada ? "ring-2 ring-white" : ""
+                }`}
+              >
+                {dt}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Exibição dos logs */}
+      {mensagens.length > 0 && (
+        <div className="bg-black p-4 rounded shadow-md overflow-y-auto max-h-[500px] font-mono text-sm whitespace-pre-wrap">
+          {mensagens.map((msg, index) => (
+            <div key={index} className="text-green-400">{msg}</div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
