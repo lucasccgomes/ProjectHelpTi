@@ -19,11 +19,14 @@ import { LuImageOff } from "react-icons/lu";
 import { SiInstatus } from "react-icons/si";
 import AlertModal from '../AlertModal/AlertModal';
 import { IoMdAlert } from "react-icons/io";
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import ImageUploadButton from '../ImageUploadButton/ImageUploadButton';
+import LoadingSpinner from '../LoadingSpinner/LoadingSpinner';
+import { getApiUrls } from '../../utils/apiBaseUrl';
 
 // Componente principal para gerenciamento de chamados administrativos
 const AdmChamados = () => {
 
-    const NOTIFICATION_API_URL = import.meta.env.VITE_NOTIFICATION_API_URL;
     // Estados para controlar a abertura e fechamento de modais
     const [notificationModalIsOpen, setNotificationModalIsOpen] = useState(false);
     const [notificationMessage, setNotificationMessage] = useState('');
@@ -62,6 +65,23 @@ const AdmChamados = () => {
     const [selectedLogTicket, setSelectedLogTicket] = useState(null); // Armazena o ticket para exibir o log
     const [currentPage, setCurrentPage] = useState(1); // Página atual
     const itemsPerPage = 50; // Máximo de itens por página
+    const [finalizadoImages, setFinalizadoImages] = useState([]);
+    const [isSaving, setIsSaving] = useState(false);
+
+    const [NOTIFICATION_API_URL, setNotificaApiUrl] = useState('');
+
+    useEffect(() => {
+        async function loadUrls() {
+            try {
+                const urls = await getApiUrls();
+                setNotificaApiUrl(urls.VITE_NOTIFICATION_API_URL);
+            } catch (error) {
+                console.error("Erro ao carregar URL da API:", error);
+            }
+        }
+
+        loadUrls();
+    }, []);
 
     const openLogModal = (ticket) => {
         setSelectedLogTicket(ticket);
@@ -114,7 +134,7 @@ const AdmChamados = () => {
 
                     // Envia a notificação ao endpoint configurado
                     await sendNotification([token], notificationData); // Envie como array de tokens
-                    console.log('Notificação enviada com sucesso!');
+                    //console.log('Notificação enviada com sucesso!');
                 } else {
                     console.error('Token do supervisor não encontrado ou inválido.');
                 }
@@ -146,7 +166,7 @@ const AdmChamados = () => {
                     .map(([id, user]) => ({ id, ...user }));
 
                 setSupervisors(supervisorsList); // Armazena os supervisores no estado
-                console.log('Supervisores encontrados:', supervisorsList); // Verifica os supervisores encontrados
+                //console.log('Supervisores encontrados:', supervisorsList); // Verifica os supervisores encontrados
             } else {
                 console.error('Subcoleção Osvaldo Cruz não encontrada.');
             }
@@ -154,7 +174,6 @@ const AdmChamados = () => {
             console.error("Erro ao buscar supervisores:", error);
         }
     };
-
 
     const openNormalizarModal = (ticket) => {
         setTicketToNormalize(ticket);
@@ -367,7 +386,7 @@ const AdmChamados = () => {
             const responseData = await response.json();
 
             if (response.ok) {
-                console.log('Notificação enviada com sucesso:', responseData);
+                // console.log('Notificação enviada com sucesso:', responseData);
             } else {
                 console.error('Erro ao enviar notificação:', response.status, responseData);
             }
@@ -379,7 +398,7 @@ const AdmChamados = () => {
     };
 
     // Função para atualizar o status do ticket
-    const updateTicketStatus = async (id, status, descricaoFinalizacao = '', treatment = '', interacao = null) => {
+    const updateTicketStatus = async (id, status, descricaoFinalizacao = '', treatment = '', interacao = null, finalizadoImgUrls = []) => {
         try {
             const ticketDocRef = doc(db, 'chamados', 'aberto', 'tickets', id); // Referência ao documento do ticket no Firestore
 
@@ -420,6 +439,10 @@ const AdmChamados = () => {
                 // Só atualiza `interacao` se for passado como parâmetro (não `null`)
                 if (interacao !== null) {
                     updatedData.interacao = interacao;
+                }
+
+                if (finalizadoImgUrls.length > 0) {
+                    updatedData.finalizadoImgUrls = finalizadoImgUrls;
                 }
 
                 // Adiciona o registro de alteração de status ao histórico
@@ -484,56 +507,56 @@ const AdmChamados = () => {
 
     // Filtro para os tickets com base nos filtros e consulta de busca
     const filteredTickets = tickets
-    .filter(ticket => {
-        const query = searchQuery.toLowerCase();
-        return (
-            (userFilter ? ticket.user === userFilter : true) &&
-            (storeFilter ? ticket.loja === storeFilter : true) &&
-            (
-                ticket.user.toLowerCase().includes(query) ||
-                ticket.status.toLowerCase().includes(query) ||
-                ticket.descricaoFinalizacao?.toLowerCase().includes(query) ||
-                ticket.cidade.toLowerCase().includes(query) ||
-                ticket.descricao?.toLowerCase().includes(query) ||
-                ticket.localProblema?.toLowerCase().includes(query) ||
-                (ticket.checkproblema && ticket.checkproblema.some(cp => cp.toLowerCase().includes(query))) ||
-                ticket.loja.toLowerCase().includes(query) ||
-                ticket.order.toLowerCase().includes(query)
-            )
-        );
-    })
-    .sort((a, b) => {
-        const statusPriority = (status) => {
-            switch (status) {
-                case 'Urgente': return 1;
-                case 'BLOCK': return 2;
-                case 'Aberto': return 3;
-                case 'Andamento': return 4;
-                default: return 5;
+        .filter(ticket => {
+            const query = searchQuery.toLowerCase();
+            return (
+                (userFilter ? ticket.user === userFilter : true) &&
+                (storeFilter ? ticket.loja === storeFilter : true) &&
+                (
+                    ticket.user.toLowerCase().includes(query) ||
+                    ticket.status.toLowerCase().includes(query) ||
+                    ticket.descricaoFinalizacao?.toLowerCase().includes(query) ||
+                    ticket.cidade.toLowerCase().includes(query) ||
+                    ticket.descricao?.toLowerCase().includes(query) ||
+                    ticket.localProblema?.toLowerCase().includes(query) ||
+                    (ticket.checkproblema && ticket.checkproblema.some(cp => cp.toLowerCase().includes(query))) ||
+                    ticket.loja.toLowerCase().includes(query) ||
+                    ticket.order.toLowerCase().includes(query)
+                )
+            );
+        })
+        .sort((a, b) => {
+            const statusPriority = (status) => {
+                switch (status) {
+                    case 'Urgente': return 1;
+                    case 'BLOCK': return 2;
+                    case 'Aberto': return 3;
+                    case 'Andamento': return 4;
+                    default: return 5;
+                }
+            };
+
+            const priorityComparison = statusPriority(a.status) - statusPriority(b.status);
+            if (priorityComparison !== 0) {
+                return priorityComparison;
+            } else {
+                return new Date(b.data) - new Date(a.data);
             }
-        };
+        });
 
-        const priorityComparison = statusPriority(a.status) - statusPriority(b.status);
-        if (priorityComparison !== 0) {
-            return priorityComparison;
-        } else {
-            return new Date(b.data) - new Date(a.data);
-        }
-    });
+    // Calcular o índice inicial e final dos itens a serem exibidos
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedTickets = filteredTickets.slice(startIndex, endIndex);
 
-// Calcular o índice inicial e final dos itens a serem exibidos
-const startIndex = (currentPage - 1) * itemsPerPage;
-const endIndex = startIndex + itemsPerPage;
-const paginatedTickets = filteredTickets.slice(startIndex, endIndex);
+    // Funções de navegação
+    const goToNextPage = () => {
+        if (endIndex < filteredTickets.length) setCurrentPage(prev => prev + 1);
+    };
 
-// Funções de navegação
-const goToNextPage = () => {
-    if (endIndex < filteredTickets.length) setCurrentPage(prev => prev + 1);
-};
-
-const goToPreviousPage = () => {
-    if (startIndex > 0) setCurrentPage(prev => prev - 1);
-};
+    const goToPreviousPage = () => {
+        if (startIndex > 0) setCurrentPage(prev => prev - 1);
+    };
 
     // Geração de listas únicas de usuários e lojas para os dropdowns de filtro
     const uniqueUsers = [...new Set(tickets.map(ticket => ticket.user))];
@@ -599,6 +622,54 @@ const goToPreviousPage = () => {
     const closeConclusaoModal = () => {
         setConclusaoModalIsOpen(false);
     };
+
+    const handleFinalizadoImageChange = (e) => {
+        if (e.target.files.length + finalizadoImages.length > 4) {
+            alert('Você pode enviar no máximo 4 imagens.');
+            return;
+        }
+        setFinalizadoImages([...finalizadoImages, ...e.target.files]);
+    };
+
+    const handleFinalizarChamado = async () => {
+        if (!finalizadoDescricao.trim()) {
+            setAlertMessage("Por favor, adicione uma descrição de finalização.");
+            openAlertModal();
+            return;
+        }
+
+        if (!selectedProblem) {
+            setAlertMessage("Por favor, selecione o problema encontrado.");
+            openAlertModal();
+            return;
+        }
+
+        setIsSaving(true); // inicia o spinner e desativa o botão
+
+        try {
+            const storage = getStorage();
+            const imageUrls = [];
+
+            for (let i = 0; i < finalizadoImages.length; i++) {
+                const image = finalizadoImages[i];
+                const storageRef = ref(storage, `finalizados/${selectedTicket.order}/${image.name}`);
+                const snapshot = await uploadBytes(storageRef, image);
+                const url = await getDownloadURL(snapshot.ref);
+                imageUrls.push(url);
+            }
+
+            await updateTicketStatus(selectedTicket.id, 'Finalizado', finalizadoDescricao, '', null, imageUrls);
+            setFinalizadoImages([]);
+            closeFinalizarModal();
+        } catch (error) {  // O catch deve vir logo após o bloco try
+            console.error("Erro ao finalizar chamado:", error);
+            setAlertMessage("Ocorreu um erro ao finalizar o chamado. Tente novamente.");
+            openAlertModal();
+        } finally {
+            setIsSaving(false); // Desativa o spinner após finalizar operação
+        }
+    };
+
 
     return (
         <div className="justify-center items-center bg-altBlue pb-4">
@@ -668,7 +739,7 @@ const goToPreviousPage = () => {
                 <>
                     <div className="pt-56 p-4 grid grid-cols-1 custom-sm:grid-cols-2 custom-xl:grid-cols-3 gap-4 w-full bg-altBlue">
                         {paginatedTickets.map(ticket => (
-                             <div
+                            <div
                                 key={ticket.id}
                                 className={`bg-white shadow-xl mb-4 px-4 pb-4 rounded-xl ${ticket.interacao ? 'animate-shake hover:animate-none' : ''}`}
                             >
@@ -936,10 +1007,10 @@ const goToPreviousPage = () => {
                                 </div>
 
                             </div>
-                           
+
                         ))}
                     </div>
-                    
+
                     {/* Botões de navegação */}
                     <div className="flex justify-between mx-4 gap-4 mt-4 ">
                         <button
@@ -1012,23 +1083,26 @@ const goToPreviousPage = () => {
                             </button>
                         </div>
                     </div>
+
+                    <div className="mb-4">
+                        <label className="block text-gray-700 text-sm font-bold">Anexar Imagens</label>
+                        <ImageUploadButton handleImageChange={handleFinalizadoImageChange} />
+                        {finalizadoImages.length > 0 && (
+                            <div className="mt-2">
+                                {Array.from(finalizadoImages).map((image, index) => (
+                                    <p key={index} className="text-sm text-gray-600">{image.name}</p>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
                     <div className="flex justify-end gap-2">
                         <button
-                            onClick={() => {
-                                if (!finalizadoDescricao.trim()) {
-                                    setAlertMessage("Por favor, adicione uma descrição de finalização.");
-                                    openAlertModal();
-                                } else if (!selectedProblem) {
-                                    setAlertMessage("Por favor, selecione o local do problema.");
-                                    openAlertModal();
-                                } else {
-                                    updateTicketStatus(selectedTicket.id, 'Finalizado', finalizadoDescricao);
-                                    closeFinalizarModal();
-                                }
-                            }}
-                            className="bg-green-500 text-white px-4 py-2 rounded"
+                            onClick={handleFinalizarChamado}
+                            className={`bg-green-500 text-white px-4 py-2 rounded flex items-center justify-center ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            disabled={isSaving}
                         >
-                            Salvar
+                            {isSaving ? <LoadingSpinner /> : 'Salvar'}
                         </button>
                         <button
                             onClick={closeFinalizarModal}
@@ -1039,6 +1113,7 @@ const goToPreviousPage = () => {
                     </div>
                 </MyModal>
             )}
+
 
             {tratativaEditModalIsOpen && (
                 <MyModal isOpen={tratativaEditModalIsOpen} onClose={closeTratativaEditModal}>
@@ -1052,20 +1127,27 @@ const goToPreviousPage = () => {
                     />
                     <div className="flex justify-end gap-2">
                         <button
-                            onClick={() => {
+                            onClick={async () => {
                                 if (!treatment.trim()) {
                                     setAlertMessage("Por favor, descreva a tratativa antes de salvar.");
                                     openAlertModal();
                                 } else {
-                                    updateTicketStatus(selectedTicket.id, 'Andamento', '', treatment);
-                                    closeTratativaEditModal();
+                                    setIsSaving(true); // inicia loading
+                                    try {
+                                        await updateTicketStatus(selectedTicket.id, 'Andamento', '', treatment);
+                                        closeTratativaEditModal();
+                                    } catch (error) {
+                                        console.error("Erro ao salvar tratativa:", error);
+                                    } finally {
+                                        setIsSaving(false); // encerra loading
+                                    }
                                 }
                             }}
+                            disabled={isSaving}
                             className="bg-green-500 text-white px-4 py-2 rounded"
                         >
-                            Salvar
+                            {isSaving ? <LoadingSpinner /> : 'Salvar'}
                         </button>
-
                         <button
                             onClick={closeTratativaEditModal}
                             className="bg-gray-500 text-white px-4 py-2 rounded"
