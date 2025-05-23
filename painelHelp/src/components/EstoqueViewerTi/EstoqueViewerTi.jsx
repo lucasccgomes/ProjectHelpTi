@@ -42,7 +42,7 @@ const EstoqueViewer = () => {
 
             if (response.ok) {
                 const responseData = await response.json();
-                console.log('Etiqueta enviada para impressão com sucesso:', responseData);
+              //  console.log('Etiqueta enviada para impressão com sucesso:', responseData);
                 alert(`Etiqueta para o item ${item.title} enviada para impressão com sucesso.`);
             } else {
                 const errorData = await response.json();
