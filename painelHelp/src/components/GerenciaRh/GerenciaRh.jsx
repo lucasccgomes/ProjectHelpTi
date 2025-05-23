@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { doc, getDoc, setDoc, updateDoc, collection, getDocs } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, collection, getDocs } from 'firebase/firestore';
 import { db } from '../../firebase'; // Certifique-se de que o caminho está correto
 import { useAuth } from '../../context/AuthContext'; // Importando o contexto de autenticação
 import 'react-quill/dist/quill.snow.css';
@@ -55,26 +55,37 @@ const GerenciaRh = () => {
       try {
         const usuariosRef = collection(db, 'usuarios'); // Referência à coleção de usuários no Firestore
         const querySnapshot = await getDocs(usuariosRef);
-        const responsaveis = [];
+        const responsaveis = new Set(); // Usamos Set para evitar duplicatas
 
         querySnapshot.forEach((doc) => {
           const userData = doc.data();
 
+          // Iterando sobre cada usuário dentro do documento Firestore
           Object.keys(userData).forEach((key) => {
-            const user = userData[key];
+            const user = userData[key]; // Obtendo os dados do usuário
 
-            // Se o usuário logado for RH, busca os Gerentes
-            if (currentUser.cargo === 'RH' && user.cargo === 'Gerente' && user.fullName) {
-              responsaveis.push(user.fullName);
-            }
-            // Se o usuário logado não for RH, busca todos os RH
-            else if (currentUser.cargo !== 'RH' && user.cargo === 'RH' && user.fullName) {
-              responsaveis.push(user.fullName);
+            if (user?.fullName && user?.loja) {
+              // Formata como "Nome - Loja"
+              const nomeFormatado = `${user.fullName} - ${user.loja}`;
+
+              // Se o usuário logado for RH, busca os Gerentes
+              if (currentUser?.cargo === 'RH' && user.cargo === 'Gerente') {
+                responsaveis.add(nomeFormatado);
+              }
+              // Se o usuário logado não for RH, busca todos os RH
+              else if (currentUser?.cargo !== 'RH' && user.cargo === 'RH') {
+                responsaveis.add(nomeFormatado);
+              }
             }
           });
         });
 
-        setResponsaveis(responsaveis); // Define a lista de responsáveis de acordo com o cargo do usuário logado
+        // Adicionando a loja do usuário logado na lista de destinatários
+        if (currentUser?.loja) {
+          responsaveis.add(`${currentUser.fullName} - ${currentUser.loja}`);
+        }
+
+        setResponsaveis(Array.from(responsaveis)); // Converte Set para Array e atualiza o estado
       } catch (error) {
         console.error("Erro ao buscar destinatários:", error);
       }
@@ -82,6 +93,7 @@ const GerenciaRh = () => {
 
     fetchResponsaveis();
   }, [currentUser]);
+
 
 
   // Busca o último número de documento e gera o próximo
@@ -92,11 +104,11 @@ const GerenciaRh = () => {
 
       if (docSnap.exists()) {
         const lastDocNumber = docSnap.data().numberDoc; // Acessa o campo numberDoc
-        console.log("Número do documento anterior:", lastDocNumber); // Verifica o número anterior
+        //  console.log("Número do documento anterior:", lastDocNumber); // Verifica o número anterior
 
         // Gera o próximo número de documento
         const nextDocNumber = generateNextDocNumber(lastDocNumber);
-        console.log("Próximo número de documento gerado:", nextDocNumber);
+        //  console.log("Próximo número de documento gerado:", nextDocNumber);
 
         // Retorna o próximo número gerado
         return nextDocNumber;
@@ -187,7 +199,7 @@ const GerenciaRh = () => {
 
   const handleSave = async () => {
     try {
-      console.log("Buscando último número de documento...");
+      //  console.log("Buscando último número de documento...");
 
       const nextDocNumber = await fetchLastDocumentNumber();
 
@@ -218,13 +230,13 @@ const GerenciaRh = () => {
         [nextDocNumber]: newDocumentMap
       });
 
-      console.log("Campo map salvo com sucesso no caminho: ", documentRef.path);
+      //  console.log("Campo map salvo com sucesso no caminho: ", documentRef.path);
 
       await updateDoc(doc(db, 'gerenciaRh', 'controlDoc'), {
         numberDoc: nextDocNumber,
       });
 
-      console.log("Número de controle atualizado com sucesso!");
+      //  console.log("Número de controle atualizado com sucesso!");
 
       resetFields(); // Limpa todos os campos
 
@@ -467,12 +479,11 @@ const GerenciaRh = () => {
           onChange={(e) => setSelectedResponsavel(e.target.value)}
         >
           <option value="">Selecione o destinatário</option>
-          {responsaveis.map((fullName, index) => (
-            <option key={index} value={fullName}>{fullName}</option>
+          {responsaveis.map((destinatario, index) => (
+            <option key={index} value={destinatario}>{destinatario}</option>
           ))}
         </select>
       </div>
-
 
       {/* Observação (ReactQuill) */}
       <div className="mb-4">
