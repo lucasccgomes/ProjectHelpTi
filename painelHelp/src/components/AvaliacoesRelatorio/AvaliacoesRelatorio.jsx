@@ -22,13 +22,13 @@ const AvaliacoesRelatorio = () => {
   const buscarAvaliacoes = async () => {
     if (!dataInicio || !dataFim) {
       alert("Por favor, selecione o período de datas.");
-      console.log("Erro: Período de datas não informado.");
+     // console.log("Erro: Período de datas não informado.");
       return;
     }
 
-    console.log("Buscando avaliações...");
-    console.log("Loja selecionada:", lojaSelecionada);
-    console.log("Período:", dataInicio, "até", dataFim);
+   // console.log("Buscando avaliações...");
+   // console.log("Loja selecionada:", lojaSelecionada);
+   // console.log("Período:", dataInicio, "até", dataFim);
 
     try {
       const inicio = new Date(dataInicio).toISOString();
