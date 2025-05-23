@@ -156,11 +156,11 @@ export default function DadosLojas() {
 
           <div className="flex flex-col border-b pb-2">
             <p className="font-bold">Razão</p>
-            <p className="text-[13px]"> DROGALIRA 4 COMERCIO DE PRODUTOS FARMACEUTICOS LTDA</p>
+            <p className="text-[13px]"> DROGALIRA FORMULAS COMERCIO DE PRODUTOS FARMACEUTICOS LTDA</p>
           </div>
 
           <p className="text-sm border-b mb-2">Endereço: Av. Brasil - 502, Osvaldo Cruz - SP</p>
-          <p className="font-bold">CNPJ: 01.031.579/0001-02</p>
+          <p className="font-bold">CNPJ: 01.031.579/0001-12</p>
           <p className="font-bold">I.E: 494.025.186.119</p>
           <div className="flex flex-row items-center justify-center gap-2">
             <FaPhoneAlt />
