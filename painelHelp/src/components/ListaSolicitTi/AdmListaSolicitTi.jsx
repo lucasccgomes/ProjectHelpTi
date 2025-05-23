@@ -21,6 +21,7 @@ import { HiPencilSquare } from "react-icons/hi2";
 import AlertModal from '../AlertModal/AlertModal';
 import MyModal from '../MyModal/MyModal';
 import JsBarcode from 'jsbarcode';
+import { getApiUrls } from '../../utils/apiBaseUrl';
 
 const AdmListaSolicitTi = () => {
     const [isEditAlertModalOpen, setIsEditAlertModalOpen] = useState(false); // Estado para controlar a exibição do modal de alerta de edição
@@ -71,8 +72,37 @@ const AdmListaSolicitTi = () => {
     const nextPage = () => setCurrentPage((prev) => Math.min(prev + 1, totalPages));
     const prevPage = () => setCurrentPage((prev) => Math.max(prev - 1, 1));
 
-    const PRINTER_API_URL = import.meta.env.VITE_PRINTER_API_URL;
-    const NOTIFICATION_API_URL = import.meta.env.VITE_NOTIFICATION_API_URL;
+    const [PRINTER_API_URL, setPrinterApiUrl] = useState('');
+
+    useEffect(() => {
+        async function loadUrls() {
+            try {
+                const urls = await getApiUrls();
+                setPrinterApiUrl(urls.VITE_PRINTER_API_URL);
+            } catch (error) {
+                console.error("Erro ao carregar URL da API:", error);
+            }
+        }
+
+        loadUrls();
+    }, []);
+
+
+    const [NOTIFICATION_API_URL, setNotificaApiUrl] = useState('');
+
+    useEffect(() => {
+        async function loadUrls() {
+            try {
+                const urls = await getApiUrls();
+                setNotificaApiUrl(urls.VITE_NOTIFICATION_API_URL);
+            } catch (error) {
+                console.error("Erro ao carregar URL da API:", error);
+            }
+        }
+
+        loadUrls();
+    }, []);
+
 
     // Função para gerar código de barras
     const generateBarcode = (numSolicitacao) => {
@@ -331,7 +361,7 @@ const AdmListaSolicitTi = () => {
 
                     const result = await response.json();
                     if (response.ok) {
-                        console.log('Notificação enviada com sucesso:', result);
+                        //    console.log('Notificação enviada com sucesso:', result);
                     } else {
                         console.error('Erro ao enviar notificação:', result);
                     }
