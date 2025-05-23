@@ -11,11 +11,11 @@ const ConfirmRequestModal = () => {
 
   useEffect(() => {
     if (!currentUser) {
-      console.log("Usuário não autenticado.");
+    //  console.log("Usuário não autenticado.");
       return;
     }
 
-    console.log("Usuário logado:", currentUser);
+  //  console.log("Usuário logado:", currentUser);
 
     // Verifica se as informações necessárias do usuário estão disponíveis
     if (!currentUser.user || !currentUser.loja) {
@@ -41,7 +41,7 @@ const ConfirmRequestModal = () => {
 
         // Verifica se a diferença em dias é maior ou igual a 3
         const diffInDays = (today - requestDate) / (1000 * 60 * 60 * 24);
-        console.log(`Data da solicitação: ${requestDate}, Diferença em dias: ${diffInDays}`);
+      //  console.log(`Data da solicitação: ${requestDate}, Diferença em dias: ${diffInDays}`);
         return diffInDays >= 3;
       } catch (error) {
         console.error("Erro ao verificar a data:", error, timestamp);
@@ -56,31 +56,31 @@ const ConfirmRequestModal = () => {
       where("user", "==", currentUser.user) // Filtra solicitações pelo usuário logado
     );
 
-    console.log("Iniciando consulta ao Firestore...");
+  //  console.log("Iniciando consulta ao Firestore...");
 
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
-        console.log("Consulta retornada do Firestore:", snapshot.docs.length, "documentos encontrados.");
+     //   console.log("Consulta retornada do Firestore:", snapshot.docs.length, "documentos encontrados.");
 
         let foundRequest = null;
 
         snapshot.forEach((doc) => {
           const data = doc.data();
-          console.log("Analisando documento:", data);
+        //  console.log("Analisando documento:", data);
 
           if (data.dateSend && isThreeDaysOrMore(data.dateSend)) {
-            console.log("Solicitação atende os critérios de data e status:", data);
+         //   console.log("Solicitação atende os critérios de data e status:", data);
             foundRequest = { id: doc.id, ...data }; // Armazena a solicitação encontrada
           }
         });
 
         if (foundRequest) {
-          console.log("Solicitação válida encontrada:", foundRequest);
+        //  console.log("Solicitação válida encontrada:", foundRequest);
           setRequest(foundRequest);
           setIsModalOpen(true); // Abre o modal
         } else {
-          console.log("Nenhuma solicitação válida encontrada.");
+        //  console.log("Nenhuma solicitação válida encontrada.");
           setIsModalOpen(false); // Fecha o modal caso não haja solicitações
         }
       },
@@ -90,13 +90,12 @@ const ConfirmRequestModal = () => {
     );
 
     return () => {
-      console.log("Limpando listener do Firestore...");
+    //  console.log("Limpando listener do Firestore...");
       unsubscribe(); // Cleanup
     };
   }, [currentUser]);
 
   const handleRedirect = () => {
-    console.log("Redirecionando para solicitações...");
     window.location.href = "/solicitati";
   };
 
