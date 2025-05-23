@@ -92,11 +92,11 @@ const GerenciaMarketing = () => {
 
       if (docSnap.exists()) {
         const lastDocNumber = docSnap.data().numberDoc; // Acessa o campo numberDoc
-        console.log("Número do documento anterior:", lastDocNumber); // Verifica o número anterior
+      //  console.log("Número do documento anterior:", lastDocNumber); // Verifica o número anterior
 
         // Gera o próximo número de documento
         const nextDocNumber = generateNextDocNumber(lastDocNumber);
-        console.log("Próximo número de documento gerado:", nextDocNumber);
+      //  console.log("Próximo número de documento gerado:", nextDocNumber);
 
         // Retorna o próximo número gerado
         return nextDocNumber;
@@ -187,7 +187,7 @@ const GerenciaMarketing = () => {
 
   const handleSave = async () => {
     try {
-      console.log("Buscando último número de documento...");
+    //  console.log("Buscando último número de documento...");
 
       const nextDocNumber = await fetchLastDocumentNumber();
 
@@ -218,13 +218,13 @@ const GerenciaMarketing = () => {
         [nextDocNumber]: newDocumentMap
       });
 
-      console.log("Campo map salvo com sucesso no caminho: ", documentRef.path);
+   //   console.log("Campo map salvo com sucesso no caminho: ", documentRef.path);
 
       await updateDoc(doc(db, 'gerenciaMK', 'controlDoc'), {
         numberDoc: nextDocNumber,
       });
 
-      console.log("Número de controle atualizado com sucesso!");
+   //   console.log("Número de controle atualizado com sucesso!");
 
       resetFields(); // Limpa todos os campos
 
@@ -404,7 +404,7 @@ const GerenciaMarketing = () => {
 
   return (
     <div className="lg:p-20 p-8 bg-altBlue pt-24">
-      <h1 className="text-2xl font-bold mb-4 text-white text-center ">Envio de Documentos RH</h1>
+      <h1 className="text-2xl font-bold mb-4 text-white text-center ">Envio de Documentos MK</h1>
 
       {/* Selecionar Tipo de Documento */}
       <div className="mb-4">
