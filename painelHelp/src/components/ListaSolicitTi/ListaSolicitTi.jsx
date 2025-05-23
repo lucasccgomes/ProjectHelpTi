@@ -21,7 +21,7 @@ const ListaSolicitTi = () => {
     const [solicitacoes, setSolicitacoes] = useState([]); // Estado para armazenar as solicitações
     const [error, setError] = useState(null); // Estado para armazenar mensagens de erro
     const [slidesToShow, setSlidesToShow] = useState(1); // Estado para controlar o número de slides a serem exibidos
-    const [statusFilter, setStatusFilter] = useState('Todos'); // Estado para armazenar o filtro de status
+    const [statusFilter, setStatusFilter] = useState('Principais'); // Estado para armazenar o filtro de status
     const [isModalOpen, setIsModalOpen] = useState(false); // Estado para controlar a abertura do modal
     const [selectedSolicitacao, setSelectedSolicitacao] = useState(null); // Estado para armazenar a solicitação selecionada
     const [buttonDisabled, setButtonDisabled] = useState(false); // Estado para desabilitar o botão de confirmação
@@ -124,41 +124,44 @@ const ListaSolicitTi = () => {
 
     useEffect(() => {
         if (!currentUser) {
-            setError('Usuário não autenticado'); // Define um erro se o usuário não estiver autenticado
+            setError('Usuário não autenticado');
             return;
         }
-
-        const solicitacoesRef = collection(db, 'solicitTi'); // Referência à coleção de solicitações no Firestore
+    
+        const solicitacoesRef = collection(db, 'solicitTi');
         let q;
-
+    
         if (currentUser.cargo === 'Supervisor') {
-            q = query(solicitacoesRef); // Busca todas as solicitações se o usuário for Supervisor
+            q = query(solicitacoesRef);
         } else {
-            q = query(solicitacoesRef, where('user', '==', currentUser.user)); // Busca solicitações do usuário autenticado
+            q = query(solicitacoesRef, where('user', '==', currentUser.user));
         }
-
-        if (statusFilter !== 'Todos') {
-            q = query(q, where('status', '==', statusFilter)); // Aplica filtro de status, se necessário
+    
+        if (statusFilter !== 'Todos' && statusFilter !== 'Principais') {
+            q = query(q, where('status', '==', statusFilter));
+        } else if (statusFilter === 'Principais') {
+            q = query(solicitacoesRef, where('status', 'in', ['Pendente', 'Separando', 'Enviado']));
         }
-
+    
         if (cityFilter !== 'Todos') {
-            q = query(q, where('cidade', '==', cityFilter)); // Aplica filtro de cidade, se necessário
+            q = query(q, where('cidade', '==', cityFilter));
         }
-
+    
         if (storeFilter !== 'Todos') {
-            q = query(q, where('loja', '==', storeFilter)); // Aplica filtro de loja, se necessário
+            q = query(q, where('loja', '==', storeFilter));
         }
-
+    
         const unsubscribe = onSnapshot(q, (querySnapshot) => {
-            const solicitacoesData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); // Mapeia os dados das solicitações
-            setSolicitacoes(solicitacoesData); // Armazena as solicitações no estado
+            const solicitacoesData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setSolicitacoes(solicitacoesData);
         }, (error) => {
-            setError('Erro ao buscar solicitações'); // Define um erro se ocorrer algum problema na busca
-            console.error('Erro ao buscar solicitações:', error); // Loga o erro
+            setError('Erro ao buscar solicitações');
+            console.error('Erro ao buscar solicitações:', error);
         });
-
-        return () => unsubscribe(); // Cancela a inscrição no snapshot ao desmontar o componente
-    }, [currentUser, statusFilter, cityFilter, storeFilter]); // Roda o efeito quando esses estados mudam
+    
+        return () => unsubscribe();
+    }, [currentUser, statusFilter, cityFilter, storeFilter]);
+    
 
     if (error) {
         return <div className="text-center mt-4 text-lg font-semibold text-red-500">{error}</div>; // Exibe mensagem de erro na interface
