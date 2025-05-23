@@ -3,6 +3,7 @@ import { db } from '../../firebase';
 import { collection, getDocs, doc, setDoc } from 'firebase/firestore';
 import MyModal from '../MyModal/MyModal';
 import AlertModal from '../AlertModal/AlertModal';
+import { getApiUrls } from '../../utils/apiBaseUrl';
 
 const MarketingMp3 = () => {
     const [servers, setServers] = useState([]);
@@ -27,9 +28,51 @@ const MarketingMp3 = () => {
     const [isScheduleSaved, setIsScheduleSaved] = useState(false);
     const [isPlayEnabled, setIsPlayEnabled] = useState(false);
 
-    const MP3_LIST_API_URL = import.meta.env.VITE_MP3_LIST;
-    const MP3_UPLOAD_API_URL = import.meta.env.VITE_MP3_UPLOAD;
-    const VITE_MP3_DELETE_API_URL = import.meta.env.VITE_MP3_DELETE;
+    const [MP3_LIST_API_URL, setMp3ListApiUrl] = useState('');
+
+    useEffect(() => {
+        async function loadUrls() {
+            try {
+                const urls = await getApiUrls();
+                setMp3ListApiUrl(urls.VITE_MP3_LIST);
+            } catch (error) {
+                console.error("Erro ao carregar URL da API:", error);
+            }
+        }
+
+        loadUrls();
+    }, []);
+
+    const [MP3_UPLOAD_API_URL, setUpApiUrl] = useState('');
+
+    useEffect(() => {
+        async function loadUrls() {
+            try {
+                const urls = await getApiUrls();
+                setUpApiUrl(urls.VITE_MP3_UPLOAD);
+            } catch (error) {
+                console.error("Erro ao carregar URL da API:", error);
+            }
+        }
+
+        loadUrls();
+    }, []);
+
+    const [VITE_MP3_DELETE_API_URL, setDeletApiUrl] = useState('');
+
+    useEffect(() => {
+        async function loadUrls() {
+            try {
+                const urls = await getApiUrls();
+                setDeletApiUrl(urls.VITE_MP3_DELETE);
+            } catch (error) {
+                console.error("Erro ao carregar URL da API:", error);
+            }
+        }
+
+        loadUrls();
+    }, []);
+
 
     // Função para abrir o AlertModal com título, mensagem e estado de carregamento específicos
     const showAlert = (title, message, loading = false) => {
@@ -60,9 +103,12 @@ const MarketingMp3 = () => {
 
     const startRealTimeUpdate = async () => {
         const lojaFormatted = selectedServer.replace(/-/g, ' ');
-
+    
         try {
-            const timeResponse = await fetch(import.meta.env.VITE_MP3_CONTROL_API, {
+            const urls = await getApiUrls(); // busca as URLs dinâmicas
+            const controlUrl = urls.VITE_MP3_CONTROL_API;
+    
+            const timeResponse = await fetch(controlUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -70,8 +116,8 @@ const MarketingMp3 = () => {
                     action: "time",
                 }),
             });
-
-            const currentResponse = await fetch(import.meta.env.VITE_MP3_CONTROL_API, {
+    
+            const currentResponse = await fetch(controlUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -79,12 +125,11 @@ const MarketingMp3 = () => {
                     action: "current",
                 }),
             });
-
+    
             const timeData = await timeResponse.json();
             const currentData = await currentResponse.json();
-
+    
             if (timeResponse.ok && currentResponse.ok) {
-                // Verifica se há música tocando
                 if (currentData.output && currentData.output !== 'Nenhuma música.') {
                     setTimeInfo('Ativo');
                 } else {
@@ -249,15 +294,16 @@ const MarketingMp3 = () => {
             showAlert("Erro", "Selecione uma loja antes de executar comandos.");
             return;
         }
-
+    
         const lojaFormatted = selectedServer.replace(/-/g, ' ');
-
-        console.log("Enviando dados para a API:", { loja: lojaFormatted, action, filename });
-
+    
         try {
+            const urls = await getApiUrls(); // pega todas as URLs
+            const controlUrl = urls.VITE_MP3_CONTROL_API;
+    
             if (action === "time") {
                 // Obter informações de tempo e música atual
-                const timeResponse = await fetch(import.meta.env.VITE_MP3_CONTROL_API, {
+                const timeResponse = await fetch(controlUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -265,8 +311,8 @@ const MarketingMp3 = () => {
                         action: "time",
                     }),
                 });
-
-                const currentResponse = await fetch(import.meta.env.VITE_MP3_CONTROL_API, {
+    
+                const currentResponse = await fetch(controlUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -274,10 +320,10 @@ const MarketingMp3 = () => {
                         action: "current",
                     }),
                 });
-
+    
                 const timeData = await timeResponse.json();
                 const currentData = await currentResponse.json();
-
+    
                 if (timeResponse.ok && currentResponse.ok) {
                     setTimeInfo(timeData.output || 'Tempo não disponível');
                     setCurrentMusic(currentData.output || 'Música não disponível');
@@ -287,16 +333,16 @@ const MarketingMp3 = () => {
                 }
             } else {
                 // Comandos normais
-                const response = await fetch(import.meta.env.VITE_MP3_CONTROL_API, {
+                const response = await fetch(controlUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         loja: lojaFormatted,
                         action,
-                        filename, // Envia o nome do arquivo aqui
+                        filename,
                     }),
                 });
-
+    
                 const data = await response.json();
                 if (response.ok) {
                     showAlert("Sucesso", data.message);
@@ -486,7 +532,7 @@ const MarketingMp3 = () => {
                         >
                             Status
                         </button>
-                      
+
                     </div>
                     <p className='text-center mt-4 bg-red-300 rounded-xl'>ℹ️ Para enviar o áudio favor falar com T.I</p>
                 </div>
